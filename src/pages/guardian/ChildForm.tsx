@@ -17,6 +17,7 @@ export const ChildFormPage: React.FC = () => {
   const [name, setName] = useState('')
   const [birthDate, setBirthDate] = useState('')
   const [favoriteColor, setFavoriteColor] = useState('#FF7A45')
+  const [classGroup, setClassGroup] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [clearAvatar, setClearAvatar] = useState(false)
@@ -39,6 +40,7 @@ export const ChildFormPage: React.FC = () => {
           setName(child.name)
           setBirthDate(child.birth_date ? child.birth_date.split('T')[0] : '')
           if (child.favorite_color) setFavoriteColor(child.favorite_color)
+          if (child.class_group) setClassGroup(child.class_group)
           if (child.daily_minutes) setDailyMinutes(child.daily_minutes)
           if (child.daily_activity_count) setDailyActivityCount(child.daily_activity_count)
           const existingUrl = getChildAvatarUrl(child)
@@ -102,6 +104,7 @@ export const ChildFormPage: React.FC = () => {
           name: name.trim(),
           birth_date: new Date(birthDate).toISOString(),
           favorite_color: favoriteColor,
+          class_group: classGroup.trim(),
           daily_minutes: dailyMinutes,
           daily_activity_count: dailyActivityCount,
           avatarFile,
@@ -113,6 +116,7 @@ export const ChildFormPage: React.FC = () => {
           name: name.trim(),
           birth_date: new Date(birthDate).toISOString(),
           favorite_color: favoriteColor,
+          class_group: classGroup.trim(),
           daily_minutes: dailyMinutes,
           daily_activity_count: dailyActivityCount,
           avatarFile,
@@ -249,6 +253,25 @@ export const ChildFormPage: React.FC = () => {
           <p className="text-[11px] text-slate-400">
             A idade exata calibra o tempo de resposta, o vocabulário e o número de rodadas nos
             jogos.
+          </p>
+        </div>
+
+        {/* Turma / Sala (Escola) */}
+        <div className="space-y-1.5 text-left">
+          <Label htmlFor="classGroup" className="text-xs font-bold text-slate-700">
+            Turma / Sala de aula (opcional)
+          </Label>
+          <Input
+            id="classGroup"
+            type="text"
+            placeholder="ex: Maternal II, Berçário A, Jardim 1..."
+            value={classGroup}
+            onChange={(e) => setClassGroup(e.target.value)}
+            disabled={isLoading}
+            className="rounded-2xl h-11"
+          />
+          <p className="text-[11px] text-slate-400">
+            Facilita o agrupamento e filtro no Portal Pedagógico da Escola.
           </p>
         </div>
 

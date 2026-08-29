@@ -4,9 +4,11 @@ import {
   fetchChildren,
   fetchChildById,
   calculateChildEvolution,
+  fetchChildAchievements,
   getChildAvatarUrl,
 } from '@/services/children'
-import type { Child, EvolutionSummary } from '@/types/cognikids'
+import type { Child, EvolutionSummary, ChildAchievement } from '@/types/cognikids'
+import { generateEvolutionPdf } from '@/lib/pdfReport'
 import { formatChildAge, COGNIKIDS_MODULES } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { Button } from '@/components/ui/button'
@@ -29,19 +31,24 @@ import {
   Home,
   CheckCircle2,
   BookOpen,
+  FileDown,
+  Printer,
+  Download,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export const EvolutionReportsPage: React.FC = () => {
   const { childId } = useParams()
   const navigate = useNavigate()
-  const { playPop } = useSound()
+  const { playPop, playStarReward } = useSound()
 
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
+  const [achievements, setAchievements] = useState<ChildAchievement[]>([])
   const [period, setPeriod] = useState<'week' | 'month'>('week')
   const [summary, setSummary] = useState<EvolutionSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -54,21 +61,37 @@ export const EvolutionReportsPage: React.FC = () => {
       setSelectedChild(active)
 
       if (active) {
-        const evo = await calculateChildEvolution(active.id, period)
+        const [evo, achs] = await Promise.all([
+          calculateChildEvolution(active.id, period),
+          fetchChildAchievements(active.id),
+        ])
         setSummary(evo)
+        setAchievements(achs)
       }
       setIsLoading(false)
     }
     load()
   }, [childId, period])
 
+  const handleExportPdf = () => {
+    if (!selectedChild || !summary) return
+    playStarReward(2)
+    setIsExporting(true)
+    generateEvolutionPdf(selectedChild, summary, achievements)
+    setTimeout(() => setIsExporting(false), 1000)
+  }
+
   const handleSelectChild = async (kid: Child) => {
     playPop()
     setSelectedChild(kid)
     localStorage.setItem('cognikids_selected_child_id', kid.id)
     setIsLoading(true)
-    const evo = await calculateChildEvolution(kid.id, period)
+    const [evo, achs] = await Promise.all([
+      calculateChildEvolution(kid.id, period),
+      fetchChildAchievements(kid.id),
+    ])
     setSummary(evo)
+    setAchievements(achs)
     setIsLoading(false)
   }
 
@@ -163,6 +186,18 @@ export const EvolutionReportsPage: React.FC = () => {
               Mensal (30d)
             </button>
           </div>
+
+          {/* Export PDF Button */}
+          {selectedChild && summary && (
+            <Button
+              onClick={handleExportPdf}
+              disabled={isExporting}
+              className="h-10 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 flex items-center gap-1.5 shrink-0"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>{isExporting ? 'Gerando…' : 'Exportar Relatório PDF'}</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -266,6 +301,33 @@ export const EvolutionReportsPage: React.FC = () => {
                 Iniciar agora
               </Button>
             </div>
+          </div>
+
+          {/* Quick PDF Export Banner */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl p-5 border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-md shadow-indigo-600/20">
+                <FileDown className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-slate-800">
+                  Levar este relatório ao Pediatra ou à Escola?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Gere um documento executivo formatado com o Cérebro em Flor, taxas de acerto e
+                  dicas pedagógicas.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleExportPdf}
+              disabled={isExporting}
+              className="h-10 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 shrink-0"
+            >
+              <Printer className="w-3.5 h-3.5 mr-1.5" />
+              <span>{isExporting ? 'Processando…' : 'Gerar PDF para Impressão'}</span>
+            </Button>
           </div>
 
           {/* Module Breakdown Comparison Cards */}

@@ -3,10 +3,11 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { User, Mail, ShieldCheck, HardDrive, RefreshCw, Smartphone } from 'lucide-react'
+import { User, Mail, ShieldCheck, HardDrive, RefreshCw, Smartphone, BellRing } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { offlineSyncService } from '@/lib/offlineSync'
+import { RoutineReminderSettings } from '@/components/reminders/RoutineReminderSettings'
 
 export const SettingsPage: React.FC = () => {
   const { user, refreshUser } = useAuth()
@@ -68,6 +69,9 @@ export const SettingsPage: React.FC = () => {
           Configurações da conta do responsável e sincronização offline
         </p>
       </div>
+
+      {/* Routine Daily Reminder Card */}
+      <RoutineReminderSettings />
 
       {/* Account Info Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">

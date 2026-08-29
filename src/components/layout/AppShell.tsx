@@ -7,6 +7,13 @@ import type { Child } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { ConnectivityPill } from './ConnectivityPill'
 import {
+  getReminderConfig,
+  checkShouldTriggerReminder,
+  markReminderTriggeredToday,
+  sendLocalNotification,
+} from '@/services/reminders'
+import { useToast } from '@/hooks/use-toast'
+import {
   Home,
   Users,
   BarChart3,
@@ -41,6 +48,7 @@ export const AppShell: React.FC = () => {
 
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     if (!isValid) {
@@ -59,6 +67,47 @@ export const AppShell: React.FC = () => {
     }
     load()
   }, [isValid, navigate])
+
+  // In-app and browser reminder background check
+  useEffect(() => {
+    if (!isValid) return
+
+    const checkReminder = async () => {
+      const config = await getReminderConfig()
+      if (checkShouldTriggerReminder(config)) {
+        markReminderTriggeredToday()
+        const kidName = selectedChild ? selectedChild.name : 'seu filho(a)'
+
+        // 1. In-app toast notification
+        toast({
+          title: `⏰ Hora da Sessão Diária de ${kidName}!`,
+          description: `O Tico preparou joguinhos rápidos para hoje. Vamos brincar?`,
+          action: selectedChild ? (
+            <Button
+              size="sm"
+              onClick={() => navigate(`/app/daily/${selectedChild.id}`)}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl"
+            >
+              Iniciar
+            </Button>
+          ) : undefined,
+        })
+
+        // 2. Browser notification
+        sendLocalNotification(
+          `⏰ Hora da Sessão Diária de ${kidName}!`,
+          'O Tico preparou joguinhos rápidos para hoje. Vamos brincar no CogniKids?',
+        )
+      }
+    }
+
+    // Check immediately on mount
+    checkReminder()
+
+    // And check periodically every 30 seconds while app is open
+    const interval = setInterval(checkReminder, 30000)
+    return () => clearInterval(interval)
+  }, [isValid, selectedChild, navigate, toast])
 
   const handleSelectChild = (child: Child) => {
     setSelectedChild(child)

@@ -59,6 +59,7 @@ export const InvitesAndSchoolPage: React.FC = () => {
   const [showSchoolModal, setShowSchoolModal] = useState(false)
   const [schoolName, setSchoolName] = useState('')
   const [teacherName, setTeacherName] = useState('')
+  const [schoolClassGroup, setSchoolClassGroup] = useState('')
   const [schoolNote, setSchoolNote] = useState('')
   const [schoolTargetChildId, setSchoolTargetChildId] = useState('')
   const [isCreatingSchool, setIsCreatingSchool] = useState(false)
@@ -156,12 +157,14 @@ export const InvitesAndSchoolPage: React.FC = () => {
         childId: schoolTargetChildId || undefined,
         schoolName: schoolName.trim(),
         teacherName: teacherName.trim(),
+        classGroup: schoolClassGroup.trim(),
         note: schoolNote.trim(),
       })
       setSchoolTokens((prev) => [newToken, ...prev])
       setShowSchoolModal(false)
       setSchoolName('')
       setTeacherName('')
+      setSchoolClassGroup('')
       setSchoolNote('')
       playStarReward(3)
       toast({
@@ -473,6 +476,11 @@ export const InvitesAndSchoolPage: React.FC = () => {
                               (Prof(a). {st.teacher_name})
                             </span>
                           )}
+                          {st.class_group && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200">
+                              Turma: {st.class_group}
+                            </span>
+                          )}
                           <span
                             className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                               st.is_active
@@ -485,6 +493,7 @@ export const InvitesAndSchoolPage: React.FC = () => {
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
                           Criança vinculada: <strong>{targetKid ? targetKid.name : 'Todas'}</strong>
+                          {targetKid?.class_group && ` (Turma: ${targetKid.class_group})`}
                           {st.note ? ` • Nota: "${st.note}"` : ''}
                         </p>
                       </div>
@@ -578,17 +587,30 @@ export const InvitesAndSchoolPage: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-1.5 text-left">
-              <Label className="text-xs font-bold text-slate-700">
-                Nome do(a) Professor(a) ou Pedagogo(a)
-              </Label>
-              <Input
-                type="text"
-                placeholder="ex: Profa. Juliana"
-                value={teacherName}
-                onChange={(e) => setTeacherName(e.target.value)}
-                className="rounded-2xl h-11"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 text-left">
+                <Label className="text-xs font-bold text-slate-700">
+                  Professor(a) ou Pedagogo(a)
+                </Label>
+                <Input
+                  type="text"
+                  placeholder="ex: Profa. Juliana"
+                  value={teacherName}
+                  onChange={(e) => setTeacherName(e.target.value)}
+                  className="rounded-2xl h-11"
+                />
+              </div>
+
+              <div className="space-y-1.5 text-left">
+                <Label className="text-xs font-bold text-slate-700">Turma / Sala</Label>
+                <Input
+                  type="text"
+                  placeholder="ex: Maternal II"
+                  value={schoolClassGroup}
+                  onChange={(e) => setSchoolClassGroup(e.target.value)}
+                  className="rounded-2xl h-11"
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5 text-left">

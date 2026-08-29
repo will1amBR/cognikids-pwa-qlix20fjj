@@ -35,6 +35,7 @@ export async function createChild(data: {
   name: string
   birth_date: string
   favorite_color?: string
+  class_group?: string
   avatarFile?: File | null
   daily_minutes?: number
   daily_activity_count?: number
@@ -44,6 +45,7 @@ export async function createChild(data: {
   formData.append('name', data.name)
   formData.append('birth_date', data.birth_date)
   if (data.favorite_color) formData.append('favorite_color', data.favorite_color)
+  if (data.class_group) formData.append('class_group', data.class_group)
   if (data.daily_minutes) formData.append('daily_minutes', String(data.daily_minutes))
   if (data.daily_activity_count)
     formData.append('daily_activity_count', String(data.daily_activity_count))
@@ -59,6 +61,7 @@ export async function updateChild(
     name: string
     birth_date: string
     favorite_color?: string
+    class_group?: string
     avatarFile?: File | null
     clearAvatar?: boolean
     daily_minutes?: number
@@ -69,6 +72,7 @@ export async function updateChild(
   formData.append('name', data.name)
   formData.append('birth_date', data.birth_date)
   if (data.favorite_color) formData.append('favorite_color', data.favorite_color)
+  if (data.class_group !== undefined) formData.append('class_group', data.class_group)
   if (data.daily_minutes !== undefined) formData.append('daily_minutes', String(data.daily_minutes))
   if (data.daily_activity_count !== undefined)
     formData.append('daily_activity_count', String(data.daily_activity_count))
@@ -311,6 +315,7 @@ export async function createSchoolAccessToken(data: {
   childId?: string
   schoolName: string
   teacherName?: string
+  classGroup?: string
   note?: string
 }): Promise<SchoolAccessToken> {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -325,6 +330,7 @@ export async function createSchoolAccessToken(data: {
     access_code: code,
     school_name: data.schoolName,
     teacher_name: data.teacherName || '',
+    class_group: data.classGroup || '',
     note: data.note || '',
     is_active: true,
   })
@@ -346,15 +352,21 @@ export async function deleteSchoolAccessToken(tokenId: string): Promise<boolean>
   return true
 }
 
-/**
- * Public lookup for school portal by access code without guardian login
- */
-export async function getSchoolPortalData(accessCode: string): Promise<{
-  token: SchoolAccessToken
+export interface SchoolPortalResult {
+  primaryToken: SchoolAccessToken
+  institutionTokens: SchoolAccessToken[]
+  institutionName: string
   children: Child[]
   sessions: GameSession[]
   progress: ModuleProgress[]
-} | null> {
+}
+
+/**
+ * Public lookup for school portal by access code without guardian login.
+ * If multiple school tokens belong to the same school name or guardian institution,
+ * all associated tokens and children are retrieved to allow filtering by class group (turma) and access code.
+ */
+export async function getSchoolPortalData(accessCode: string): Promise<SchoolPortalResult | null> {
   try {
     const cleanCode = accessCode.trim().toUpperCase()
     const tokens = await pb.collection('school_access_tokens').getList<SchoolAccessToken>(1, 1, {
@@ -362,29 +374,78 @@ export async function getSchoolPortalData(accessCode: string): Promise<{
     })
 
     if (tokens.items.length === 0) return null
-    const token = tokens.items[0]
+    const primaryToken = tokens.items[0]
 
-    // Fetch associated children, sessions, and progress
+    // Find all active tokens linked to the same school institution (by school_name or user_id)
+    let institutionTokens: SchoolAccessToken[] = [primaryToken]
+    try {
+      const schoolNameFilter = primaryToken.school_name
+        ? `school_name = '${primaryToken.school_name.replace(/'/g, "\\'")}' && is_active = true`
+        : `user_id = '${primaryToken.user_id}' && is_active = true`
+
+      const relatedTokens = await pb
+        .collection('school_access_tokens')
+        .getFullList<SchoolAccessToken>({
+          filter: schoolNameFilter,
+          sort: '-created',
+        })
+      if (relatedTokens.length > 0) {
+        institutionTokens = relatedTokens
+      }
+    } catch (_) {
+      institutionTokens = [primaryToken]
+    }
+
+    // Collect all relevant child IDs across these institution tokens
+    const targetChildIds = new Set<string>()
+    let includeAllUserKids = false
+
+    institutionTokens.forEach((tok) => {
+      if (tok.child_id) {
+        targetChildIds.add(tok.child_id)
+      } else {
+        includeAllUserKids = true
+      }
+    })
+
     let childrenList: Child[] = []
-    if (token.child_id) {
+    if (includeAllUserKids || targetChildIds.size === 0) {
+      const userIds = Array.from(new Set(institutionTokens.map((t) => t.user_id)))
+      const userFilter = userIds.map((uid) => `user_id = '${uid}'`).join(' || ')
       try {
-        const singleKid = await pb.collection('children').getOne<Child>(token.child_id)
-        childrenList = [singleKid]
+        childrenList = await pb.collection('children').getFullList<Child>({
+          filter: userFilter,
+          sort: 'name',
+        })
       } catch (_) {
-        // ignore if not found
+        childrenList = []
       }
     } else {
-      childrenList = await pb.collection('children').getFullList<Child>({
-        filter: `user_id = '${token.user_id}'`,
-      })
+      const idsArray = Array.from(targetChildIds)
+      const childFilter = idsArray.map((id) => `id = '${id}'`).join(' || ')
+      try {
+        childrenList = await pb.collection('children').getFullList<Child>({
+          filter: childFilter,
+          sort: 'name',
+        })
+      } catch (_) {
+        childrenList = []
+      }
     }
 
-    const childIds = childrenList.map((c) => c.id)
-    if (childIds.length === 0) {
-      return { token, children: [], sessions: [], progress: [] }
+    const allChildIds = childrenList.map((c) => c.id)
+    if (allChildIds.length === 0) {
+      return {
+        primaryToken,
+        institutionTokens,
+        institutionName: primaryToken.school_name || 'Instituição Escolar',
+        children: [],
+        sessions: [],
+        progress: [],
+      }
     }
 
-    const filterExpr = childIds.map((id) => `child_id = '${id}'`).join(' || ')
+    const filterExpr = allChildIds.map((id) => `child_id = '${id}'`).join(' || ')
 
     const [sessionsRes, progressRes] = await Promise.all([
       pb.collection('game_sessions').getFullList<GameSession>({
@@ -397,7 +458,9 @@ export async function getSchoolPortalData(accessCode: string): Promise<{
     ])
 
     return {
-      token,
+      primaryToken,
+      institutionTokens,
+      institutionName: primaryToken.school_name || 'Instituição Escolar',
       children: childrenList,
       sessions: sessionsRes,
       progress: progressRes,
@@ -504,4 +567,13 @@ export async function calculateChildEvolution(
     sessionsChange,
     moduleBreakdown,
   }
+}
+
+export async function fetchChildReportForPdf(childId: string, period: 'week' | 'month' = 'month') {
+  const [kid, summary, achievements] = await Promise.all([
+    fetchChildById(childId),
+    calculateChildEvolution(childId, period),
+    fetchChildAchievements(childId),
+  ])
+  return { kid, summary, achievements }
 }

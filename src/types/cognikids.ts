@@ -5,6 +5,7 @@ export interface Child {
   birth_date: string
   favorite_color?: string
   avatar?: string
+  class_group?: string
   daily_minutes?: number
   daily_activity_count?: number
   created?: string
@@ -85,12 +86,18 @@ export interface SchoolAccessToken {
   access_code: string
   school_name?: string
   teacher_name?: string
+  class_group?: string
   note?: string
   is_active: boolean
   last_accessed_at?: string
   expires_at?: string
   created?: string
   updated?: string
+}
+
+export interface GuardianReminderConfig {
+  reminder_enabled: boolean
+  reminder_time: string // format "HH:MM" e.g. "18:30"
 }
 
 export interface ModuleDefinition {
