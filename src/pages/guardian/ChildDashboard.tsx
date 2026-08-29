@@ -17,6 +17,8 @@ import {
   Calendar,
   CheckCircle2,
   Play,
+  Flame,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Dialog,
@@ -139,7 +141,7 @@ export const ChildDashboardPage: React.FC = () => {
           </div>
 
           {/* Assimilation Conic Progress Ring + CTA */}
-          <div className="flex flex-col sm:flex-row items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
             {/* Assimilation Conic Ring */}
             <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
               <div
@@ -158,14 +160,28 @@ export const ChildDashboardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Big Action Button */}
-            <Button
-              onClick={() => setShowGamePicker(true)}
-              className="h-14 px-8 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-base shadow-lg shadow-orange-500/25 flex items-center gap-2"
-            >
-              <Gamepad2 className="w-5 h-5" />
-              <span>🎮 Jogar agora</span>
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => {
+                  playPop()
+                  navigate(`/app/daily/${child.id}`)
+                }}
+                className="h-14 px-5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-sm shadow-lg shadow-orange-500/25 flex items-center gap-2"
+              >
+                <Flame className="w-5 h-5 fill-current" />
+                <span>Sessão Diária</span>
+              </Button>
+
+              <Button
+                onClick={() => setShowGamePicker(true)}
+                variant="outline"
+                className="h-14 px-5 rounded-2xl border-slate-300 hover:bg-slate-50 text-slate-800 font-extrabold text-sm flex items-center gap-2"
+              >
+                <Gamepad2 className="w-5 h-5 text-orange-500" />
+                <span>Todos os Jogos</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,72 +1,72 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Child } from '@/types/cognikids'
-import { calculateAgeMonths } from '@/types/cognikids'
 import { GameShell } from '@/components/layout/GameShell'
 import { speechService } from '@/lib/speechSynthesis'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { useSound } from '@/context/SoundContext'
-import { AnimalItem, WORD_CATEGORIES, getItemsByCategory, getAllItems } from './farmAnimalsData'
+import { FARM_ANIMALS, DINOSAURS, AnimalItem } from './farmAnimalsData'
+import { Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 
-interface CadeOBichinhoGameProps {
+interface SomDoBichoGameProps {
   child: Child
 }
 
-export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) => {
+export const SomDoBichoGame: React.FC<SomDoBichoGameProps> = ({ child }) => {
   const navigate = useNavigate()
   const { playPop, playStarReward, playVictory, playAnimalSound } = useSound()
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('farm')
+  const allItems = [...FARM_ANIMALS, ...DINOSAURS]
   const totalRounds = 4
 
-  const [roundsList, setRoundsList] = useState<AnimalItem[]>([])
+  const [roundsList] = useState<AnimalItem[]>(() => {
+    return [...allItems].sort(() => 0.5 - Math.random()).slice(0, totalRounds)
+  })
+
   const [currentRoundIdx, setCurrentRoundIdx] = useState(0)
   const [options, setOptions] = useState<AnimalItem[]>([])
-  const [selectedAnimalId, setSelectedAnimalId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const [isCompleted, setIsCompleted] = useState(false)
 
-  useEffect(() => {
-    const items = getItemsByCategory(selectedCategory)
-    const shuffled = [...items].sort(() => 0.5 - Math.random()).slice(0, totalRounds)
-    setRoundsList(shuffled)
-    setCurrentRoundIdx(0)
-    setIsCompleted(false)
-  }, [selectedCategory])
-
-  const targetAnimal = roundsList[currentRoundIdx] || roundsList[0]
+  const targetItem = roundsList[currentRoundIdx] || roundsList[0]
 
   useEffect(() => {
-    if (isCompleted || !targetAnimal) return
+    if (isCompleted || !targetItem) return
 
-    const categoryPool = getItemsByCategory(selectedCategory)
-    const distractors = categoryPool
-      .filter((a) => a.id !== targetAnimal.id)
+    const distractors = allItems
+      .filter((a) => a.id !== targetItem.id)
       .sort(() => 0.5 - Math.random())
       .slice(0, 2)
 
-    const roundOptions = [targetAnimal, ...distractors].sort(() => 0.5 - Math.random())
+    const roundOptions = [targetItem, ...distractors].sort(() => 0.5 - Math.random())
     setOptions(roundOptions)
-    setSelectedAnimalId(null)
+    setSelectedId(null)
     setIsCorrect(null)
 
-    playAnimalSound(targetAnimal.soundKey)
+    // Play target sound first
+    playAnimalSound(targetItem.soundKey)
     setTimeout(() => {
-      speechService.speak(`Cadê: ${targetAnimal.name}? Toque no ${targetAnimal.name}!`)
-    }, 500)
-  }, [currentRoundIdx, targetAnimal, isCompleted, selectedCategory])
+      speechService.speak('Ouça o som! De quem é esse barulhinho ou rugido?')
+    }, 400)
+  }, [currentRoundIdx, targetItem, isCompleted])
 
-  const handleSelectOption = (animal: AnimalItem) => {
-    if (selectedAnimalId !== null) return
+  const handlePlaySoundAgain = () => {
+    if (!targetItem) return
+    playAnimalSound(targetItem.soundKey)
+  }
+
+  const handleSelectOption = (item: AnimalItem) => {
+    if (selectedId !== null) return
     playPop()
-    setSelectedAnimalId(animal.id)
+    setSelectedId(item.id)
 
-    if (animal.id === targetAnimal.id) {
+    if (item.id === targetItem.id) {
       setIsCorrect(true)
       playStarReward(3)
-      speechService.speak(`Muito bem! Você encontrou: ${animal.name}! 🎉`)
+      speechService.speak(`Acertou! É o som do ${item.name}! 🌟`)
 
       setTimeout(() => {
         if (currentRoundIdx + 1 < totalRounds) {
@@ -77,11 +77,11 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
       }, 1500)
     } else {
       setIsCorrect(false)
-      playAnimalSound(animal.soundKey)
-      speechService.speak(`Esse é o ${animal.name}. Cadê o ${targetAnimal.name}?`)
+      speechService.speak(`Não é o ${item.name}. Ouça o som de novo!`)
       setTimeout(() => {
-        setSelectedAnimalId(null)
+        setSelectedId(null)
         setIsCorrect(null)
+        playAnimalSound(targetItem.soundKey)
       }, 1400)
     }
   }
@@ -90,13 +90,12 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
     setIsCompleted(true)
     playVictory()
     const finalScore = 95
-    const catName = WORD_CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'Itens'
     await offlineSyncService.queueGameSession({
       user_id: child.user_id,
       child_id: child.id,
       module_id: 'speech',
-      game_id: 'cade_o_bichinho',
-      game_title: `Cadê o Item? (${catName})`,
+      game_id: 'som_do_bicho',
+      game_title: 'Qual é o Som?',
       stars: 3,
       score: finalScore,
       accuracy: finalScore,
@@ -108,7 +107,7 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
   if (isCompleted) {
     return (
       <GameShell
-        title="Cadê o Bichinho / Objeto?"
+        title="Qual é o Som?"
         moduleColor="#FF7A45"
         currentRound={totalRounds}
         totalRounds={totalRounds}
@@ -117,9 +116,9 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
       >
         <div className="bg-white/95 rounded-3xl p-8 border border-orange-200 shadow-2xl flex flex-col items-center text-center max-w-sm mx-auto animate-fade-in">
           <TicoMascot size="lg" mood="celebrating" />
-          <h2 className="text-2xl font-black text-slate-800 mt-3">Você encontrou todos! 🎈</h2>
+          <h2 className="text-2xl font-black text-slate-800 mt-3">Ouvido de Detetive! 🎧</h2>
           <p className="text-xs text-slate-500 mt-1 mb-6">
-            {child.name} tem uma ótima percepção auditiva e visual!
+            {child.name} reconheceu todos os sons e rugidos!
           </p>
           <Button
             onClick={() => navigate(`/app/child/${child.id}`)}
@@ -132,54 +131,37 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
     )
   }
 
-  if (!targetAnimal) return null
+  if (!targetItem) return null
 
   return (
     <GameShell
-      title="Cadê o Bichinho / Objeto?"
+      title="Qual é o Som?"
       moduleColor="#FF7A45"
       currentRound={currentRoundIdx + 1}
       totalRounds={totalRounds}
       exitPath={`/app/child/${child.id}`}
-      ticoMood={isCorrect ? 'celebrating' : 'talking'}
-      ticoInstruction={`Toque no ${targetAnimal.name}!`}
+      ticoMood={isCorrect ? 'celebrating' : 'listening'}
+      ticoInstruction="Ouça o som e toque no bicho ou dinossauro certo!"
     >
-      <div className="w-full max-w-md flex flex-col items-center gap-4">
-        {/* Category Pills */}
-        <div className="w-full flex items-center justify-between gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {WORD_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.id
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  playPop()
-                  setSelectedCategory(cat.id)
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1 ${
-                  isSelected
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-white/80 text-slate-600 border border-slate-200'
-                }`}
-              >
-                <span>{cat.emoji}</span>
-                <span>{cat.name}</span>
-              </button>
-            )
-          })}
-        </div>
+      <div className="w-full max-w-md flex flex-col items-center gap-6">
+        {/* Sound button */}
+        <button
+          onClick={handlePlaySoundAgain}
+          className="w-28 h-28 rounded-full bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xl shadow-orange-500/30 flex flex-col items-center justify-center gap-1 active:scale-95 transition-all hover:scale-105"
+        >
+          <Volume2 className="w-10 h-10 animate-pulse" />
+          <span className="text-[11px] font-black uppercase tracking-wider">Ouvir som</span>
+        </button>
 
-        <div className="text-center">
-          <h2 className="text-2xl font-black text-slate-800">
-            Cadê o <span className="text-orange-600">{targetAnimal.name}</span>?
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">Toque na imagem correspondente na tela</p>
-        </div>
+        <p className="text-sm font-bold text-slate-700 text-center">
+          De quem é esse barulhinho? Toque na opção:
+        </p>
 
+        {/* Options */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
           {options.map((opt) => {
-            const isSelected = selectedAnimalId === opt.id
-            const isTarget = opt.id === targetAnimal.id
+            const isSelected = selectedId === opt.id
+            const isTarget = opt.id === targetItem.id
 
             return (
               <button

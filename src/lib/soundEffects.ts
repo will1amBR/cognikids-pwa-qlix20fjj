@@ -1,5 +1,6 @@
 /**
- * Procedural web audio sound effects: animal sounds, rewards, clicks, celebratory fanfares.
+ * Procedural web audio sound effects: animal sounds, dinosaur roars, nature,
+ * category sounds, rewards, celebratory fanfares and UI cues.
  * 100% offline and standalone with Web Audio API.
  */
 
@@ -116,17 +117,19 @@ class SoundEffectsService {
     })
   }
 
-  // Procedural animal sounds
+  // Procedural animal, dinosaur, category sounds
   public playAnimalSound(type: string) {
     if (this.isMuted) return
     const ctx = this.getContext()
     if (!ctx) return
     const now = ctx.currentTime
+    const key = (type || '').toLowerCase().trim()
 
-    switch (type.toLowerCase()) {
+    switch (key) {
+      // --- ANIMALS ---
       case 'leao':
       case 'leão': {
-        // Roar: low noise modulation
+        // Roar
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.type = 'sawtooth'
@@ -141,7 +144,7 @@ class SoundEffectsService {
         break
       }
       case 'gato': {
-        // Meow: pitch goes up then down
+        // Meow
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.type = 'sine'
@@ -159,7 +162,7 @@ class SoundEffectsService {
       case 'cachorro':
       case 'cao':
       case 'cão': {
-        // Bark: 2 quick woofs
+        // Woof woof
         ;[0, 0.22].forEach((offset) => {
           const osc = ctx.createOscillator()
           const gain = ctx.createGain()
@@ -176,7 +179,7 @@ class SoundEffectsService {
         break
       }
       case 'vaca': {
-        // Moo: low vibrating hum
+        // Moo
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.type = 'triangle'
@@ -191,7 +194,7 @@ class SoundEffectsService {
         break
       }
       case 'pato': {
-        // Quack: quick nasal buzz
+        // Quack
         ;[0, 0.18].forEach((offset) => {
           const osc = ctx.createOscillator()
           const gain = ctx.createGain()
@@ -208,7 +211,7 @@ class SoundEffectsService {
         break
       }
       case 'ovelha': {
-        // Baa: oscillating vibrato
+        // Baa
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.type = 'sawtooth'
@@ -255,16 +258,49 @@ class SoundEffectsService {
         })
         break
       }
-      case 'passaro':
-      case 'pássaro': {
-        // Chirp chirp
-        ;[0, 0.15, 0.3].forEach((offset) => {
+      case 'porco': {
+        // Oink oink
+        ;[0, 0.2].forEach((offset) => {
           const osc = ctx.createOscillator()
           const gain = ctx.createGain()
-          osc.type = 'sine'
-          osc.frequency.setValueAtTime(1200, now + offset)
-          osc.frequency.exponentialRampToValueAtTime(1800, now + offset + 0.08)
-          gain.gain.setValueAtTime(0.18, now + offset)
+          osc.type = 'sawtooth'
+          osc.frequency.setValueAtTime(180, now + offset)
+          osc.frequency.linearRampToValueAtTime(240, now + offset + 0.08)
+          osc.frequency.linearRampToValueAtTime(160, now + offset + 0.15)
+          gain.gain.setValueAtTime(0.25, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.16)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.17)
+        })
+        break
+      }
+      case 'cavalo': {
+        // Neigh / whinny
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(500, now)
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.2)
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.6)
+        gain.gain.setValueAtTime(0.22, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.7)
+        break
+      }
+      case 'galinha': {
+        // Cluck cluck
+        ;[0, 0.12, 0.28].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'square'
+          osc.frequency.setValueAtTime(400, now + offset)
+          osc.frequency.exponentialRampToValueAtTime(280, now + offset + 0.08)
+          gain.gain.setValueAtTime(0.2, now + offset)
           gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.09)
           osc.connect(gain)
           gain.connect(ctx.destination)
@@ -273,9 +309,338 @@ class SoundEffectsService {
         })
         break
       }
+      case 'sapo': {
+        // Ribbit / croak
+        ;[0, 0.18].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'sawtooth'
+          osc.frequency.setValueAtTime(110, now + offset)
+          osc.frequency.linearRampToValueAtTime(160, now + offset + 0.07)
+          osc.frequency.linearRampToValueAtTime(90, now + offset + 0.14)
+          gain.gain.setValueAtTime(0.25, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.15)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.16)
+        })
+        break
+      }
+
+      // --- DINOSAURS ---
+      case 'trex': {
+        // Huge deep terrifying roar
+        const osc = ctx.createOscillator()
+        const osc2 = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sawtooth'
+        osc2.type = 'square'
+
+        osc.frequency.setValueAtTime(180, now)
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.9)
+
+        osc2.frequency.setValueAtTime(90, now)
+        osc2.frequency.exponentialRampToValueAtTime(30, now + 0.9)
+
+        gain.gain.setValueAtTime(0.35, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.95)
+
+        osc.connect(gain)
+        osc2.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc2.start(now)
+        osc.stop(now + 1.0)
+        osc2.stop(now + 1.0)
+        break
+      }
+      case 'triceratops': {
+        // Heavy stomp + low grunt
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'triangle'
+        osc.frequency.setValueAtTime(130, now)
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.6)
+        gain.gain.setValueAtTime(0.35, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.7)
+        break
+      }
+      case 'braquiossauro': {
+        // High harmonic singing bellow
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(220, now)
+        osc.frequency.linearRampToValueAtTime(380, now + 0.4)
+        osc.frequency.linearRampToValueAtTime(180, now + 0.9)
+        gain.gain.setValueAtTime(0.28, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.95)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 1.0)
+        break
+      }
+      case 'estegossauro': {
+        // Plate rattle + low thud
+        ;[0, 0.15, 0.3].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'sawtooth'
+          osc.frequency.setValueAtTime(160, now + offset)
+          osc.frequency.exponentialRampToValueAtTime(70, now + offset + 0.1)
+          gain.gain.setValueAtTime(0.25, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.12)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.13)
+        })
+        break
+      }
+      case 'velociraptor': {
+        // High pitched chirp-shriek
+        ;[0, 0.14].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'sawtooth'
+          osc.frequency.setValueAtTime(700, now + offset)
+          osc.frequency.exponentialRampToValueAtTime(1400, now + offset + 0.08)
+          osc.frequency.exponentialRampToValueAtTime(600, now + offset + 0.16)
+          gain.gain.setValueAtTime(0.25, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.18)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.2)
+        })
+        break
+      }
+      case 'pterodatilo': {
+        // Screech in the sky
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(800, now)
+        osc.frequency.linearRampToValueAtTime(1300, now + 0.2)
+        osc.frequency.linearRampToValueAtTime(600, now + 0.5)
+        gain.gain.setValueAtTime(0.24, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.6)
+        break
+      }
+      case 'anquilossauro': {
+        // Heavy armor metallic thud
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'square'
+        osc.frequency.setValueAtTime(150, now)
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.4)
+        gain.gain.setValueAtTime(0.3, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.5)
+        break
+      }
+      case 'espinossauro': {
+        // Water rumble roar
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(140, now)
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.3)
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.8)
+        gain.gain.setValueAtTime(0.3, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.85)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.9)
+        break
+      }
+
+      // --- FRUITS / NATURE ---
+      case 'crunch': {
+        ;[0, 0.05, 0.1].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'triangle'
+          osc.frequency.setValueAtTime(600 + Math.random() * 200, now + offset)
+          osc.frequency.exponentialRampToValueAtTime(200, now + offset + 0.04)
+          gain.gain.setValueAtTime(0.18, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.05)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.06)
+        })
+        break
+      }
+      case 'splash': {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(300, now)
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.3)
+        gain.gain.setValueAtTime(0.2, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.4)
+        break
+      }
+      case 'pop_soft': {
+        this.playPop()
+        break
+      }
+
+      // --- COLORS / CHIMES ---
+      case 'chime_c':
+      case 'num_1':
+      case 'num_5':
+      case 'num_9': {
+        this.playChimeNote(523.25)
+        break
+      }
+      case 'chime_e':
+      case 'num_2':
+      case 'num_6':
+      case 'num_10': {
+        this.playChimeNote(659.25)
+        break
+      }
+      case 'chime_g':
+      case 'num_3':
+      case 'num_7': {
+        this.playChimeNote(783.99)
+        break
+      }
+      case 'chime_c_high':
+      case 'num_4':
+      case 'num_8': {
+        this.playChimeNote(1046.5)
+        break
+      }
+
+      // --- BODY SOUNDS ---
+      case 'blink': {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(800, now)
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08)
+        gain.gain.setValueAtTime(0.15, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.1)
+        break
+      }
+      case 'sniff': {
+        ;[0, 0.12].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'sine'
+          osc.frequency.setValueAtTime(300, now + offset)
+          osc.frequency.linearRampToValueAtTime(500, now + offset + 0.08)
+          gain.gain.setValueAtTime(0.15, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.09)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.1)
+        })
+        break
+      }
+      case 'kiss': {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(900, now)
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.1)
+        gain.gain.setValueAtTime(0.2, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.13)
+        break
+      }
+      case 'bell': {
+        this.playChimeNote(880)
+        break
+      }
+      case 'clap': {
+        ;[0, 0.15].forEach((offset) => {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'square'
+          osc.frequency.setValueAtTime(200, now + offset)
+          osc.frequency.exponentialRampToValueAtTime(80, now + offset + 0.06)
+          gain.gain.setValueAtTime(0.2, now + offset)
+          gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.07)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(now + offset)
+          osc.stop(now + offset + 0.08)
+        })
+        break
+      }
+      case 'step': {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'triangle'
+        osc.frequency.setValueAtTime(120, now)
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.1)
+        gain.gain.setValueAtTime(0.25, now)
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.11)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(now)
+        osc.stop(now + 0.12)
+        break
+      }
+      case 'tap':
+      case 'tickle': {
+        this.playPop()
+        break
+      }
+
       default:
         this.playPop()
     }
+  }
+
+  private playChimeNote(freq: number) {
+    if (this.isMuted) return
+    const ctx = this.getContext()
+    if (!ctx) return
+    const now = ctx.currentTime
+
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(freq, now)
+
+    gain.gain.setValueAtTime(0.22, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4)
+
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start(now)
+    osc.stop(now + 0.45)
   }
 }
 

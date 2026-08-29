@@ -68,16 +68,24 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     activities: [
       {
         id: 'fazenda_falante',
-        title: 'A Fazenda Falante',
-        description: 'Veja o bicho, ouça seu som, repita o nome no microfone e receba estrelas!',
+        title: 'A Fazenda & Dinossauros Falantes',
+        description:
+          'Veja animais, dinos, frutas, cores e corpo, fale no microfone e receba estrelas!',
         ageRange: '12–60 meses',
-        badge: 'Recomendado',
+        badge: 'Estrela',
       },
       {
         id: 'cade_o_bichinho',
-        title: 'Cadê o Bichinho?',
-        description: 'Reconhecimento receptivo: escute a pergunta e toque no animal correto.',
+        title: 'Cadê o Bichinho / Objeto?',
+        description: 'Reconhecimento receptivo: escute a palavra e selecione a imagem correta.',
         ageRange: '6–36 meses',
+      },
+      {
+        id: 'som_do_bicho',
+        title: 'Qual é o Som?',
+        description: 'Associe o som característico ou rugido ao animal/dino correspondente.',
+        ageRange: '12–60 meses',
+        badge: 'Novo',
       },
     ],
   },
@@ -94,29 +102,50 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     activities: [
       {
         id: 'par_dos_animais',
-        title: 'Par dos Bichinhos',
+        title: 'Par dos Bichinhos & Frutas',
         description: 'Encontre as cartas iguais e ouça a comemoração ao formar pares!',
         ageRange: '18–60 meses',
         badge: 'Popular',
+      },
+      {
+        id: 'memoria_dinos',
+        title: 'Memória Jurássica dos Dinos',
+        description: 'Encontre os pares de T-Rex, Tricerátops, Estegossauro e seus amigos.',
+        ageRange: '24–60 meses',
+        badge: 'Novo',
       },
     ],
   },
   {
     id: 'logic',
     title: 'Lógica & Cognição',
-    subtitle: 'Formas, Cores e Padrões',
+    subtitle: 'Formas, Cores e Números',
     color: '#FFB703', // Warm Sunshine Amber
     lightColor: '#FFF8E7',
     icon: '🧠',
-    description: 'Classificação por cores, tamanhos e identificação de formas geométricas.',
+    description: 'Classificação por cores, formas geométricas e contagem de 1 a 10.',
     minAgeMonths: 18,
     maxAgeMonths: 60,
     activities: [
       {
         id: 'caixa_das_formas',
-        title: 'Caixa das Formas',
-        description: 'Encaixe a forma no lugar certo para aprender círculos, estrelas e quadrados.',
+        title: 'Caixa das Formas & Cores',
+        description: 'Encaixe a forma ou identifique a cor certa para aprender círculos e tons.',
         ageRange: '18–60 meses',
+      },
+      {
+        id: 'conta_dinos',
+        title: 'Contar Bichinhos e Dinos',
+        description: 'Conte quantos dinossauros ou frutas aparecem na tela (1 a 10).',
+        ageRange: '24–60 meses',
+        badge: 'Novo',
+      },
+      {
+        id: 'sequencia_cores',
+        title: 'Sequência das Cores & Mágica',
+        description: 'Descubra qual a próxima cor ou número na sequência divertida do Tico.',
+        ageRange: '24–60 meses',
+        badge: 'Novo',
       },
     ],
   },
@@ -133,8 +162,8 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     activities: [
       {
         id: 'estoura_bolhas',
-        title: 'Estoura Bolhas Divertidas',
-        description: 'Toque rápido nas bolhas coloridas e descubra surpresas lá dentro!',
+        title: 'Estoura Bolhas com Dinos',
+        description: 'Toque rápido nas bolhas coloridas e descubra dinos e frutas lá dentro!',
         ageRange: '6–60 meses',
       },
     ],
@@ -153,12 +182,46 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
       {
         id: 'carinhas_felizes',
         title: 'Como Eu Me Sinto?',
-        description: 'Descubra carinhas de feliz, surpreso e calmo com historinhas curtinhas.',
+        description:
+          'Descubra carinhas de feliz, calmo e corajoso com historinhas do Tico e seus amigos.',
         ageRange: '18–60 meses',
       },
     ],
   },
 ]
+
+export interface DailyActivityItem {
+  id: string
+  title: string
+  moduleId: string
+  moduleTitle: string
+  moduleColor: string
+  icon: string
+  description: string
+  reason: string
+}
+
+export interface EvolutionSummary {
+  period: 'week' | 'month'
+  totalSessions: number
+  totalStars: number
+  averageAccuracy: number
+  previousTotalSessions: number
+  previousAverageAccuracy: number
+  accuracyChange: number // positive, negative or 0
+  sessionsChange: number
+  moduleBreakdown: {
+    moduleId: string
+    title: string
+    color: string
+    icon: string
+    currentMastery: number
+    previousMastery: number
+    delta: number
+    trend: 'up' | 'stable' | 'down'
+    sessionsCount: number
+  }[]
+}
 
 export function calculateAgeMonths(birthDateStr: string): number {
   if (!birthDateStr) return 0

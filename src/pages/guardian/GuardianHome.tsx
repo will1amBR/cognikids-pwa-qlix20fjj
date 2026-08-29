@@ -12,7 +12,18 @@ import type { Child, GameSession, ModuleProgress } from '@/types/cognikids'
 import { formatChildAge, COGNIKIDS_MODULES } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { BrainFlower } from '@/components/progress/BrainFlower'
-import { Plus, Play, Sparkles, Star, Trophy, Clock, ChevronRight, UserPlus } from 'lucide-react'
+import {
+  Plus,
+  Play,
+  Sparkles,
+  Star,
+  Trophy,
+  Clock,
+  ChevronRight,
+  UserPlus,
+  Flame,
+  TrendingUp,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export const GuardianHome: React.FC = () => {
@@ -61,6 +72,12 @@ export const GuardianHome: React.FC = () => {
     playPop()
     localStorage.setItem('cognikids_selected_child_id', child.id)
     navigate(`/app/child/${child.id}`)
+  }
+
+  const handleDailySessionClick = (child: Child) => {
+    playPop()
+    localStorage.setItem('cognikids_selected_child_id', child.id)
+    navigate(`/app/daily/${child.id}`)
   }
 
   const guardianName = user?.name ? user.name.split(' ')[0] : 'Responsável'
@@ -162,22 +179,41 @@ export const GuardianHome: React.FC = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 pt-2">
-                  <Button
-                    onClick={() => handlePlayClick(child)}
-                    className="flex-1 h-11 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black text-sm shadow-md shadow-orange-500/20"
-                  >
-                    <Play className="w-4 h-4 mr-1.5 fill-current" />
-                    Jogar agora
-                  </Button>
-                  <Link to={`/app/child/${child.id}`}>
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
-                      className="h-11 px-4 rounded-2xl border-slate-200 text-slate-700 font-bold hover:bg-slate-50"
+                      onClick={() => handleDailySessionClick(child)}
+                      className="flex-1 h-11 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5"
                     >
-                      Progresso
+                      <Flame className="w-4 h-4 fill-current" />
+                      <span>Sessão Diária</span>
                     </Button>
-                  </Link>
+                    <Button
+                      onClick={() => handlePlayClick(child)}
+                      variant="outline"
+                      className="h-11 px-3 rounded-2xl border-slate-200 text-slate-700 font-bold hover:bg-slate-50 text-xs"
+                    >
+                      <Play className="w-3.5 h-3.5 mr-1 fill-current" />
+                      Jogos
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-500 px-1">
+                    <Link
+                      to={`/app/child/${child.id}`}
+                      className="hover:text-orange-600 flex items-center gap-1 transition-colors"
+                    >
+                      <span>Cérebro em Flor</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                    <Link
+                      to={`/app/reports/${child.id}`}
+                      className="hover:text-orange-600 flex items-center gap-1 transition-colors text-slate-400 hover:text-orange-600"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span>Relatório</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
             )

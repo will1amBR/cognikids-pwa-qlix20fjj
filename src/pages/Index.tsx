@@ -67,15 +67,34 @@ export const IndexPage: React.FC = () => {
           mascote Tico.
         </p>
 
+        {/* Categories Strip */}
+        <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-xl">
+          <span className="bg-white/80 text-orange-800 text-xs font-black px-3 py-1 rounded-full border border-orange-200">
+            🐮 Animais da Fazenda
+          </span>
+          <span className="bg-white/80 text-emerald-800 text-xs font-black px-3 py-1 rounded-full border border-emerald-200">
+            🦖 Dinossauros
+          </span>
+          <span className="bg-white/80 text-rose-800 text-xs font-black px-3 py-1 rounded-full border border-rose-200">
+            🍎 Frutas & Alimentos
+          </span>
+          <span className="bg-white/80 text-purple-800 text-xs font-black px-3 py-1 rounded-full border border-purple-200">
+            🎨 Cores & Formas
+          </span>
+          <span className="bg-white/80 text-sky-800 text-xs font-black px-3 py-1 rounded-full border border-sky-200">
+            🔢 Números de 1 a 10
+          </span>
+        </div>
+
         {/* Feature Badges */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl">
           <div className="bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-orange-100 shadow-sm flex items-center gap-3 text-left">
             <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-slate-400 font-bold uppercase">Multiperfis</p>
-              <p className="text-sm font-bold text-slate-800">Perfis por criança</p>
+              <p className="text-xs text-slate-400 font-bold uppercase">Sessão Diária</p>
+              <p className="text-sm font-bold text-slate-800">Rotina Guiada por Idade</p>
             </div>
           </div>
 
@@ -95,7 +114,7 @@ export const IndexPage: React.FC = () => {
             </div>
             <div>
               <p className="text-xs text-slate-400 font-bold uppercase">Modo Híbrido</p>
-              <p className="text-sm font-bold text-slate-800">Funciona 100% offline</p>
+              <p className="text-sm font-bold text-slate-800">100% offline no PWA</p>
             </div>
           </div>
         </div>

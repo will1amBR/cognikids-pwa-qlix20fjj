@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Child } from '@/types/cognikids'
 import { calculateAgeMonths } from '@/types/cognikids'
-import { FARM_ANIMALS, AnimalItem } from './farmAnimalsData'
+import { AnimalItem, WORD_CATEGORIES, getItemsByCategory, CategoryInfo } from './farmAnimalsData'
 import { GameShell } from '@/components/layout/GameShell'
 import { speechService } from '@/lib/speechSynthesis'
 import { speechRecognitionService } from '@/lib/speechRecognition'
@@ -11,7 +11,6 @@ import { offlineSyncService } from '@/lib/offlineSync'
 import { useSound } from '@/context/SoundContext'
 import {
   Mic,
-  MicOff,
   Star,
   Sparkles,
   Volume2,
@@ -19,6 +18,7 @@ import {
   RotateCcw,
   Check,
   Trophy,
+  Filter,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
@@ -34,19 +34,15 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   const { playPop, playStarReward, playVictory, playAnimalSound } = useSound()
 
   const childAgeMonths = calculateAgeMonths(child.birth_date)
-  // Calibrate rounds based on age (younger = 4 rounds, older = 6 rounds)
-  const totalRounds = childAgeMonths <= 24 ? 4 : 6
+  const [selectedCategory, setSelectedCategory] = useState<string>('farm')
 
-  // Pick random subset of animals
-  const [roundsList] = useState<AnimalItem[]>(() => {
-    const shuffled = [...FARM_ANIMALS].sort(() => 0.5 - Math.random())
-    return shuffled.slice(0, totalRounds)
-  })
+  // Calibrate rounds based on age (younger = 4 rounds, older = 5-6 rounds)
+  const totalRounds = childAgeMonths <= 24 ? 4 : 5
 
+  const [roundsList, setRoundsList] = useState<AnimalItem[]>([])
   const [currentRoundIdx, setCurrentRoundIdx] = useState(0)
   const [step, setStep] = useState<StepState>('intro')
   const [isRecording, setIsRecording] = useState(false)
-  const [micLevel, setMicLevel] = useState(0)
   const [transcript, setTranscript] = useState('')
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null)
   const [sessionResults, setSessionResults] = useState<EvaluationResult[]>([])
@@ -54,9 +50,24 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   const [ticoMood, setTicoMood] = useState<'happy' | 'talking' | 'celebrating' | 'listening'>(
     'talking',
   )
+  const [showCategorySelector, setShowCategorySelector] = useState(false)
+
+  const isMountedRef = useRef(true)
+
+  // Initialize rounds when category changes or component mounts
+  useEffect(() => {
+    const items = getItemsByCategory(selectedCategory)
+    // Filter by child age if possible, or fallback to all in category
+    const ageAppropriate = items.filter((i) => i.minAgeMonths <= childAgeMonths + 6)
+    const pool = ageAppropriate.length >= 3 ? ageAppropriate : items
+    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, totalRounds)
+    setRoundsList(shuffled)
+    setCurrentRoundIdx(0)
+    setSessionResults([])
+    setStep('intro')
+  }, [selectedCategory, childAgeMonths, totalRounds])
 
   const currentAnimal = roundsList[currentRoundIdx] || roundsList[0]
-  const isMountedRef = useRef(true)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -76,9 +87,9 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setEvaluation(null)
     setTicoMood('talking')
 
-    const introText = `Olha o ${currentAnimal.name}! ${currentAnimal.actionDescription}`
+    const introText = `Olha: ${currentAnimal.name}! ${currentAnimal.actionDescription}`
     const promptText = `Agora fale: ${currentAnimal.name}!`
-    setTicoMessage(`${currentAnimal.name}! Aperte o microfone e fale o nome dele!`)
+    setTicoMessage(`${currentAnimal.name}! Aperte o microfone e diga bem bonito!`)
 
     // 1. Play animal sound effect
     playAnimalSound(currentAnimal.soundKey)
@@ -88,17 +99,18 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       speechService.speak(`${introText} ${promptText}`, {
         onEnd: () => {
           if (isMountedRef.current && step === 'intro') {
-            setTicoMessage(`Aperte o microfone e diga "${currentAnimal.name}" bem alto!`)
+            setTicoMessage(`Aperte o microfone e diga "${currentAnimal.name}"!`)
           }
         },
       })
     }, 600)
 
     return () => clearTimeout(timer)
-  }, [currentRoundIdx])
+  }, [currentRoundIdx, currentAnimal])
 
   // Start Voice Recording
   const handleStartRecording = async () => {
+    if (!currentAnimal) return
     playPop()
     speechService.stop()
     setIsRecording(true)
@@ -108,9 +120,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setTicoMessage(`Estou ouvindo você... fale "${currentAnimal.name}"! 🎙️`)
 
     await speechRecognitionService.startListening({
-      onAudioLevel: (lvl) => {
-        if (isMountedRef.current) setMicLevel(lvl)
-      },
+      onAudioLevel: () => {},
       onResult: (res) => {
         if (!isMountedRef.current) return
         setTranscript(res.transcript)
@@ -119,12 +129,11 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         }
       },
       onError: (err) => {
-        console.warn('Recognition error or fallback', err)
-        // If error or silence, let the child try or auto-evaluate best effort
+        console.warn('Recognition fallback', err)
       },
     })
 
-    // Max recording duration safeguard (4.5 seconds for toddlers)
+    // Max recording duration safeguard
     setTimeout(() => {
       if (isMountedRef.current && isRecording) {
         handleStopRecording()
@@ -134,10 +143,11 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
 
   const handleStopRecording = (forcedTranscript?: string) => {
     if (!isRecording && step !== 'listening') return
+    if (!currentAnimal) return
     setIsRecording(false)
     speechRecognitionService.stopListening()
 
-    const finalSaid = forcedTranscript || transcript || currentAnimal.name // toddler forgiving fallback if silent
+    const finalSaid = forcedTranscript || transcript || currentAnimal.name
     setStep('evaluating')
     setTicoMood('talking')
 
@@ -174,28 +184,30 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       setStep('completed')
       playVictory()
       setTicoMood('celebrating')
-      setTicoMessage(`Parabéns, ${child.name}! Você completou a Fazenda Falante com sucesso! 🏆`)
+      setTicoMessage(`Parabéns, ${child.name}! Você arrasou falando todas as palavrinhas! 🏆`)
 
-      // Calculate aggregated score
       const allResults = [...sessionResults, ...(evaluation ? [evaluation] : [])]
       const avgScore = allResults.length
         ? Math.round(allResults.reduce((a, b) => a + b.score, 0) / allResults.length)
-        : 85
+        : 90
       const avgStars = Math.max(1, Math.min(3, Math.round(avgScore / 33.3)))
 
-      // Save via OfflineSyncService (works offline and online)
+      const categoryName =
+        WORD_CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'Palavras'
+
       await offlineSyncService.queueGameSession({
         user_id: child.user_id,
         child_id: child.id,
         module_id: 'speech',
         game_id: 'fazenda_falante',
-        game_title: 'A Fazenda Falante',
+        game_title: `Fala & Voz: ${categoryName}`,
         stars: avgStars,
         score: avgScore,
         accuracy: avgScore,
         rounds_completed: totalRounds,
         total_rounds: totalRounds,
         details: {
+          category: selectedCategory,
           items: roundsList.map((r) => r.name),
         },
       })
@@ -203,6 +215,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   }
 
   const handleReplayPrompt = () => {
+    if (!currentAnimal) return
     playAnimalSound(currentAnimal.soundKey)
     speechService.speak(`Esse é o ${currentAnimal.name}. Agora fale: ${currentAnimal.name}!`)
   }
@@ -211,18 +224,19 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   if (step === 'completed') {
     const totalScore = sessionResults.length
       ? Math.round(sessionResults.reduce((a, b) => a + b.score, 0) / sessionResults.length)
-      : 90
+      : 92
     const totalStars = Math.max(1, Math.min(3, Math.round(totalScore / 33.3)))
+    const activeCategoryInfo = WORD_CATEGORIES.find((c) => c.id === selectedCategory)
 
     return (
       <GameShell
-        title="A Fazenda Falante"
+        title="Fala & Linguagem"
         moduleColor="#FF7A45"
         currentRound={totalRounds}
         totalRounds={totalRounds}
         exitPath={`/app/child/${child.id}`}
         ticoMood="celebrating"
-        ticoInstruction={`Incrível, ${child.name}! Você mandou super bem falando os bichinhos!`}
+        ticoInstruction={`Incrível, ${child.name}! Você praticou com alegria!`}
       >
         <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-orange-200 shadow-2xl flex flex-col items-center text-center max-w-lg mx-auto w-full animate-fade-in">
           <div className="relative mb-3">
@@ -232,7 +246,8 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
 
           <h2 className="text-2xl sm:text-3xl font-black text-slate-800">Partida Concluída! 🎉</h2>
           <p className="text-sm text-slate-500 mt-1">
-            {child.name} praticou {totalRounds} animais na Fazenda Falante
+            {child.name} completou {totalRounds} palavras da categoria{' '}
+            <span className="font-bold text-orange-600">{activeCategoryInfo?.name}</span>!
           </p>
 
           {/* Stars */}
@@ -253,7 +268,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
 
           <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 w-full mb-6">
             <div className="flex justify-between items-center text-xs font-bold text-orange-950">
-              <span>Assimilação da Fala:</span>
+              <span>Precisão da Fala:</span>
               <span className="text-base text-orange-600">{totalScore}%</span>
             </div>
             <div className="w-full bg-orange-200/60 h-3 rounded-full overflow-hidden mt-1.5">
@@ -289,9 +304,11 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     )
   }
 
+  if (!currentAnimal) return null
+
   return (
     <GameShell
-      title="A Fazenda Falante"
+      title="Fala & Linguagem"
       moduleColor="#FF7A45"
       currentRound={currentRoundIdx + 1}
       totalRounds={totalRounds}
@@ -299,27 +316,51 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       ticoMood={ticoMood}
       ticoInstruction={ticoMessage}
     >
-      <div className="w-full max-w-lg flex flex-col items-center justify-between gap-4 sm:gap-6">
-        {/* Animal Stage Card */}
+      <div className="w-full max-w-lg flex flex-col items-center justify-between gap-4">
+        {/* Category Selector Pills */}
+        <div className="w-full flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {WORD_CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.id
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  playPop()
+                  setSelectedCategory(cat.id)
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105'
+                    : 'bg-white/80 text-slate-600 hover:bg-white border border-slate-200'
+                }`}
+              >
+                <span>{cat.emoji}</span>
+                <span>{cat.name}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Animal / Item Stage Card */}
         <div
           className={`w-full bg-gradient-to-br ${currentAnimal.bgGradient} rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500`}
         >
-          {/* Sound play button */}
+          {/* Sound replay button */}
           <button
             onClick={handleReplayPrompt}
             className="absolute top-4 right-4 w-11 h-11 rounded-2xl bg-white/25 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-95 shadow-sm"
-            title="Ouvir som do animal novamente"
-            aria-label="Ouvir som do animal"
+            title="Ouvir som novamente"
+            aria-label="Ouvir som"
           >
             <Volume2 className="w-6 h-6" />
           </button>
 
-          {/* Big Animal Emoji / Illustration */}
+          {/* Big Emoji / Visual */}
           <div className="w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center text-7xl sm:text-8xl drop-shadow-lg animate-float">
             {currentAnimal.emoji}
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2">
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2 text-center">
             {currentAnimal.name}
           </h2>
 

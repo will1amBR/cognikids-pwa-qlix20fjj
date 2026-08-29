@@ -70,6 +70,11 @@ export const AppShell: React.FC = () => {
       path: selectedChild ? `/app/child/${selectedChild.id}` : '/app/children',
       icon: BarChart3,
     },
+    {
+      label: 'Relatórios',
+      path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
+      icon: Sparkles,
+    },
     { label: 'Ajustes', path: '/app/settings', icon: Settings },
   ]
 

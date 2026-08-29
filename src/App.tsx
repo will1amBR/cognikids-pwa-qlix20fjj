@@ -21,6 +21,8 @@ import { ChildrenListPage } from '@/pages/guardian/ChildrenList'
 import { ChildFormPage } from '@/pages/guardian/ChildForm'
 import { ChildDashboardPage } from '@/pages/guardian/ChildDashboard'
 import { SettingsPage } from '@/pages/guardian/SettingsPage'
+import { DailySessionPage } from '@/pages/guardian/DailySessionPage'
+import { EvolutionReportsPage } from '@/pages/guardian/EvolutionReportsPage'
 import { GameRunnerPage } from '@/pages/game/GameRunner'
 import NotFound from '@/pages/NotFound'
 
@@ -49,8 +51,13 @@ const App: React.FC = () => {
                 <Route path="children/new" element={<ChildFormPage />} />
                 <Route path="children/:childId/edit" element={<ChildFormPage />} />
                 <Route path="child/:childId" element={<ChildDashboardPage />} />
+                <Route path="reports" element={<EvolutionReportsPage />} />
+                <Route path="reports/:childId" element={<EvolutionReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
+
+              {/* Fullscreen Guided Daily Session */}
+              <Route path="/app/daily/:childId" element={<DailySessionPage />} />
 
               {/* Fullscreen Immersive Game Runner */}
               <Route path="/app/game/:childId/:module" element={<GameRunnerPage />} />

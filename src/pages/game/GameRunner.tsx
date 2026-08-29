@@ -5,8 +5,12 @@ import type { Child } from '@/types/cognikids'
 import { Loader2 } from 'lucide-react'
 import { FazendaFalanteGame } from '@/components/games/FazendaFalanteGame'
 import { CadeOBichinhoGame } from '@/components/games/CadeOBichinhoGame'
+import { SomDoBichoGame } from '@/components/games/SomDoBichoGame'
 import { ParDosAnimaisGame } from '@/components/games/ParDosAnimaisGame'
+import { MemoriaDinosGame } from '@/components/games/MemoriaDinosGame'
 import { CaixaDasFormasGame } from '@/components/games/CaixaDasFormasGame'
+import { ContaDinosGame } from '@/components/games/ContaDinosGame'
+import { SequenciaCoresGame } from '@/components/games/SequenciaCoresGame'
 import { EstouraBolhasGame } from '@/components/games/EstouraBolhasGame'
 import { CarinhasFelizesGame } from '@/components/games/CarinhasFelizesGame'
 
@@ -46,12 +50,20 @@ export const GameRunnerPage: React.FC = () => {
       return <FazendaFalanteGame child={child} />
     case 'cade_o_bichinho':
       return <CadeOBichinhoGame child={child} />
+    case 'som_do_bicho':
+      return <SomDoBichoGame child={child} />
     case 'par_dos_animais':
     case 'memory':
       return <ParDosAnimaisGame child={child} />
+    case 'memoria_dinos':
+      return <MemoriaDinosGame child={child} />
     case 'caixa_das_formas':
     case 'logic':
       return <CaixaDasFormasGame child={child} />
+    case 'conta_dinos':
+      return <ContaDinosGame child={child} />
+    case 'sequencia_cores':
+      return <SequenciaCoresGame child={child} />
     case 'estoura_bolhas':
     case 'motor':
       return <EstouraBolhasGame child={child} />

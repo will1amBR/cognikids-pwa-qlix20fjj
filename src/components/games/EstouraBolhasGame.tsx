@@ -5,6 +5,7 @@ import { GameShell } from '@/components/layout/GameShell'
 import { speechService } from '@/lib/speechSynthesis'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { useSound } from '@/context/SoundContext'
+import { DINOSAURS, FRUITS, FARM_ANIMALS } from './farmAnimalsData'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 
@@ -18,8 +19,18 @@ interface Bubble {
   item: string
 }
 
-const BUBBLE_ITEMS = ['⭐', '🎈', '🍓', '🚗', '🍭', '🌸', '🧸', '🚀']
-const BUBBLE_COLORS = ['#06D6A0', '#4EA8DE', '#FF7A45', '#FFB703', '#E63946']
+const BUBBLE_ITEMS = [
+  '🦖', // T-Rex
+  '🦕', // Brachio
+  '🍌', // Banana
+  '🍓', // Strawberry
+  '🦁', // Lion
+  '⭐', // Star
+  '🍎', // Apple
+  '🎈', // Balloon
+  '🍇', // Grape
+]
+const BUBBLE_COLORS = ['#06D6A0', '#4EA8DE', '#FF7A45', '#FFB703', '#E63946', '#8B5CF6']
 
 export const EstouraBolhasGame: React.FC<{ child: Child }> = ({ child }) => {
   const navigate = useNavigate()
@@ -31,7 +42,7 @@ export const EstouraBolhasGame: React.FC<{ child: Child }> = ({ child }) => {
   const [isCompleted, setIsCompleted] = useState(false)
 
   useEffect(() => {
-    // Generate 8 floating bubbles
+    // Generate floating bubbles
     const initial: Bubble[] = Array.from({ length: totalBubbles }).map((_, idx) => ({
       id: idx,
       x: 10 + (idx % 4) * 22 + (Math.random() * 8 - 4),
@@ -42,7 +53,9 @@ export const EstouraBolhasGame: React.FC<{ child: Child }> = ({ child }) => {
       item: BUBBLE_ITEMS[idx % BUBBLE_ITEMS.length],
     }))
     setBubbles(initial)
-    speechService.speak('Toque rápido nas bolhas para estourar e descobrir as surpresas!')
+    speechService.speak(
+      'Toque rápido nas bolhas para estourar e descobrir dinos, frutas e estrelas!',
+    )
   }, [])
 
   const handlePop = (bubbleId: number) => {
@@ -66,7 +79,7 @@ export const EstouraBolhasGame: React.FC<{ child: Child }> = ({ child }) => {
       child_id: child.id,
       module_id: 'motor',
       game_id: 'estoura_bolhas',
-      game_title: 'Estoura Bolhas Divertidas',
+      game_title: 'Estoura Bolhas com Dinos',
       stars: 3,
       score: 100,
       accuracy: 100,
