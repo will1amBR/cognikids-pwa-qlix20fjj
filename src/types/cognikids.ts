@@ -5,6 +5,8 @@ export interface Child {
   birth_date: string
   favorite_color?: string
   avatar?: string
+  daily_minutes?: number
+  daily_activity_count?: number
   created?: string
   updated?: string
 }
@@ -35,6 +37,62 @@ export interface ModuleProgress {
   last_played_at?: string
 }
 
+export interface ChildAchievement {
+  id: string
+  user_id: string
+  child_id: string
+  module_id: string
+  badge_key: string
+  title: string
+  description?: string
+  icon?: string
+  tier?: 'bronze' | 'silver' | 'gold' | 'special'
+  unlocked_at?: string
+  created?: string
+  updated?: string
+}
+
+export interface BadgeDefinition {
+  key: string
+  moduleId: string
+  title: string
+  description: string
+  icon: string
+  tier: 'bronze' | 'silver' | 'gold' | 'special'
+  requirementText: string
+  requiredSessions: number
+  requiredMastery: number
+}
+
+export interface InviteRecord {
+  id: string
+  user_id: string
+  child_id?: string
+  invite_code: string
+  sender_child_name?: string
+  status: 'active' | 'used' | 'expired'
+  accepted_by_user_id?: string
+  accepted_child_name?: string
+  accepted_at?: string
+  created?: string
+  updated?: string
+}
+
+export interface SchoolAccessToken {
+  id: string
+  user_id: string
+  child_id?: string
+  access_code: string
+  school_name?: string
+  teacher_name?: string
+  note?: string
+  is_active: boolean
+  last_accessed_at?: string
+  expires_at?: string
+  created?: string
+  updated?: string
+}
+
 export interface ModuleDefinition {
   id: string
   title: string
@@ -45,6 +103,11 @@ export interface ModuleDefinition {
   description: string
   minAgeMonths: number
   maxAgeMonths: number
+  themes: {
+    title: string
+    whatIsWorked: string
+    homeTips: string[]
+  }[]
   activities: {
     id: string
     title: string
@@ -53,6 +116,183 @@ export interface ModuleDefinition {
     badge?: string
   }[]
 }
+
+export const COGNIKIDS_BADGES: BadgeDefinition[] = [
+  // 1. Fala & Linguagem
+  {
+    key: 'speech_primeiras_palavras',
+    moduleId: 'speech',
+    title: 'Primeiras Palavras',
+    description: 'Completou a primeira sessão vocal com o Tico.',
+    icon: '🗣️',
+    tier: 'bronze',
+    requirementText: 'Jogue 1 partida de Fala & Linguagem',
+    requiredSessions: 1,
+    requiredMastery: 40,
+  },
+  {
+    key: 'speech_falante_jurassico',
+    moduleId: 'speech',
+    title: 'Voz da Selva',
+    description: 'Imitou os dinos, animais e aprendeu os sons da fazenda.',
+    icon: '🦖',
+    tier: 'silver',
+    requirementText: 'Complete 3 partidas e alcance 65% de fala',
+    requiredSessions: 3,
+    requiredMastery: 65,
+  },
+  {
+    key: 'speech_mestre_rimas',
+    moduleId: 'speech',
+    title: 'Mestre das Rimas',
+    description: 'Percepção auditiva afiada para rimas e fonemas.',
+    icon: '🌟',
+    tier: 'gold',
+    requirementText: 'Alcance 85% de maestria em Fala & Linguagem',
+    requiredSessions: 5,
+    requiredMastery: 85,
+  },
+
+  // 2. Memória & Atenção
+  {
+    key: 'memory_primeiros_pares',
+    moduleId: 'memory',
+    title: 'Detetive de Pares',
+    description: 'Encontrou os primeiros pares de cartas no jogo da memória.',
+    icon: '🧩',
+    tier: 'bronze',
+    requirementText: 'Jogue 1 partida de Memória & Atenção',
+    requiredSessions: 1,
+    requiredMastery: 40,
+  },
+  {
+    key: 'memory_memoria_jurassica',
+    moduleId: 'memory',
+    title: 'Foco Jurássico',
+    description: 'Lembrou a posição dos dinossauros sem errar.',
+    icon: '🦕',
+    tier: 'silver',
+    requirementText: 'Complete 3 partidas com retenção visual',
+    requiredSessions: 3,
+    requiredMastery: 65,
+  },
+  {
+    key: 'memory_super_memoria',
+    moduleId: 'memory',
+    title: 'Cérebro de Elefante',
+    description: 'Memória de trabalho extraordinária em todos os tabuleiros.',
+    icon: '🐘',
+    tier: 'gold',
+    requirementText: 'Alcance 85% de maestria em Memória',
+    requiredSessions: 5,
+    requiredMastery: 85,
+  },
+
+  // 3. Lógica & Cognição
+  {
+    key: 'logic_caixa_formas',
+    moduleId: 'logic',
+    title: 'Descobridor de Formas',
+    description: 'Identificou círculos, quadrados e cores primárias.',
+    icon: '🧠',
+    tier: 'bronze',
+    requirementText: 'Jogue 1 partida de Lógica & Cognição',
+    requiredSessions: 1,
+    requiredMastery: 40,
+  },
+  {
+    key: 'logic_mestre_contagem',
+    moduleId: 'logic',
+    title: 'Contador Esperto',
+    description: 'Contou dinos e frutas de 1 a 10 com precisão.',
+    icon: '🔢',
+    tier: 'silver',
+    requirementText: 'Complete 3 partidas de contagem e sequências',
+    requiredSessions: 3,
+    requiredMastery: 65,
+  },
+  {
+    key: 'logic_genio_padroes',
+    moduleId: 'logic',
+    title: 'Gênio dos Padrões',
+    description: 'Descobriu as sequências complexas do Tico.',
+    icon: '🏆',
+    tier: 'gold',
+    requirementText: 'Alcance 85% de maestria em Lógica',
+    requiredSessions: 5,
+    requiredMastery: 85,
+  },
+
+  // 4. Motricidade
+  {
+    key: 'motor_primeiro_toque',
+    moduleId: 'motor',
+    title: 'Toque Mágico',
+    description: 'Estourou suas primeiras bolhas flutuantes com o dedinho.',
+    icon: '🫧',
+    tier: 'bronze',
+    requirementText: 'Jogue 1 partida de Motricidade',
+    requiredSessions: 1,
+    requiredMastery: 40,
+  },
+  {
+    key: 'motor_trilha_letras',
+    moduleId: 'motor',
+    title: 'Dedinho Desenhista',
+    description: 'Conectou os pontos e traçou as letras e números com firmeza.',
+    icon: '✍️',
+    tier: 'silver',
+    requirementText: 'Complete 3 partidas de precisão motora',
+    requiredSessions: 3,
+    requiredMastery: 65,
+  },
+  {
+    key: 'motor_super_reflexo',
+    moduleId: 'motor',
+    title: 'Reflexo Ninja',
+    description: 'Coordenação motora fina e rastreamento visual impecável.',
+    icon: '⚡',
+    tier: 'gold',
+    requirementText: 'Alcance 85% de maestria em Motricidade',
+    requiredSessions: 5,
+    requiredMastery: 85,
+  },
+
+  // 5. Socioemocional
+  {
+    key: 'socioemotional_reconhece_emocoes',
+    moduleId: 'socioemotional',
+    title: 'Coração Empático',
+    description: 'Identificou carinhas de feliz, calmo e amoroso.',
+    icon: '❤️',
+    tier: 'bronze',
+    requirementText: 'Jogue 1 partida de Socioemocional',
+    requiredSessions: 1,
+    requiredMastery: 40,
+  },
+  {
+    key: 'socioemotional_clima_autonomia',
+    moduleId: 'socioemotional',
+    title: 'Guardião do Clima & Autonomia',
+    description: 'Aprendeu a escolher roupas adequadas para sol, chuva e frio.',
+    icon: '🌤️',
+    tier: 'silver',
+    requirementText: 'Complete o jogo de Clima & Roupa com autonomia',
+    requiredSessions: 3,
+    requiredMastery: 65,
+  },
+  {
+    key: 'socioemotional_amigo_do_tico',
+    moduleId: 'socioemotional',
+    title: 'Amigo do Tico & Comunidade',
+    description: 'Convidou um colega para brincar ou alcançou maestria socioemocional.',
+    icon: '🤝',
+    tier: 'gold',
+    requirementText: 'Alcance 85% em Socioemocional ou compartilhe convite',
+    requiredSessions: 4,
+    requiredMastery: 85,
+  },
+]
 
 export const COGNIKIDS_MODULES: ModuleDefinition[] = [
   {
@@ -65,14 +305,40 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     description: 'Estimula a articulação, repertório de palavras e associação sonora.',
     minAgeMonths: 6,
     maxAgeMonths: 60,
+    themes: [
+      {
+        title: 'Articulação e Expressão Vocal',
+        whatIsWorked:
+          'Estimula a criança a usar a própria voz, falar nomes de animais, objetos e cores em voz alta.',
+        homeTips: [
+          'Brinque de imitar sons de animais durante o banho ou passeio.',
+          'Aponte para objetos cotidianos e peça para a criança repetir com entusiasmo.',
+          'Cante musiquinhas rimadas fazendo pausas para ela completar a última palavra.',
+        ],
+      },
+      {
+        title: 'Consciência Fonológica e Rimas',
+        whatIsWorked: 'Percepção auditiva dos sons finais das palavras (ex: gato/pato, maçã/rã).',
+        homeTips: [
+          'Faça joguinhos verbais rápidos: "O que combina com pão? Sabão ou bola?".',
+          'Leia livrinhos com textos em versos e repita as rimas com entonação divertida.',
+        ],
+      },
+    ],
     activities: [
       {
         id: 'fazenda_falante',
         title: 'A Fazenda & Dinossauros Falantes',
-        description:
-          'Veja animais, dinos, frutas, cores e corpo, fale no microfone e receba estrelas!',
+        description: 'Veja animais, dinos, frutas e cores, fale no microfone e receba estrelas!',
         ageRange: '12–60 meses',
-        badge: 'Estrela',
+        badge: 'Microfone',
+      },
+      {
+        id: 'rima_divertida',
+        title: 'Rimas do Tico',
+        description: 'Ouça as palavras e encontre quais figuras rimam pelo som final!',
+        ageRange: '24–60 meses',
+        badge: 'Novo',
       },
       {
         id: 'cade_o_bichinho',
@@ -85,7 +351,6 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
         title: 'Qual é o Som?',
         description: 'Associe o som característico ou rugido ao animal/dino correspondente.',
         ageRange: '12–60 meses',
-        badge: 'Novo',
       },
     ],
   },
@@ -99,6 +364,16 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     description: 'Fortalece a memória de trabalho e concentração com desafios lúdicos de pares.',
     minAgeMonths: 12,
     maxAgeMonths: 60,
+    themes: [
+      {
+        title: 'Memória de Trabalho Visual',
+        whatIsWorked: 'Retenção da posição espacial de cartas e reconhecimento de semelhanças.',
+        homeTips: [
+          'Esconda um brinquedinho embaixo de um de dois copos e peça para ela adivinhar onde está.',
+          'Coloque 3 objetos na mesa, peça para a criança fechar os olhos, retire 1 e pergunte qual sumiu.',
+        ],
+      },
+    ],
     activities: [
       {
         id: 'par_dos_animais',
@@ -112,7 +387,6 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
         title: 'Memória Jurássica dos Dinos',
         description: 'Encontre os pares de T-Rex, Tricerátops, Estegossauro e seus amigos.',
         ageRange: '24–60 meses',
-        badge: 'Novo',
       },
     ],
   },
@@ -123,9 +397,28 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     color: '#FFB703', // Warm Sunshine Amber
     lightColor: '#FFF8E7',
     icon: '🧠',
-    description: 'Classificação por cores, formas geométricas e contagem de 1 a 10.',
+    description: 'Classificação por cores, formas geométricas, sequências e contagem de 1 a 10.',
     minAgeMonths: 18,
     maxAgeMonths: 60,
+    themes: [
+      {
+        title: 'Classificação de Formas e Cores',
+        whatIsWorked: 'Agrupamento visual por propriedades geométricas e distinção cromática.',
+        homeTips: [
+          'Peça ajuda para guardar os brinquedos separando por cor ou tamanho.',
+          'Identifique círculos e quadrados nos objetos da casa (pratos, almofadas, portas).',
+        ],
+      },
+      {
+        title: 'Sequências Lógicas e Contagem Inicial',
+        whatIsWorked:
+          'Noção de ordem numérica, padrão repetitivo (AB, ABC) e contagem quantitativa.',
+        homeTips: [
+          'Conte os degraus da escada em voz alta ao subir com a criança.',
+          'Faça fileirinhas de frutas ou peças alternando maçã-banana-maçã-banana.',
+        ],
+      },
+    ],
     activities: [
       {
         id: 'caixa_das_formas',
@@ -138,6 +431,12 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
         title: 'Contar Bichinhos e Dinos',
         description: 'Conte quantos dinossauros ou frutas aparecem na tela (1 a 10).',
         ageRange: '24–60 meses',
+      },
+      {
+        id: 'sequencia_padroes',
+        title: 'Sequência & Padrões Lógicos',
+        description: 'Descubra qual figura completa o padrão de repetição do Tico.',
+        ageRange: '24–60 meses',
         badge: 'Novo',
       },
       {
@@ -145,7 +444,6 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
         title: 'Sequência das Cores & Mágica',
         description: 'Descubra qual a próxima cor ou número na sequência divertida do Tico.',
         ageRange: '24–60 meses',
-        badge: 'Novo',
       },
     ],
   },
@@ -159,31 +457,77 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     description: 'Precisão motora fina, rastreamento visual e agilidade de toque.',
     minAgeMonths: 6,
     maxAgeMonths: 60,
+    themes: [
+      {
+        title: 'Coordenação Motora Fina e Toque Dirigido',
+        whatIsWorked: 'Controle de movimento do indicador, pressão, traçado de linhas e agilidade.',
+        homeTips: [
+          'Estimule brincadeiras com massinha de modelar, rasgar papel e fazer bolinhas.',
+          'Ofereça giz de cera grosso para desenhar livremente em folhas grandes.',
+          'Pratique abotoar botões grandes ou encaixar potes com tampa.',
+        ],
+      },
+    ],
     activities: [
       {
         id: 'estoura_bolhas',
         title: 'Estoura Bolhas com Dinos',
         description: 'Toque rápido nas bolhas coloridas e descubra dinos e frutas lá dentro!',
         ageRange: '6–60 meses',
+        badge: 'Favorito',
+      },
+      {
+        id: 'trilha_das_letras',
+        title: 'Trilha das Letras & Formas',
+        description: 'Conecte os pontos numéricos na ordem certa para desenhar letras e números.',
+        ageRange: '24–60 meses',
+        badge: 'Novo',
       },
     ],
   },
   {
     id: 'socioemotional',
     title: 'Socioemocional',
-    subtitle: 'Sentimentos e Empatia',
+    subtitle: 'Sentimentos e Autonomia',
     color: '#E63946', // Warm Coral Red / Pink
     lightColor: '#FDEDEE',
     icon: '❤️',
-    description: 'Reconhecimento de expressões faciais, emoções e autorregulação.',
+    description:
+      'Reconhecimento de expressões faciais, autorregulação e autonomia no vestir/clima.',
     minAgeMonths: 18,
     maxAgeMonths: 60,
+    themes: [
+      {
+        title: 'Reconhecimento e Validação de Emoções',
+        whatIsWorked:
+          'Nomear o que a criança sente (alegria, medo, frustração, calma) para desenvolver autorregulação.',
+        homeTips: [
+          'Nomeie os sentimentos no dia a dia: "Vejo que você ficou bravo porque o bloco caiu, vamos tentar de novo?".',
+          'Faça caretas no espelho imitando sentimentos e peça para a criança adivinhar.',
+        ],
+      },
+      {
+        title: 'Autonomia, Clima e Cuidado Pessoal',
+        whatIsWorked:
+          'Compreensão de temperatura (frio/calor), previsão de chuva e escolha de roupas adequadas.',
+        homeTips: [
+          'Abra a janela pela manhã com a criança e pergunte: "Como está o céu hoje? Vamos ver que roupa usar?".',
+          'Deixe que ela participe na escolha entre duas opções de roupas para o passeio.',
+        ],
+      },
+    ],
     activities: [
+      {
+        id: 'clima_roupa',
+        title: 'Clima & Roupa Adequada',
+        description: 'Analise o sol, chuva ou frio e ajude o Tico a escolher as roupas ideais!',
+        ageRange: '18–60 meses',
+        badge: 'Novo',
+      },
       {
         id: 'carinhas_felizes',
         title: 'Como Eu Me Sinto?',
-        description:
-          'Descubra carinhas de feliz, calmo e corajoso com historinhas do Tico e seus amigos.',
+        description: 'Descubra carinhas de feliz, calmo e corajoso com historinhas do Tico.',
         ageRange: '18–60 meses',
       },
     ],
@@ -208,7 +552,7 @@ export interface EvolutionSummary {
   averageAccuracy: number
   previousTotalSessions: number
   previousAverageAccuracy: number
-  accuracyChange: number // positive, negative or 0
+  accuracyChange: number
   sessionsChange: number
   moduleBreakdown: {
     moduleId: string

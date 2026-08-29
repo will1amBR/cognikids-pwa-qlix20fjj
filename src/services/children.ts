@@ -1,6 +1,17 @@
 import pb from '@/lib/pocketbase/client'
-import type { Child, GameSession, ModuleProgress, EvolutionSummary } from '@/types/cognikids'
-import { COGNIKIDS_MODULES } from '@/types/cognikids'
+import type {
+  Child,
+  GameSession,
+  ModuleProgress,
+  EvolutionSummary,
+  ChildAchievement,
+  BadgeDefinition,
+  InviteRecord,
+  SchoolAccessToken,
+} from '@/types/cognikids'
+import { COGNIKIDS_MODULES, COGNIKIDS_BADGES } from '@/types/cognikids'
+
+// ================= CHILDREN ================= //
 
 export async function fetchChildren(): Promise<Child[]> {
   if (!pb.authStore.isValid) return []
@@ -25,12 +36,17 @@ export async function createChild(data: {
   birth_date: string
   favorite_color?: string
   avatarFile?: File | null
+  daily_minutes?: number
+  daily_activity_count?: number
 }): Promise<Child> {
   const formData = new FormData()
   formData.append('user_id', pb.authStore.record?.id || '')
   formData.append('name', data.name)
   formData.append('birth_date', data.birth_date)
   if (data.favorite_color) formData.append('favorite_color', data.favorite_color)
+  if (data.daily_minutes) formData.append('daily_minutes', String(data.daily_minutes))
+  if (data.daily_activity_count)
+    formData.append('daily_activity_count', String(data.daily_activity_count))
   if (data.avatarFile) formData.append('avatar', data.avatarFile)
 
   const res = await pb.collection('children').create<Child>(formData)
@@ -45,12 +61,17 @@ export async function updateChild(
     favorite_color?: string
     avatarFile?: File | null
     clearAvatar?: boolean
+    daily_minutes?: number
+    daily_activity_count?: number
   },
 ): Promise<Child> {
   const formData = new FormData()
   formData.append('name', data.name)
   formData.append('birth_date', data.birth_date)
   if (data.favorite_color) formData.append('favorite_color', data.favorite_color)
+  if (data.daily_minutes !== undefined) formData.append('daily_minutes', String(data.daily_minutes))
+  if (data.daily_activity_count !== undefined)
+    formData.append('daily_activity_count', String(data.daily_activity_count))
   if (data.avatarFile) {
     formData.append('avatar', data.avatarFile)
   } else if (data.clearAvatar) {
@@ -65,6 +86,13 @@ export async function deleteChild(id: string): Promise<boolean> {
   await pb.collection('children').delete(id)
   return true
 }
+
+export function getChildAvatarUrl(child: Child): string | null {
+  if (!child.avatar) return null
+  return pb.files.getURL(child as any, child.avatar)
+}
+
+// ================= SESSIONS & PROGRESS ================= //
 
 export async function fetchRecentSessions(limit: number = 5): Promise<GameSession[]> {
   if (!pb.authStore.isValid) return []
@@ -107,16 +135,281 @@ export async function fetchChildModuleProgress(childId: string): Promise<ModuleP
   }
 }
 
-export function getChildAvatarUrl(child: Child): string | null {
-  if (!child.avatar) return null
-  return pb.files.getURL(child as any, child.avatar)
+// ================= ACHIEVEMENTS / MEDALS ================= //
+
+export async function fetchChildAchievements(childId: string): Promise<ChildAchievement[]> {
+  if (!pb.authStore.isValid) return []
+  try {
+    const res = await pb.collection('child_achievements').getFullList<ChildAchievement>({
+      filter: `child_id = '${childId}'`,
+      sort: '-unlocked_at',
+    })
+    return res
+  } catch (_) {
+    return []
+  }
 }
 
 /**
- * Computes period evolution summary comparing current window vs previous window.
- * Week = last 7 days vs previous 7 days
- * Month = last 30 days vs previous 30 days
+ * Checks and unlocks eligible medals for a child based on current sessions and mastery.
+ * Can be called after any game session or when viewing the dashboard.
  */
+export async function syncAndEvaluateAchievements(childId: string): Promise<ChildAchievement[]> {
+  if (!pb.authStore.isValid || !pb.authStore.record?.id) return []
+  const userId = pb.authStore.record.id
+
+  const [existingAchievements, sessions, progressList] = await Promise.all([
+    fetchChildAchievements(childId),
+    fetchChildSessions(childId, 100),
+    fetchChildModuleProgress(childId),
+  ])
+
+  const unlockedMap = new Set(existingAchievements.map((a) => a.badge_key))
+  const progressByModule: Record<string, number> = {}
+  progressList.forEach((p) => {
+    progressByModule[p.module_id] = p.mastery_percentage
+  })
+
+  const sessionsByModule: Record<string, number> = {}
+  sessions.forEach((s) => {
+    sessionsByModule[s.module_id] = (sessionsByModule[s.module_id] || 0) + 1
+  })
+
+  const newUnlocks: ChildAchievement[] = []
+
+  for (const badge of COGNIKIDS_BADGES) {
+    if (unlockedMap.has(badge.key)) continue
+
+    const modSessions = sessionsByModule[badge.moduleId] || 0
+    const modMastery = progressByModule[badge.moduleId] || (modSessions > 0 ? 50 : 0)
+
+    let isEligible = false
+    if (badge.tier === 'bronze') {
+      isEligible = modSessions >= 1
+    } else if (badge.tier === 'silver') {
+      isEligible = modSessions >= 2 || modMastery >= badge.requiredMastery
+    } else if (badge.tier === 'gold') {
+      isEligible = (modSessions >= 3 && modMastery >= 75) || modMastery >= badge.requiredMastery
+    }
+
+    if (isEligible) {
+      try {
+        const created = await pb.collection('child_achievements').create<ChildAchievement>({
+          user_id: userId,
+          child_id: childId,
+          module_id: badge.moduleId,
+          badge_key: badge.key,
+          title: badge.title,
+          description: badge.description,
+          icon: badge.icon,
+          tier: badge.tier,
+          unlocked_at: new Date().toISOString(),
+        })
+        newUnlocks.push(created)
+      } catch (err) {
+        // May already exist due to race condition
+        console.warn('Achievement create skipped', err)
+      }
+    }
+  }
+
+  return [...existingAchievements, ...newUnlocks]
+}
+
+// ================= INVITES & REFERRALS ================= //
+
+export async function fetchUserInvites(): Promise<InviteRecord[]> {
+  if (!pb.authStore.isValid) return []
+  try {
+    const res = await pb.collection('invites').getFullList<InviteRecord>({
+      filter: `user_id = '${pb.authStore.record?.id}'`,
+      sort: '-created',
+    })
+    return res
+  } catch (_) {
+    return []
+  }
+}
+
+export async function createInviteCode(
+  childId?: string,
+  childName?: string,
+): Promise<InviteRecord> {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let randomCode = 'TICO-'
+  for (let i = 0; i < 5; i++) {
+    randomCode += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+
+  const record = await pb.collection('invites').create<InviteRecord>({
+    user_id: pb.authStore.record?.id,
+    child_id: childId || null,
+    invite_code: randomCode,
+    sender_child_name: childName || 'Amigo do Tico',
+    status: 'active',
+  })
+  return record
+}
+
+export async function redeemInviteCode(
+  code: string,
+  newChildName?: string,
+): Promise<{ success: boolean; message: string }> {
+  if (!pb.authStore.isValid)
+    return { success: false, message: 'Faça login para resgatar o convite.' }
+  try {
+    const formatted = code.trim().toUpperCase()
+    const found = await pb.collection('invites').getList<InviteRecord>(1, 1, {
+      filter: `invite_code = '${formatted}'`,
+    })
+
+    if (found.items.length === 0) {
+      return { success: false, message: 'Código de convite não encontrado.' }
+    }
+
+    const invite = found.items[0]
+    if (invite.status === 'used') {
+      return { success: false, message: 'Este código de convite já foi utilizado.' }
+    }
+
+    // Update invite as used
+    await pb.collection('invites').update(invite.id, {
+      status: 'used',
+      accepted_by_user_id: pb.authStore.record?.id,
+      accepted_child_name: newChildName || 'Colega de turma',
+      accepted_at: new Date().toISOString(),
+    })
+
+    return {
+      success: true,
+      message: `Parabéns! Convite de ${invite.sender_child_name || 'um colega'} aceito com sucesso! Vocês ganharam a medalha de Amigo do Tico! 🎉`,
+    }
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Erro ao resgatar convite.' }
+  }
+}
+
+// ================= SCHOOL ACCESS TOKENS ================= //
+
+export async function fetchSchoolAccessTokens(childId?: string): Promise<SchoolAccessToken[]> {
+  if (!pb.authStore.isValid) return []
+  try {
+    const filter = childId
+      ? `user_id = '${pb.authStore.record?.id}' && child_id = '${childId}'`
+      : `user_id = '${pb.authStore.record?.id}'`
+    const res = await pb.collection('school_access_tokens').getFullList<SchoolAccessToken>({
+      filter,
+      sort: '-created',
+    })
+    return res
+  } catch (_) {
+    return []
+  }
+}
+
+export async function createSchoolAccessToken(data: {
+  childId?: string
+  schoolName: string
+  teacherName?: string
+  note?: string
+}): Promise<SchoolAccessToken> {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+  let code = 'ESCOLA-'
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+
+  const record = await pb.collection('school_access_tokens').create<SchoolAccessToken>({
+    user_id: pb.authStore.record?.id,
+    child_id: data.childId || null,
+    access_code: code,
+    school_name: data.schoolName,
+    teacher_name: data.teacherName || '',
+    note: data.note || '',
+    is_active: true,
+  })
+  return record
+}
+
+export async function toggleSchoolAccessToken(
+  tokenId: string,
+  isActive: boolean,
+): Promise<SchoolAccessToken> {
+  const record = await pb.collection('school_access_tokens').update<SchoolAccessToken>(tokenId, {
+    is_active: isActive,
+  })
+  return record
+}
+
+export async function deleteSchoolAccessToken(tokenId: string): Promise<boolean> {
+  await pb.collection('school_access_tokens').delete(tokenId)
+  return true
+}
+
+/**
+ * Public lookup for school portal by access code without guardian login
+ */
+export async function getSchoolPortalData(accessCode: string): Promise<{
+  token: SchoolAccessToken
+  children: Child[]
+  sessions: GameSession[]
+  progress: ModuleProgress[]
+} | null> {
+  try {
+    const cleanCode = accessCode.trim().toUpperCase()
+    const tokens = await pb.collection('school_access_tokens').getList<SchoolAccessToken>(1, 1, {
+      filter: `access_code = '${cleanCode}' && is_active = true`,
+    })
+
+    if (tokens.items.length === 0) return null
+    const token = tokens.items[0]
+
+    // Fetch associated children, sessions, and progress
+    let childrenList: Child[] = []
+    if (token.child_id) {
+      try {
+        const singleKid = await pb.collection('children').getOne<Child>(token.child_id)
+        childrenList = [singleKid]
+      } catch (_) {
+        // ignore if not found
+      }
+    } else {
+      childrenList = await pb.collection('children').getFullList<Child>({
+        filter: `user_id = '${token.user_id}'`,
+      })
+    }
+
+    const childIds = childrenList.map((c) => c.id)
+    if (childIds.length === 0) {
+      return { token, children: [], sessions: [], progress: [] }
+    }
+
+    const filterExpr = childIds.map((id) => `child_id = '${id}'`).join(' || ')
+
+    const [sessionsRes, progressRes] = await Promise.all([
+      pb.collection('game_sessions').getFullList<GameSession>({
+        filter: filterExpr,
+        sort: '-created',
+      }),
+      pb.collection('module_progress').getFullList<ModuleProgress>({
+        filter: filterExpr,
+      }),
+    ])
+
+    return {
+      token,
+      children: childrenList,
+      sessions: sessionsRes,
+      progress: progressRes,
+    }
+  } catch (err) {
+    console.warn('Failed to load school portal data', err)
+    return null
+  }
+}
+
+// ================= EVOLUTION REPORTS ================= //
+
 export async function calculateChildEvolution(
   childId: string,
   period: 'week' | 'month' = 'week',
@@ -174,7 +467,6 @@ export async function calculateChildEvolution(
 
     const currentMastery = progMap[mod.id] ?? (modSessionsCurrent.length > 0 ? 80 : 45)
 
-    // Calculate previous mastery approximation
     let prevMastery = currentMastery
     if (modSessionsPrev.length > 0) {
       const avgPrev = Math.round(

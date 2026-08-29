@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T04:37:33.903Z",
+  "generatedAt": "2026-08-29T13:30:29.769Z",
   "collections": [
     {
       "name": "users",
@@ -99,6 +99,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "daily_minutes",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "daily_activity_count",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -272,6 +284,262 @@
       "indexes": [
         "CREATE INDEX idx_mod_prog_user_child ON module_progress (user_id, child_id)",
         "CREATE UNIQUE INDEX idx_mod_prog_child_module ON module_progress (child_id, module_id)"
+      ]
+    },
+    {
+      "name": "child_achievements",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "child_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "children"
+        },
+        {
+          "name": "module_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "badge_key",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "icon",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tier",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "unlocked_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_achievements_user_child ON child_achievements (user_id, child_id)",
+        "CREATE UNIQUE INDEX idx_achievements_child_badge ON child_achievements (child_id, badge_key)"
+      ]
+    },
+    {
+      "name": "invites",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "child_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "children"
+        },
+        {
+          "name": "invite_code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "sender_child_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "accepted_by_user_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "accepted_child_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "accepted_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_invites_code ON invites (invite_code)",
+        "CREATE INDEX idx_invites_user ON invites (user_id)"
+      ]
+    },
+    {
+      "name": "school_access_tokens",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "child_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "children"
+        },
+        {
+          "name": "access_code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "school_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "teacher_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "last_accessed_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "expires_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_school_access_code ON school_access_tokens (access_code)",
+        "CREATE INDEX idx_school_access_user_child ON school_access_tokens (user_id, child_id)"
       ]
     }
   ]

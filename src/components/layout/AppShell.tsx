@@ -19,6 +19,9 @@ import {
   User,
   Sparkles,
   Gamepad2,
+  BookOpen,
+  Share2,
+  TrendingUp,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -73,11 +76,12 @@ export const AppShell: React.FC = () => {
     {
       label: 'Relatórios',
       path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
-      icon: Sparkles,
+      icon: TrendingUp,
     },
-    { label: 'Ajustes', path: '/app/settings', icon: Settings },
+    { label: 'Guia Pais', path: '/app/themes-guide', icon: BookOpen },
+    { label: 'Convites & Escola', path: '/app/community', icon: Share2 },
+    { label: 'Configurações', path: '/app/settings', icon: Settings },
   ]
-
   const guardianInitial = (user?.name || user?.email || 'R').charAt(0).toUpperCase()
 
   return (

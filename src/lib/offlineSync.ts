@@ -101,6 +101,12 @@ export class OfflineSyncService {
           pendingItem.module_id,
           pendingItem.score,
         )
+        // Also trigger async achievement check in background
+        this.evaluateAchievementsSilently(
+          pendingItem.child_id,
+          pendingItem.module_id,
+          pendingItem.user_id,
+        )
         return
       } catch (err) {
         console.warn('Direct game session save failed, adding to offline queue', err)
@@ -130,6 +136,31 @@ export class OfflineSyncService {
       total_rounds: item.total_rounds,
       details: item.details || {},
     })
+  }
+
+  private async evaluateAchievementsSilently(childId: string, moduleId: string, userId: string) {
+    if (!pb.authStore.isValid) return
+    try {
+      const existing = await pb.collection('child_achievements').getFullList({
+        filter: `child_id = '${childId}' && module_id = '${moduleId}'`,
+      })
+      const badgeKey = `${moduleId}_primeiro_jogo`
+      if (existing.length === 0) {
+        await pb.collection('child_achievements').create({
+          user_id: userId,
+          child_id: childId,
+          module_id: moduleId,
+          badge_key: badgeKey,
+          title: 'Primeiro Desafio',
+          description: 'Completou a primeira atividade nesta área!',
+          icon: '⭐',
+          tier: 'bronze',
+          unlocked_at: new Date().toISOString(),
+        })
+      }
+    } catch (_) {
+      // ignore
+    }
   }
 
   public async updateModuleProgress(childId: string, moduleId: string, latestScore: number) {

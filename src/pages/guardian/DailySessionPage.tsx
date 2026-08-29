@@ -25,12 +25,16 @@ import {
 import { FazendaFalanteGame } from '@/components/games/FazendaFalanteGame'
 import { CadeOBichinhoGame } from '@/components/games/CadeOBichinhoGame'
 import { SomDoBichoGame } from '@/components/games/SomDoBichoGame'
+import { RimaDivertidaGame } from '@/components/games/RimaDivertidaGame'
 import { ParDosAnimaisGame } from '@/components/games/ParDosAnimaisGame'
 import { MemoriaDinosGame } from '@/components/games/MemoriaDinosGame'
 import { CaixaDasFormasGame } from '@/components/games/CaixaDasFormasGame'
 import { ContaDinosGame } from '@/components/games/ContaDinosGame'
+import { SequenciaPadroesGame } from '@/components/games/SequenciaPadroesGame'
 import { SequenciaCoresGame } from '@/components/games/SequenciaCoresGame'
 import { EstouraBolhasGame } from '@/components/games/EstouraBolhasGame'
+import { TrilhaDasLetrasGame } from '@/components/games/TrilhaDasLetrasGame'
+import { ClimaERoupaGame } from '@/components/games/ClimaERoupaGame'
 import { CarinhasFelizesGame } from '@/components/games/CarinhasFelizesGame'
 
 export const DailySessionPage: React.FC = () => {
@@ -62,20 +66,19 @@ export const DailySessionPage: React.FC = () => {
           progMap[p.module_id] = p.mastery_percentage
         })
 
-        // Build personalized 3-step daily routine:
-        // 1. Focus area (lowest mastery in brain flower)
-        // 2. Playful Speech / Animal / Dino activity
-        // 3. Coordination / Logic activity
+        // Build personalized daily routine respecting child's configured activity count:
+        const targetCount = kid.daily_activity_count || 3
+
         const sortedModules = [...COGNIKIDS_MODULES].sort((a, b) => {
           const valA = progMap[a.id] ?? 40
           const valB = progMap[b.id] ?? 40
           return valA - valB
         })
 
-        const weakestModule = sortedModules[0]
         const plan: DailyActivityItem[] = []
 
-        // Step 1: Weakest area targeted game
+        // 1. Weakest area targeted game (Step 1)
+        const weakestModule = sortedModules[0]
         const step1Activity = weakestModule.activities[0]
         plan.push({
           id: step1Activity.id,
@@ -85,54 +88,76 @@ export const DailySessionPage: React.FC = () => {
           moduleColor: weakestModule.color,
           icon: weakestModule.icon,
           description: step1Activity.description,
-          reason: `Pétala com menor assimilação (${progMap[weakestModule.id] ?? 40}%) — ótimo momento para fortalecer!`,
+          reason: `Pétala com menor assimilação (${progMap[weakestModule.id] ?? 40}%) — foco principal do dia!`,
         })
 
-        // Step 2: Speech or Dino excitement
-        if (weakestModule.id !== 'speech') {
-          const speechMod = COGNIKIDS_MODULES.find((m) => m.id === 'speech')!
-          const act = ageMonths >= 24 ? speechMod.activities[0] : speechMod.activities[1]
+        // 2. Weather / Socioemotional or Speech activity (Step 2)
+        if (targetCount >= 2) {
+          const socioMod = COGNIKIDS_MODULES.find((m) => m.id === 'socioemotional')!
+          const act2 = socioMod.activities[0] // Clima & Roupa
           plan.push({
-            id: act.id,
-            title: act.title,
-            moduleId: speechMod.id,
-            moduleTitle: speechMod.title,
-            moduleColor: speechMod.color,
-            icon: speechMod.icon,
-            description: act.description,
-            reason: 'Estímulo vocal essencial do dia com palavras, dinos e sons.',
+            id: act2.id,
+            title: act2.title,
+            moduleId: socioMod.id,
+            moduleTitle: socioMod.title,
+            moduleColor: socioMod.color,
+            icon: socioMod.icon,
+            description: act2.description,
+            reason: 'Autonomia e reconhecimento de sentimentos/clima.',
           })
-        } else {
-          const memMod = COGNIKIDS_MODULES.find((m) => m.id === 'memory')!
-          const act = ageMonths >= 24 ? memMod.activities[1] : memMod.activities[0]
+        }
+
+        // 3. Logic or Speech excitement (Step 3)
+        if (targetCount >= 3) {
+          const speechOrLogic =
+            sortedModules.find((m) => m.id === 'speech' || m.id === 'logic') || sortedModules[1]
+          const act3 =
+            speechOrLogic.activities[ageMonths >= 24 && speechOrLogic.activities.length > 1 ? 1 : 0]
           plan.push({
-            id: act.id,
-            title: act.title,
+            id: act3.id,
+            title: act3.title,
+            moduleId: speechOrLogic.id,
+            moduleTitle: speechOrLogic.title,
+            moduleColor: speechOrLogic.color,
+            icon: speechOrLogic.icon,
+            description: act3.description,
+            reason: 'Treino de vocabulário, rimas ou padrões lógicos.',
+          })
+        }
+
+        // 4. Fine motor coordination (Step 4 if configured)
+        if (targetCount >= 4) {
+          const motorMod = COGNIKIDS_MODULES.find((m) => m.id === 'motor')!
+          const act4 = motorMod.activities[0]
+          plan.push({
+            id: act4.id,
+            title: act4.title,
+            moduleId: motorMod.id,
+            moduleTitle: motorMod.title,
+            moduleColor: motorMod.color,
+            icon: motorMod.icon,
+            description: act4.description,
+            reason: 'Agilidade motora e coordenação de toque.',
+          })
+        }
+
+        // 5. Memory & Retention (Step 5 if configured)
+        if (targetCount >= 5) {
+          const memMod = COGNIKIDS_MODULES.find((m) => m.id === 'memory')!
+          const act5 = memMod.activities[0]
+          plan.push({
+            id: act5.id,
+            title: act5.title,
             moduleId: memMod.id,
             moduleTitle: memMod.title,
             moduleColor: memMod.color,
             icon: memMod.icon,
-            description: act.description,
-            reason: 'Treino de foco e memória de trabalho com bichinhos.',
+            description: act5.description,
+            reason: 'Fortalecimento da memória de trabalho.',
           })
         }
 
-        // Step 3: Logic or Motor fine tuning
-        const logicOrMotor =
-          sortedModules.find((m) => m.id === 'logic' || m.id === 'motor') || sortedModules[1]
-        const act3 = logicOrMotor.activities[0]
-        plan.push({
-          id: act3.id,
-          title: act3.title,
-          moduleId: logicOrMotor.id,
-          moduleTitle: logicOrMotor.title,
-          moduleColor: logicOrMotor.color,
-          icon: logicOrMotor.icon,
-          description: act3.description,
-          reason: 'Desenvolvimento de raciocínio, formas e agilidade motora.',
-        })
-
-        setDailyPlan(plan)
+        setDailyPlan(plan.slice(0, targetCount))
       }
       setIsLoading(false)
     }
@@ -177,6 +202,8 @@ export const DailySessionPage: React.FC = () => {
     switch (currentActivity.id) {
       case 'fazenda_falante':
         return <FazendaFalanteGame child={child} />
+      case 'rima_divertida':
+        return <RimaDivertidaGame child={child} />
       case 'cade_o_bichinho':
         return <CadeOBichinhoGame child={child} />
       case 'som_do_bicho':
@@ -189,10 +216,16 @@ export const DailySessionPage: React.FC = () => {
         return <CaixaDasFormasGame child={child} />
       case 'conta_dinos':
         return <ContaDinosGame child={child} />
+      case 'sequencia_padroes':
+        return <SequenciaPadroesGame child={child} />
       case 'sequencia_cores':
         return <SequenciaCoresGame child={child} />
       case 'estoura_bolhas':
         return <EstouraBolhasGame child={child} />
+      case 'trilha_das_letras':
+        return <TrilhaDasLetrasGame child={child} />
+      case 'clima_roupa':
+        return <ClimaERoupaGame child={child} />
       case 'carinhas_felizes':
         return <CarinhasFelizesGame child={child} />
       default:
@@ -216,7 +249,9 @@ export const DailySessionPage: React.FC = () => {
           </button>
           <div className="flex items-center gap-1.5 bg-orange-100 text-orange-800 font-black text-xs px-3 py-1.5 rounded-full">
             <Flame className="w-4 h-4 fill-orange-500 text-orange-500" />
-            <span>Sessão Diária • 10-15 min</span>
+            <span>
+              Sessão Diária • {child.daily_minutes || 15} min ({dailyPlan.length} atividades)
+            </span>
           </div>
         </div>
 

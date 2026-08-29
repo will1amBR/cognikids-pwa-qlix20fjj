@@ -25,7 +25,12 @@ import {
   Gamepad2,
   ChevronDown,
   Info,
+  Lightbulb,
+  Home,
+  CheckCircle2,
+  BookOpen,
 } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export const EvolutionReportsPage: React.FC = () => {
   const { childId } = useParams()
@@ -103,13 +108,14 @@ export const EvolutionReportsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-            <span>Relatórios de Evolução</span>
+            <span>Relatórios de Evolução & Dicas</span>
             <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-700">
               Responsável
             </span>
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Acompanhe o desenvolvimento cognitivo e vocal por período comparativo
+            Acompanhe o desenvolvimento cognitivo e vocal por período com sugestões práticas para
+            casa
           </p>
         </div>
 
@@ -244,17 +250,20 @@ export const EvolutionReportsPage: React.FC = () => {
             <div className="bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl p-5 text-white shadow-md flex flex-col justify-between">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
-                  Rotina
+                  Rotina Personalizada
                 </span>
                 <h3 className="text-sm font-black mt-1">Sessão Diária</h3>
-                <p className="text-[11px] text-white/90 mt-0.5">3 jogos rápidos para hoje</p>
+                <p className="text-[11px] text-white/90 mt-0.5">
+                  {selectedChild.daily_minutes || 15} min •{' '}
+                  {selectedChild.daily_activity_count || 3} jogos
+                </p>
               </div>
               <Button
                 size="sm"
                 onClick={() => navigate(`/app/daily/${selectedChild.id}`)}
                 className="mt-2 h-9 bg-white text-orange-600 hover:bg-white/90 font-black rounded-xl text-xs shadow-sm"
               >
-                Iniciar hoje
+                Iniciar agora
               </Button>
             </div>
           </div>
@@ -360,6 +369,109 @@ export const EvolutionReportsPage: React.FC = () => {
                       >
                         <span>Treinar</span>
                         <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Pedagogical Guidance Cards / Dicas Pedagógicas para o Responsável */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                  <Lightbulb className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-800">
+                    Cartões de Dicas Pedagógicas & Reforço em Casa
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Atividades práticas do dia a dia sugeridas para {selectedChild.name} com base no
+                    desempenho atual
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-[11px] font-bold px-3 py-1 bg-slate-100 text-slate-600 rounded-full self-start sm:self-auto">
+                Baseado em Neurociência Infantil
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {COGNIKIDS_MODULES.map((mod) => {
+                const modSummary = summary?.moduleBreakdown.find((m) => m.moduleId === mod.id)
+                const currentMastery = modSummary?.currentMastery || 50
+                const isPriority = currentMastery < 65
+
+                return (
+                  <div
+                    key={mod.id}
+                    className={`rounded-3xl p-5 border-2 flex flex-col justify-between transition-all ${
+                      isPriority
+                        ? 'bg-amber-50/40 border-amber-300 shadow-sm'
+                        : 'bg-slate-50/60 border-slate-200/80'
+                    }`}
+                  >
+                    <div>
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{mod.icon}</span>
+                          <div>
+                            <h3 className="text-sm font-black text-slate-800">{mod.title}</h3>
+                            <span className="text-[10px] font-semibold text-slate-400">
+                              Assimilação: {currentMastery}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {isPriority ? (
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 shrink-0">
+                            Foco Prioritário
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
+                            Em Boa Evolução
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Content Description */}
+                      <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+                        {isPriority
+                          ? `Área com maior margem de crescimento no momento. Estimular com brincadeiras curtas em casa:`
+                          : `Ótima assimilação! Para consolidar e avançar para desafios mais complexos:`}
+                      </p>
+
+                      {/* Home Activities Tips */}
+                      <div className="space-y-2 bg-white/90 p-3 rounded-2xl border border-slate-200/60 text-xs">
+                        {mod.themes[0]?.homeTips.slice(0, 2).map((tip, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-slate-700">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                            <span className="leading-snug">{tip}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom Link to Play Area */}
+                    <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        {mod.activities.length} jogos disponíveis
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          navigate(`/app/game/${selectedChild.id}/${mod.activities[0].id}`)
+                        }
+                        className="h-8 px-2 text-orange-600 font-bold hover:bg-orange-50 text-xs"
+                      >
+                        <span>Praticar</span>
+                        <ArrowRight className="w-3 h-3 ml-1" />
                       </Button>
                     </div>
                   </div>

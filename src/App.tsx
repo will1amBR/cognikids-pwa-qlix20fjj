@@ -23,6 +23,9 @@ import { ChildDashboardPage } from '@/pages/guardian/ChildDashboard'
 import { SettingsPage } from '@/pages/guardian/SettingsPage'
 import { DailySessionPage } from '@/pages/guardian/DailySessionPage'
 import { EvolutionReportsPage } from '@/pages/guardian/EvolutionReportsPage'
+import { GuardianThemesGuidePage } from '@/pages/guardian/GuardianThemesGuidePage'
+import { InvitesAndSchoolPage } from '@/pages/guardian/InvitesAndSchoolPage'
+import { SchoolViewPortalPage } from '@/pages/guardian/SchoolViewPortalPage'
 import { GameRunnerPage } from '@/pages/game/GameRunner'
 import NotFound from '@/pages/NotFound'
 
@@ -53,8 +56,13 @@ const App: React.FC = () => {
                 <Route path="child/:childId" element={<ChildDashboardPage />} />
                 <Route path="reports" element={<EvolutionReportsPage />} />
                 <Route path="reports/:childId" element={<EvolutionReportsPage />} />
+                <Route path="themes-guide" element={<GuardianThemesGuidePage />} />
+                <Route path="community" element={<InvitesAndSchoolPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
+
+              {/* Public School / Pedagogical Portal route */}
+              <Route path="/escola" element={<SchoolViewPortalPage />} />
 
               {/* Fullscreen Guided Daily Session */}
               <Route path="/app/daily/:childId" element={<DailySessionPage />} />

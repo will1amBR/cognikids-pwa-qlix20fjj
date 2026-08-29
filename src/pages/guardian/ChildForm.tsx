@@ -20,6 +20,8 @@ export const ChildFormPage: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [clearAvatar, setClearAvatar] = useState(false)
+  const [dailyMinutes, setDailyMinutes] = useState<number>(15)
+  const [dailyActivityCount, setDailyActivityCount] = useState<number>(3)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(isEditing)
 
@@ -37,6 +39,8 @@ export const ChildFormPage: React.FC = () => {
           setName(child.name)
           setBirthDate(child.birth_date ? child.birth_date.split('T')[0] : '')
           if (child.favorite_color) setFavoriteColor(child.favorite_color)
+          if (child.daily_minutes) setDailyMinutes(child.daily_minutes)
+          if (child.daily_activity_count) setDailyActivityCount(child.daily_activity_count)
           const existingUrl = getChildAvatarUrl(child)
           if (existingUrl) setAvatarPreview(existingUrl)
         } else {
@@ -98,6 +102,8 @@ export const ChildFormPage: React.FC = () => {
           name: name.trim(),
           birth_date: new Date(birthDate).toISOString(),
           favorite_color: favoriteColor,
+          daily_minutes: dailyMinutes,
+          daily_activity_count: dailyActivityCount,
           avatarFile,
           clearAvatar,
         })
@@ -107,6 +113,8 @@ export const ChildFormPage: React.FC = () => {
           name: name.trim(),
           birth_date: new Date(birthDate).toISOString(),
           favorite_color: favoriteColor,
+          daily_minutes: dailyMinutes,
+          daily_activity_count: dailyActivityCount,
           avatarFile,
         })
         localStorage.setItem('cognikids_selected_child_id', created.id)
@@ -267,6 +275,64 @@ export const ChildFormPage: React.FC = () => {
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* Configuração da Sessão Diária da Criança */}
+        <div className="pt-2 border-t border-slate-100 space-y-4 text-left">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-xs font-black text-slate-800">
+                ⚙️ Configuração da Sessão Diária
+              </Label>
+              <p className="text-[11px] text-slate-500">
+                Ajuste a duração e a quantidade de atividades diárias para esta criança
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Duração em minutos */}
+            <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+              <Label htmlFor="dailyMinutes" className="text-[11px] font-bold text-slate-700">
+                Duração sugerida (minutos)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="dailyMinutes"
+                  type="number"
+                  min={3}
+                  max={60}
+                  value={dailyMinutes}
+                  onChange={(e) => setDailyMinutes(Math.max(3, Number(e.target.value)))}
+                  className="rounded-xl h-10 bg-white"
+                />
+                <span className="text-xs font-bold text-slate-500 shrink-0">minutos</span>
+              </div>
+              <p className="text-[10px] text-slate-400">Recomendado: 10 a 20 min</p>
+            </div>
+
+            {/* Quantidade de atividades */}
+            <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+              <Label htmlFor="dailyActivityCount" className="text-[11px] font-bold text-slate-700">
+                Quantidade de atividades
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="dailyActivityCount"
+                  type="number"
+                  min={1}
+                  max={6}
+                  value={dailyActivityCount}
+                  onChange={(e) =>
+                    setDailyActivityCount(Math.min(6, Math.max(1, Number(e.target.value))))
+                  }
+                  className="rounded-xl h-10 bg-white"
+                />
+                <span className="text-xs font-bold text-slate-500 shrink-0">jogos</span>
+              </div>
+              <p className="text-[10px] text-slate-400">Padrão: 3 desafios diários</p>
+            </div>
           </div>
         </div>
 

@@ -95,12 +95,32 @@ export const GuardianHome: React.FC = () => {
           </p>
         </div>
 
-        <Link to="/app/children/new">
-          <Button className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20">
-            <Plus className="w-4 h-4 mr-1.5" />
-            Adicionar criança
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/app/themes-guide">
+            <Button
+              variant="outline"
+              className="rounded-2xl border-orange-200 text-orange-700 hover:bg-orange-50 font-bold text-xs"
+            >
+              📖 Guia de Temas
+            </Button>
+          </Link>
+
+          <Link to="/app/community">
+            <Button
+              variant="outline"
+              className="rounded-2xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold text-xs"
+            >
+              🤝 Convites & Escola
+            </Button>
+          </Link>
+
+          <Link to="/app/children/new">
+            <Button className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20 text-xs">
+              <Plus className="w-4 h-4 mr-1.5" />
+              Adicionar criança
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Children Grid */}
