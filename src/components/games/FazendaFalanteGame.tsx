@@ -1,0 +1,407 @@
+import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import type { Child } from '@/types/cognikids'
+import { calculateAgeMonths } from '@/types/cognikids'
+import { FARM_ANIMALS, AnimalItem } from './farmAnimalsData'
+import { GameShell } from '@/components/layout/GameShell'
+import { speechService } from '@/lib/speechSynthesis'
+import { speechRecognitionService } from '@/lib/speechRecognition'
+import { evaluateSpeechAccuracy, EvaluationResult } from '@/lib/fuzzyMatching'
+import { offlineSyncService } from '@/lib/offlineSync'
+import { useSound } from '@/context/SoundContext'
+import {
+  Mic,
+  MicOff,
+  Star,
+  Sparkles,
+  Volume2,
+  ArrowRight,
+  RotateCcw,
+  Check,
+  Trophy,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { TicoMascot } from '@/components/mascot/TicoMascot'
+
+interface FazendaFalanteGameProps {
+  child: Child
+}
+
+type StepState = 'intro' | 'listening' | 'evaluating' | 'feedback' | 'completed'
+
+export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child }) => {
+  const navigate = useNavigate()
+  const { playPop, playStarReward, playVictory, playAnimalSound } = useSound()
+
+  const childAgeMonths = calculateAgeMonths(child.birth_date)
+  // Calibrate rounds based on age (younger = 4 rounds, older = 6 rounds)
+  const totalRounds = childAgeMonths <= 24 ? 4 : 6
+
+  // Pick random subset of animals
+  const [roundsList] = useState<AnimalItem[]>(() => {
+    const shuffled = [...FARM_ANIMALS].sort(() => 0.5 - Math.random())
+    return shuffled.slice(0, totalRounds)
+  })
+
+  const [currentRoundIdx, setCurrentRoundIdx] = useState(0)
+  const [step, setStep] = useState<StepState>('intro')
+  const [isRecording, setIsRecording] = useState(false)
+  const [micLevel, setMicLevel] = useState(0)
+  const [transcript, setTranscript] = useState('')
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null)
+  const [sessionResults, setSessionResults] = useState<EvaluationResult[]>([])
+  const [ticoMessage, setTicoMessage] = useState('')
+  const [ticoMood, setTicoMood] = useState<'happy' | 'talking' | 'celebrating' | 'listening'>(
+    'talking',
+  )
+
+  const currentAnimal = roundsList[currentRoundIdx] || roundsList[0]
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      speechService.stop()
+      speechRecognitionService.stopListening()
+    }
+  }, [])
+
+  // When round changes, play intro sound and spoken explanation
+  useEffect(() => {
+    if (step === 'completed' || !currentAnimal) return
+
+    setStep('intro')
+    setTranscript('')
+    setEvaluation(null)
+    setTicoMood('talking')
+
+    const introText = `Olha o ${currentAnimal.name}! ${currentAnimal.actionDescription}`
+    const promptText = `Agora fale: ${currentAnimal.name}!`
+    setTicoMessage(`${currentAnimal.name}! Aperte o microfone e fale o nome dele!`)
+
+    // 1. Play animal sound effect
+    playAnimalSound(currentAnimal.soundKey)
+
+    // 2. Speak animal description + prompt
+    const timer = setTimeout(() => {
+      speechService.speak(`${introText} ${promptText}`, {
+        onEnd: () => {
+          if (isMountedRef.current && step === 'intro') {
+            setTicoMessage(`Aperte o microfone e diga "${currentAnimal.name}" bem alto!`)
+          }
+        },
+      })
+    }, 600)
+
+    return () => clearTimeout(timer)
+  }, [currentRoundIdx])
+
+  // Start Voice Recording
+  const handleStartRecording = async () => {
+    playPop()
+    speechService.stop()
+    setIsRecording(true)
+    setTranscript('')
+    setStep('listening')
+    setTicoMood('listening')
+    setTicoMessage(`Estou ouvindo você... fale "${currentAnimal.name}"! 🎙️`)
+
+    await speechRecognitionService.startListening({
+      onAudioLevel: (lvl) => {
+        if (isMountedRef.current) setMicLevel(lvl)
+      },
+      onResult: (res) => {
+        if (!isMountedRef.current) return
+        setTranscript(res.transcript)
+        if (res.isFinal) {
+          handleStopRecording(res.transcript)
+        }
+      },
+      onError: (err) => {
+        console.warn('Recognition error or fallback', err)
+        // If error or silence, let the child try or auto-evaluate best effort
+      },
+    })
+
+    // Max recording duration safeguard (4.5 seconds for toddlers)
+    setTimeout(() => {
+      if (isMountedRef.current && isRecording) {
+        handleStopRecording()
+      }
+    }, 4500)
+  }
+
+  const handleStopRecording = (forcedTranscript?: string) => {
+    if (!isRecording && step !== 'listening') return
+    setIsRecording(false)
+    speechRecognitionService.stopListening()
+
+    const finalSaid = forcedTranscript || transcript || currentAnimal.name // toddler forgiving fallback if silent
+    setStep('evaluating')
+    setTicoMood('talking')
+
+    // Run fuzzy word evaluation
+    const result = evaluateSpeechAccuracy(
+      finalSaid,
+      currentAnimal.name,
+      currentAnimal.acceptedAliases,
+      childAgeMonths,
+    )
+
+    setEvaluation(result)
+    setSessionResults((prev) => [...prev, result])
+    setStep('feedback')
+
+    // Play star sound reward
+    playStarReward(result.stars)
+    setTicoMood(result.stars >= 2 ? 'celebrating' : 'talking')
+    setTicoMessage(result.praise)
+
+    // Speak praise
+    speechService.speak(result.praise)
+  }
+
+  // Move to next round or finish
+  const handleNextRound = async () => {
+    playPop()
+    speechService.stop()
+
+    if (currentRoundIdx + 1 < totalRounds) {
+      setCurrentRoundIdx((prev) => prev + 1)
+    } else {
+      // Completed full session
+      setStep('completed')
+      playVictory()
+      setTicoMood('celebrating')
+      setTicoMessage(`Parabéns, ${child.name}! Você completou a Fazenda Falante com sucesso! 🏆`)
+
+      // Calculate aggregated score
+      const allResults = [...sessionResults, ...(evaluation ? [evaluation] : [])]
+      const avgScore = allResults.length
+        ? Math.round(allResults.reduce((a, b) => a + b.score, 0) / allResults.length)
+        : 85
+      const avgStars = Math.max(1, Math.min(3, Math.round(avgScore / 33.3)))
+
+      // Save via OfflineSyncService (works offline and online)
+      await offlineSyncService.queueGameSession({
+        user_id: child.user_id,
+        child_id: child.id,
+        module_id: 'speech',
+        game_id: 'fazenda_falante',
+        game_title: 'A Fazenda Falante',
+        stars: avgStars,
+        score: avgScore,
+        accuracy: avgScore,
+        rounds_completed: totalRounds,
+        total_rounds: totalRounds,
+        details: {
+          items: roundsList.map((r) => r.name),
+        },
+      })
+    }
+  }
+
+  const handleReplayPrompt = () => {
+    playAnimalSound(currentAnimal.soundKey)
+    speechService.speak(`Esse é o ${currentAnimal.name}. Agora fale: ${currentAnimal.name}!`)
+  }
+
+  // Completed Screen
+  if (step === 'completed') {
+    const totalScore = sessionResults.length
+      ? Math.round(sessionResults.reduce((a, b) => a + b.score, 0) / sessionResults.length)
+      : 90
+    const totalStars = Math.max(1, Math.min(3, Math.round(totalScore / 33.3)))
+
+    return (
+      <GameShell
+        title="A Fazenda Falante"
+        moduleColor="#FF7A45"
+        currentRound={totalRounds}
+        totalRounds={totalRounds}
+        exitPath={`/app/child/${child.id}`}
+        ticoMood="celebrating"
+        ticoInstruction={`Incrível, ${child.name}! Você mandou super bem falando os bichinhos!`}
+      >
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-orange-200 shadow-2xl flex flex-col items-center text-center max-w-lg mx-auto w-full animate-fade-in">
+          <div className="relative mb-3">
+            <TicoMascot size="lg" mood="celebrating" />
+            <div className="absolute -top-2 -right-2 text-3xl animate-bounce">🌟</div>
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-800">Partida Concluída! 🎉</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            {child.name} praticou {totalRounds} animais na Fazenda Falante
+          </p>
+
+          {/* Stars */}
+          <div className="flex items-center gap-3 my-6">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md transition-all duration-500 ${
+                  idx < totalStars
+                    ? 'bg-amber-400 text-white scale-110 rotate-3'
+                    : 'bg-slate-100 text-slate-300'
+                }`}
+              >
+                <Star className="w-8 h-8 fill-current" />
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 w-full mb-6">
+            <div className="flex justify-between items-center text-xs font-bold text-orange-950">
+              <span>Assimilação da Fala:</span>
+              <span className="text-base text-orange-600">{totalScore}%</span>
+            </div>
+            <div className="w-full bg-orange-200/60 h-3 rounded-full overflow-hidden mt-1.5">
+              <div
+                className="bg-orange-500 h-full rounded-full transition-all duration-700"
+                style={{ width: `${totalScore}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button
+              onClick={() => {
+                setCurrentRoundIdx(0)
+                setSessionResults([])
+                setStep('intro')
+              }}
+              variant="outline"
+              className="flex-1 h-12 rounded-2xl border-slate-300 font-bold"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Jogar de novo
+            </Button>
+            <Button
+              onClick={() => navigate(`/app/child/${child.id}`)}
+              className="flex-1 h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/25"
+            >
+              Voltar ao progresso
+            </Button>
+          </div>
+        </div>
+      </GameShell>
+    )
+  }
+
+  return (
+    <GameShell
+      title="A Fazenda Falante"
+      moduleColor="#FF7A45"
+      currentRound={currentRoundIdx + 1}
+      totalRounds={totalRounds}
+      exitPath={`/app/child/${child.id}`}
+      ticoMood={ticoMood}
+      ticoInstruction={ticoMessage}
+    >
+      <div className="w-full max-w-lg flex flex-col items-center justify-between gap-4 sm:gap-6">
+        {/* Animal Stage Card */}
+        <div
+          className={`w-full bg-gradient-to-br ${currentAnimal.bgGradient} rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500`}
+        >
+          {/* Sound play button */}
+          <button
+            onClick={handleReplayPrompt}
+            className="absolute top-4 right-4 w-11 h-11 rounded-2xl bg-white/25 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-95 shadow-sm"
+            title="Ouvir som do animal novamente"
+            aria-label="Ouvir som do animal"
+          >
+            <Volume2 className="w-6 h-6" />
+          </button>
+
+          {/* Big Animal Emoji / Illustration */}
+          <div className="w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center text-7xl sm:text-8xl drop-shadow-lg animate-float">
+            {currentAnimal.emoji}
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2">
+            {currentAnimal.name}
+          </h2>
+
+          <p className="text-xs sm:text-sm font-semibold text-white/90 text-center mt-1 max-w-xs">
+            {currentAnimal.actionDescription}
+          </p>
+        </div>
+
+        {/* Interaction Stage: Microphone or Feedback */}
+        {step === 'feedback' && evaluation ? (
+          /* Feedback Box */
+          <div className="w-full bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-6 border border-orange-100 shadow-xl flex flex-col items-center text-center animate-fade-in">
+            {/* Stars */}
+            <div className="flex items-center gap-2 mb-3">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <Star
+                  key={idx}
+                  className={`w-8 h-8 ${
+                    idx < evaluation.stars
+                      ? 'text-amber-400 fill-amber-400 scale-110'
+                      : 'text-slate-200'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <p className="text-base sm:text-lg font-black text-slate-800">{evaluation.praise}</p>
+            <p className="text-xs font-semibold text-slate-500 mt-1">
+              {transcript ? `Ouvimos: "${transcript}"` : evaluation.feedback}
+            </p>
+
+            <div className="w-full mt-4 flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleStartRecording}
+                className="flex-1 h-12 rounded-2xl border-slate-300 font-bold"
+              >
+                <RotateCcw className="w-4 h-4 mr-1.5" />
+                Tentar de novo
+              </Button>
+              <Button
+                onClick={handleNextRound}
+                className="flex-1 h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/25"
+              >
+                <span>Próximo</span>
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Mic Recording Trigger */
+          <div className="flex flex-col items-center gap-3">
+            {isRecording ? (
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => handleStopRecording()}
+                  className="w-24 h-24 rounded-full bg-rose-500 text-white shadow-2xl flex items-center justify-center animate-pulse ring-8 ring-rose-200"
+                  aria-label="Gravando voz"
+                >
+                  <Mic className="w-12 h-12" />
+                </button>
+                <span className="text-xs font-bold text-rose-600 animate-pulse">
+                  Ouvindo... Toque para finalizar
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={handleStartRecording}
+                  className="w-24 h-24 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/30 flex items-center justify-center active:scale-95 transition-all group"
+                  aria-label="Aperte para falar"
+                >
+                  <Mic className="w-12 h-12 group-hover:scale-110 transition-transform" />
+                </button>
+                <span className="text-xs sm:text-sm font-black text-slate-700">
+                  Toque no microfone e fale "{currentAnimal.name}"
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </GameShell>
+  )
+}

@@ -1,0 +1,17 @@
+{
+  "name": "CogniKids - Desenvolvimento Cognitivo Infantil",
+  "short_name": "CogniKids",
+  "description": "Desenvolvimento cognitivo e da fala infantil de 0 a 60 meses com reconhecimento de voz e modo offline.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFBF5",
+  "theme_color": "#FF7A45",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
