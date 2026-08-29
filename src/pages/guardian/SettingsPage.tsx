@@ -3,21 +3,34 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { User, Mail, ShieldCheck, HardDrive, RefreshCw, Smartphone, BellRing } from 'lucide-react'
+import {
+  User,
+  Mail,
+  ShieldCheck,
+  HardDrive,
+  RefreshCw,
+  Smartphone,
+  BellRing,
+  Globe,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { RoutineReminderSettings } from '@/components/reminders/RoutineReminderSettings'
+import { useLanguage } from '@/context/LanguageContext'
+import { SUPPORTED_LANGUAGES, AppLanguage } from '@/types/cognikids'
 
 export const SettingsPage: React.FC = () => {
   const { user, refreshUser } = useAuth()
   const { toast } = useToast()
+  const { language, setLanguage, t } = useLanguage()
 
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
   const [isSavingName, setIsSavingName] = useState(false)
   const [isRequestingEmailChange, setIsRequestingEmailChange] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isSavingLanguage, setIsSavingLanguage] = useState(false)
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,6 +81,50 @@ export const SettingsPage: React.FC = () => {
         <p className="text-sm text-slate-500 mt-0.5">
           Configurações da conta do responsável e sincronização offline
         </p>
+      </div>
+
+      {/* Interface Language Card */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+          <Globe className="w-5 h-5 text-orange-500" />
+          <h2 className="text-lg font-black text-slate-800">{t('settings.interfaceLanguage')}</h2>
+        </div>
+        <p className="text-xs text-slate-500">{t('settings.interfaceLanguageDesc')}</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          {SUPPORTED_LANGUAGES.map((opt) => {
+            const isSelected = language === opt.code
+            return (
+              <button
+                key={opt.code}
+                type="button"
+                onClick={async () => {
+                  setIsSavingLanguage(true)
+                  await setLanguage(opt.code)
+                  setIsSavingLanguage(false)
+                  toast({
+                    title: 'Idioma atualizado',
+                    description: `Interface configurada para ${opt.nativeName}.`,
+                  })
+                }}
+                className={`flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all text-left ${
+                  isSelected
+                    ? 'border-orange-500 bg-orange-50/70 shadow-sm'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{opt.flag}</span>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{opt.label}</p>
+                    <p className="text-xs text-slate-500">{opt.nativeName}</p>
+                  </div>
+                </div>
+                {isSelected && <span className="w-3 h-3 rounded-full bg-orange-500 shadow-sm" />}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Routine Daily Reminder Card */}

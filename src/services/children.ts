@@ -39,6 +39,8 @@ export async function createChild(data: {
   avatarFile?: File | null
   daily_minutes?: number
   daily_activity_count?: number
+  learning_languages?: string[]
+  primary_language?: string
 }): Promise<Child> {
   const formData = new FormData()
   formData.append('user_id', pb.authStore.record?.id || '')
@@ -49,6 +51,9 @@ export async function createChild(data: {
   if (data.daily_minutes) formData.append('daily_minutes', String(data.daily_minutes))
   if (data.daily_activity_count)
     formData.append('daily_activity_count', String(data.daily_activity_count))
+  if (data.learning_languages)
+    formData.append('learning_languages', JSON.stringify(data.learning_languages))
+  if (data.primary_language) formData.append('primary_language', data.primary_language)
   if (data.avatarFile) formData.append('avatar', data.avatarFile)
 
   const res = await pb.collection('children').create<Child>(formData)
@@ -66,6 +71,8 @@ export async function updateChild(
     clearAvatar?: boolean
     daily_minutes?: number
     daily_activity_count?: number
+    learning_languages?: string[]
+    primary_language?: string
   },
 ): Promise<Child> {
   const formData = new FormData()
@@ -76,6 +83,10 @@ export async function updateChild(
   if (data.daily_minutes !== undefined) formData.append('daily_minutes', String(data.daily_minutes))
   if (data.daily_activity_count !== undefined)
     formData.append('daily_activity_count', String(data.daily_activity_count))
+  if (data.learning_languages !== undefined)
+    formData.append('learning_languages', JSON.stringify(data.learning_languages))
+  if (data.primary_language !== undefined)
+    formData.append('primary_language', data.primary_language)
   if (data.avatarFile) {
     formData.append('avatar', data.avatarFile)
   } else if (data.clearAvatar) {

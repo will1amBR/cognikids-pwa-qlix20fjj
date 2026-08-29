@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { fetchChildById, createChild, updateChild, getChildAvatarUrl } from '@/services/children'
-import { COGNIKIDS_MODULES, calculateAgeMonths } from '@/types/cognikids'
+import {
+  COGNIKIDS_MODULES,
+  calculateAgeMonths,
+  SUPPORTED_LANGUAGES,
+  AppLanguage,
+} from '@/types/cognikids'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -23,6 +28,8 @@ export const ChildFormPage: React.FC = () => {
   const [clearAvatar, setClearAvatar] = useState(false)
   const [dailyMinutes, setDailyMinutes] = useState<number>(15)
   const [dailyActivityCount, setDailyActivityCount] = useState<number>(3)
+  const [learningLanguages, setLearningLanguages] = useState<AppLanguage[]>(['pt-BR'])
+  const [primaryLanguage, setPrimaryLanguage] = useState<AppLanguage>('pt-BR')
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(isEditing)
 
@@ -43,6 +50,10 @@ export const ChildFormPage: React.FC = () => {
           if (child.class_group) setClassGroup(child.class_group)
           if (child.daily_minutes) setDailyMinutes(child.daily_minutes)
           if (child.daily_activity_count) setDailyActivityCount(child.daily_activity_count)
+          if (child.learning_languages && Array.isArray(child.learning_languages)) {
+            setLearningLanguages(child.learning_languages as AppLanguage[])
+          }
+          if (child.primary_language) setPrimaryLanguage(child.primary_language as AppLanguage)
           const existingUrl = getChildAvatarUrl(child)
           if (existingUrl) setAvatarPreview(existingUrl)
         } else {
@@ -107,6 +118,8 @@ export const ChildFormPage: React.FC = () => {
           class_group: classGroup.trim(),
           daily_minutes: dailyMinutes,
           daily_activity_count: dailyActivityCount,
+          learning_languages: learningLanguages,
+          primary_language: primaryLanguage,
           avatarFile,
           clearAvatar,
         })
@@ -119,6 +132,8 @@ export const ChildFormPage: React.FC = () => {
           class_group: classGroup.trim(),
           daily_minutes: dailyMinutes,
           daily_activity_count: dailyActivityCount,
+          learning_languages: learningLanguages,
+          primary_language: primaryLanguage,
           avatarFile,
         })
         localStorage.setItem('cognikids_selected_child_id', created.id)
@@ -253,6 +268,52 @@ export const ChildFormPage: React.FC = () => {
           <p className="text-[11px] text-slate-400">
             A idade exata calibra o tempo de resposta, o vocabulário e o número de rodadas nos
             jogos.
+          </p>
+        </div>
+
+        {/* Idiomas de Aprendizagem (Português, Inglês, Espanhol, Alemão, Francês) */}
+        <div className="space-y-2 text-left">
+          <Label className="text-xs font-bold text-slate-700">
+            Idiomas que a criança está aprendendo
+          </Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const isChecked = learningLanguages.includes(lang.code)
+              return (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => {
+                    if (isChecked) {
+                      if (learningLanguages.length > 1) {
+                        setLearningLanguages(learningLanguages.filter((l) => l !== lang.code))
+                      }
+                    } else {
+                      setLearningLanguages([...learningLanguages, lang.code])
+                    }
+                  }}
+                  className={`p-2.5 rounded-2xl border text-xs font-bold flex items-center justify-between transition-all ${
+                    isChecked
+                      ? 'border-orange-500 bg-orange-50 text-orange-950 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </span>
+                  <span
+                    className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${isChecked ? 'bg-orange-500 text-white' : 'border border-slate-300'}`}
+                  >
+                    {isChecked ? '✓' : ''}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[11px] text-slate-400">
+            As atividades de fala e jogos adaptarão o reconhecimento e síntese de voz para esses
+            idiomas.
           </p>
         </div>
 

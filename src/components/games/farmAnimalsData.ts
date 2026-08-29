@@ -1,3 +1,5 @@
+import type { AppLanguage } from '@/types/cognikids'
+
 export interface CategoryItem {
   id: string
   name: string
@@ -6,9 +8,21 @@ export interface CategoryItem {
   actionDescription: string
   promptText: string
   acceptedAliases: string[]
-  bgGradient: string
+  difficulty?: 1 | 2 | 3
   minAgeMonths: number
-  category: 'farm' | 'dinosaurs' | 'fruits' | 'colors' | 'body' | 'numbers'
+  category: 'farm' | 'dinos' | 'dinosaurs' | 'fruits' | 'colors' | 'body' | 'numbers'
+  bgGradient?: string
+  translations?: Partial<
+    Record<
+      AppLanguage,
+      {
+        name: string
+        actionDescription: string
+        promptText: string
+        acceptedAliases: string[]
+      }
+    >
+  >
 }
 
 export type AnimalItem = CategoryItem
@@ -761,10 +775,894 @@ export const ALL_CATEGORY_ITEMS: Record<string, CategoryItem[]> = {
   numbers: NUMBERS,
 }
 
-export function getItemsByCategory(categoryId: string): CategoryItem[] {
-  return ALL_CATEGORY_ITEMS[categoryId] || FARM_ANIMALS
+export function getLocalizedItem(item: CategoryItem, lang: AppLanguage = 'pt-BR'): CategoryItem {
+  if (lang === 'pt-BR' || !item.translations || !item.translations[lang]) {
+    const dictionary = MULTILINGUAL_WORD_MAP[item.id]
+    if (dictionary && dictionary[lang]) {
+      const trans = dictionary[lang]!
+      return {
+        ...item,
+        name: trans.name,
+        actionDescription: trans.actionDescription || item.actionDescription,
+        promptText: trans.promptText || `Now say: ${trans.name}!`,
+        acceptedAliases: trans.acceptedAliases,
+      }
+    }
+    return item
+  }
+
+  const trans = item.translations[lang]!
+  return {
+    ...item,
+    name: trans.name,
+    actionDescription: trans.actionDescription,
+    promptText: trans.promptText,
+    acceptedAliases: trans.acceptedAliases,
+  }
 }
 
-export function getAllItems(): CategoryItem[] {
-  return [...FARM_ANIMALS, ...DINOSAURS, ...FRUITS, ...COLORS, ...BODY_PARTS, ...NUMBERS]
+export const MULTILINGUAL_WORD_MAP: Record<
+  string,
+  Partial<
+    Record<
+      AppLanguage,
+      {
+        name: string
+        actionDescription: string
+        promptText: string
+        acceptedAliases: string[]
+      }
+    >
+  >
+> = {
+  vaca: {
+    en: {
+      name: 'Cow',
+      actionDescription: 'The cow eats green grass and goes: Moooo!',
+      promptText: 'Now say: Cow!',
+      acceptedAliases: ['cow', 'moo', 'mooo', 'cattle'],
+    },
+    es: {
+      name: 'Vaca',
+      actionDescription: '¡La vaca come pasto y hace: Muuuu!',
+      promptText: '¡Ahora di: Vaca!',
+      acceptedAliases: ['vaca', 'vaquita', 'mu', 'muuu'],
+    },
+    de: {
+      name: 'Kuh',
+      actionDescription: 'Die Kuh frisst Gras und macht: Muuuh!',
+      promptText: 'Jetzt sprich: Kuh!',
+      acceptedAliases: ['kuh', 'muh', 'muhh'],
+    },
+    fr: {
+      name: 'Vache',
+      actionDescription: 'La vache mange de l’herbe et fait : Meuuuh !',
+      promptText: 'Maintenant dis : Vache !',
+      acceptedAliases: ['vache', 'meuh', 'meuuh'],
+    },
+  },
+  cachorro: {
+    en: {
+      name: 'Dog',
+      actionDescription: 'The puppy wags its tail and barks: Woof woof!',
+      promptText: 'Now say: Dog!',
+      acceptedAliases: ['dog', 'puppy', 'woof', 'doggy'],
+    },
+    es: {
+      name: 'Perro',
+      actionDescription: '¡El perrito mueve la colita y ladra: Guau guau!',
+      promptText: '¡Ahora di: Perro!',
+      acceptedAliases: ['perro', 'perrito', 'guau', 'guau guau'],
+    },
+    de: {
+      name: 'Hund',
+      actionDescription: 'Der Hund wedelt mit dem Schwanz und bellt: Wuff wuff!',
+      promptText: 'Jetzt sprich: Hund!',
+      acceptedAliases: ['hund', 'wuff', 'wau'],
+    },
+    fr: {
+      name: 'Chien',
+      actionDescription: 'Le chiot remue la queue et aboie : Ouaf ouaf !',
+      promptText: 'Maintenant dis : Chien !',
+      acceptedAliases: ['chien', 'chiot', 'ouaf'],
+    },
+  },
+  gato: {
+    en: {
+      name: 'Cat',
+      actionDescription: 'The kitten purrs gently and meows: Meow!',
+      promptText: 'Now say: Cat!',
+      acceptedAliases: ['cat', 'kitten', 'meow', 'kitty'],
+    },
+    es: {
+      name: 'Gato',
+      actionDescription: '¡El gatito ronronea y maúlla: Miau!',
+      promptText: '¡Ahora di: Gato!',
+      acceptedAliases: ['gato', 'gatito', 'miau'],
+    },
+    de: {
+      name: 'Katze',
+      actionDescription: 'Die Katze schnurrt und miaut: Miau!',
+      promptText: 'Jetzt sprich: Katze!',
+      acceptedAliases: ['katze', 'miau', 'kätzchen'],
+    },
+    fr: {
+      name: 'Chat',
+      actionDescription: 'Le chaton ronronne et miaule : Miaou !',
+      promptText: 'Maintenant dis : Chat !',
+      acceptedAliases: ['chat', 'chaton', 'miaou'],
+    },
+  },
+  pato: {
+    en: {
+      name: 'Duck',
+      actionDescription: 'The duck swims in the pond and goes: Quack quack!',
+      promptText: 'Now say: Duck!',
+      acceptedAliases: ['duck', 'quack', 'duckling'],
+    },
+    es: {
+      name: 'Pato',
+      actionDescription: '¡El patito nada en el lago y hace: Cuac cuac!',
+      promptText: '¡Ahora di: Pato!',
+      acceptedAliases: ['pato', 'cuac', 'patito'],
+    },
+    de: {
+      name: 'Ente',
+      actionDescription: 'Die Ente schwimmt im See und macht: Quak quak!',
+      promptText: 'Jetzt sprich: Ente!',
+      acceptedAliases: ['ente', 'quak'],
+    },
+    fr: {
+      name: 'Canard',
+      actionDescription: 'Le caneton nage sur le lac et fait : Coin coin !',
+      promptText: 'Maintenant dis : Canard !',
+      acceptedAliases: ['canard', 'coin', 'caneton'],
+    },
+  },
+  ovelha: {
+    en: {
+      name: 'Sheep',
+      actionDescription: 'The sheep has fluffy wool and goes: Baaa!',
+      promptText: 'Now say: Sheep!',
+      acceptedAliases: ['sheep', 'baa', 'lamb'],
+    },
+    es: {
+      name: 'Oveja',
+      actionDescription: '¡La oveja tiene lana suave y hace: Beeee!',
+      promptText: '¡Ahora di: Oveja!',
+      acceptedAliases: ['oveja', 'beee', 'ovejita'],
+    },
+    de: {
+      name: 'Schaf',
+      actionDescription: 'Das Schaf hat weiche Wolle und macht: Mähhh!',
+      promptText: 'Jetzt sprich: Schaf!',
+      acceptedAliases: ['schaf', 'mäh'],
+    },
+    fr: {
+      name: 'Mouton',
+      actionDescription: 'Le mouton a une laine douce et fait : Bêêê !',
+      promptText: 'Maintenant dis : Mouton !',
+      acceptedAliases: ['mouton', 'bêê', 'agneau'],
+    },
+  },
+  porco: {
+    en: {
+      name: 'Pig',
+      actionDescription: 'The piggy splashes in mud and goes: Oink oink!',
+      promptText: 'Now say: Pig!',
+      acceptedAliases: ['pig', 'oink', 'piglet'],
+    },
+    es: {
+      name: 'Cerdito',
+      actionDescription: '¡El cerdito juega en el lodo y hace: Oink oink!',
+      promptText: '¡Ahora di: Cerdito!',
+      acceptedAliases: ['cerdo', 'cerdito', 'oink'],
+    },
+    de: {
+      name: 'Schwein',
+      actionDescription: 'Das Schweinchen suhlt sich im Schlamm: Oink oink!',
+      promptText: 'Jetzt sprich: Schwein!',
+      acceptedAliases: ['schwein', 'oink'],
+    },
+    fr: {
+      name: 'Cochon',
+      actionDescription: 'Le cochon adore la boue et fait : Groin groin !',
+      promptText: 'Maintenant dis : Cochon !',
+      acceptedAliases: ['cochon', 'groin'],
+    },
+  },
+  leao: {
+    en: {
+      name: 'Lion',
+      actionDescription: 'The king of the jungle roars: Rrrroar!',
+      promptText: 'Now say: Lion!',
+      acceptedAliases: ['lion', 'roar'],
+    },
+    es: {
+      name: 'León',
+      actionDescription: '¡El rey de la selva ruge fuerte: Rrrrugido!',
+      promptText: '¡Ahora di: León!',
+      acceptedAliases: ['leon', 'león', 'rugido'],
+    },
+    de: {
+      name: 'Löwe',
+      actionDescription: 'Der König der Tiere brüllt laut: Brrrülll!',
+      promptText: 'Jetzt sprich: Löwe!',
+      acceptedAliases: ['löwe', 'lowe', 'brüllen'],
+    },
+    fr: {
+      name: 'Lion',
+      actionDescription: 'Le roi de la savane rugit : Roaaar !',
+      promptText: 'Maintenant dis : Lion !',
+      acceptedAliases: ['lion', 'rugissement'],
+    },
+  },
+  elefante: {
+    en: {
+      name: 'Elephant',
+      actionDescription: 'The huge elephant with a long trunk: Pawoo!',
+      promptText: 'Now say: Elephant!',
+      acceptedAliases: ['elephant'],
+    },
+    es: {
+      name: 'Elefante',
+      actionDescription: '¡El gran elefante con su trompa larga!',
+      promptText: '¡Ahora di: Elefante!',
+      acceptedAliases: ['elefante'],
+    },
+    de: {
+      name: 'Elefant',
+      actionDescription: 'Der riesige Elefant mit langem Rüssel: Törööö!',
+      promptText: 'Jetzt sprich: Elefant!',
+      acceptedAliases: ['elefant', 'töröö'],
+    },
+    fr: {
+      name: 'Éléphant',
+      actionDescription: 'Le grand éléphant avec sa longue trompe !',
+      promptText: 'Maintenant dis : Éléphant !',
+      acceptedAliases: ['elephant', 'éléphant'],
+    },
+  },
+  sapo: {
+    en: {
+      name: 'Frog',
+      actionDescription: 'The little green frog hops: Ribbit ribbit!',
+      promptText: 'Now say: Frog!',
+      acceptedAliases: ['frog', 'ribbit', 'toad'],
+    },
+    es: {
+      name: 'Rana',
+      actionDescription: '¡La ranita verde salta alto: Croac croac!',
+      promptText: '¡Ahora di: Rana!',
+      acceptedAliases: ['rana', 'croac', 'sapo'],
+    },
+    de: {
+      name: 'Frosch',
+      actionDescription: 'Der kleine grüne Frosch hüpft: Quak quak!',
+      promptText: 'Jetzt sprich: Frosch!',
+      acceptedAliases: ['frosch', 'quak'],
+    },
+    fr: {
+      name: 'Grenouille',
+      actionDescription: 'La petite grenouille verte saute : Coâ coâ !',
+      promptText: 'Maintenant dis : Grenouille !',
+      acceptedAliases: ['grenouille', 'coa'],
+    },
+  },
+  galo: {
+    en: {
+      name: 'Rooster',
+      actionDescription: 'The rooster wakes everyone up: Cock-a-doodle-doo!',
+      promptText: 'Now say: Rooster!',
+      acceptedAliases: ['rooster', 'cockadoodledoo'],
+    },
+    es: {
+      name: 'Gallo',
+      actionDescription: '¡El gallo despierta a todos: Cocoricó!',
+      promptText: '¡Ahora di: Gallo!',
+      acceptedAliases: ['gallo', 'cocorico'],
+    },
+    de: {
+      name: 'Hahn',
+      actionDescription: 'Der Hahn weckt alle auf: Kikeriki!',
+      promptText: 'Jetzt sprich: Hahn!',
+      acceptedAliases: ['hahn', 'kikeriki'],
+    },
+    fr: {
+      name: 'Coq',
+      actionDescription: 'Le coq réveille la ferme : Cocorico !',
+      promptText: 'Maintenant dis : Coq !',
+      acceptedAliases: ['coq', 'cocorico'],
+    },
+  },
+  cavalo: {
+    en: {
+      name: 'Horse',
+      actionDescription: 'The horse gallops fast: Neigh neigh!',
+      promptText: 'Now say: Horse!',
+      acceptedAliases: ['horse', 'neigh'],
+    },
+    es: {
+      name: 'Caballo',
+      actionDescription: '¡El caballo galopa veloz: Relincho!',
+      promptText: '¡Ahora di: Caballo!',
+      acceptedAliases: ['caballo'],
+    },
+    de: {
+      name: 'Pferd',
+      actionDescription: 'Das Pferd galoppiert schnell: Wieheee!',
+      promptText: 'Jetzt sprich: Pferd!',
+      acceptedAliases: ['pferd', 'wiehern'],
+    },
+    fr: {
+      name: 'Cheval',
+      actionDescription: 'Le cheval galope très vite : Hiiii !',
+      promptText: 'Maintenant dis : Cheval !',
+      acceptedAliases: ['cheval'],
+    },
+  },
+  macaco: {
+    en: {
+      name: 'Monkey',
+      actionDescription: 'The playful monkey swings: Ooh ooh aah aah!',
+      promptText: 'Now say: Monkey!',
+      acceptedAliases: ['monkey', 'ape'],
+    },
+    es: {
+      name: 'Mono',
+      actionDescription: '¡El mono travieso salta: Uh uh ah ah!',
+      promptText: '¡Ahora di: Mono!',
+      acceptedAliases: ['mono', 'monito'],
+    },
+    de: {
+      name: 'Affe',
+      actionDescription: 'Der lustige Affe klettert: Uhu haha!',
+      promptText: 'Jetzt sprich: Affe!',
+      acceptedAliases: ['affe'],
+    },
+    fr: {
+      name: 'Singe',
+      actionDescription: 'Le petit singe sautille : Ouh ouh ah ah !',
+      promptText: 'Maintenant dis : Singe !',
+      acceptedAliases: ['singe'],
+    },
+  },
+  // Dinosaurs
+  rex: {
+    en: {
+      name: 'T-Rex',
+      actionDescription: 'The giant T-Rex roars loud: Roaaar!',
+      promptText: 'Now say: T-Rex!',
+      acceptedAliases: ['trex', 't rex', 'tyrannosaurus', 'rex'],
+    },
+    es: {
+      name: 'T-Rex',
+      actionDescription: '¡El gran T-Rex ruge fuerte: Rrrrugido!',
+      promptText: '¡Ahora di: T-Rex!',
+      acceptedAliases: ['trex', 't rex', 'rex'],
+    },
+    de: {
+      name: 'T-Rex',
+      actionDescription: 'Der riesige T-Rex brüllt mächtig: Roaaar!',
+      promptText: 'Jetzt sprich: T-Rex!',
+      acceptedAliases: ['trex', 't rex', 'rex'],
+    },
+    fr: {
+      name: 'T-Rex',
+      actionDescription: 'Le grand T-Rex rugit : Roaaar !',
+      promptText: 'Maintenant dis : T-Rex !',
+      acceptedAliases: ['trex', 't rex', 'rex'],
+    },
+  },
+  triceratops: {
+    en: {
+      name: 'Triceratops',
+      actionDescription: 'Dino with three horns and a huge shield!',
+      promptText: 'Now say: Triceratops!',
+      acceptedAliases: ['triceratops', 'trike'],
+    },
+    es: {
+      name: 'Triceratops',
+      actionDescription: '¡Dino con tres cuernos y gran escudo!',
+      promptText: '¡Ahora di: Triceratops!',
+      acceptedAliases: ['triceratops'],
+    },
+    de: {
+      name: 'Triceratops',
+      actionDescription: 'Dino mit drei Hörnern und großem Schild!',
+      promptText: 'Jetzt sprich: Triceratops!',
+      acceptedAliases: ['triceratops'],
+    },
+    fr: {
+      name: 'Tricératops',
+      actionDescription: 'Dino avec trois cornes et un grand bouclier !',
+      promptText: 'Maintenant dis : Tricératops !',
+      acceptedAliases: ['triceratops', 'tricératops'],
+    },
+  },
+  pterodactilo: {
+    en: {
+      name: 'Pterodactyl',
+      actionDescription: 'Flying reptile soaring through prehistoric skies!',
+      promptText: 'Now say: Pterodactyl!',
+      acceptedAliases: ['pterodactyl', 'ptero'],
+    },
+    es: {
+      name: 'Pterodáctilo',
+      actionDescription: '¡Reptil volador surcando los cielos prehistóricos!',
+      promptText: '¡Ahora di: Pterodáctilo!',
+      acceptedAliases: ['pterodactilo', 'pterodáctilo'],
+    },
+    de: {
+      name: 'Flugsaurier',
+      actionDescription: 'Fliegender Saurier, der durch die Urzeitlüfte gleitet!',
+      promptText: 'Jetzt sprich: Flugsaurier!',
+      acceptedAliases: ['flugsaurier', 'pterodactylus'],
+    },
+    fr: {
+      name: 'Ptérodactyle',
+      actionDescription: 'Reptile volant planant dans le ciel préhistorique !',
+      promptText: 'Maintenant dis : Ptérodactyle !',
+      acceptedAliases: ['pterodactyle', 'ptérodactyle'],
+    },
+  },
+  // Fruits
+  maca: {
+    en: {
+      name: 'Apple',
+      actionDescription: 'Sweet and crunchy red apple!',
+      promptText: 'Now say: Apple!',
+      acceptedAliases: ['apple', 'red apple'],
+    },
+    es: {
+      name: 'Manzana',
+      actionDescription: '¡Manzana roja, dulce y crujiente!',
+      promptText: '¡Ahora di: Manzana!',
+      acceptedAliases: ['manzana'],
+    },
+    de: {
+      name: 'Apfel',
+      actionDescription: 'Knackiger, süßer roter Apfel!',
+      promptText: 'Jetzt sprich: Apfel!',
+      acceptedAliases: ['apfel'],
+    },
+    fr: {
+      name: 'Pomme',
+      actionDescription: 'Pomme rouge croquante et sucrée !',
+      promptText: 'Maintenant dis : Pomme !',
+      acceptedAliases: ['pomme'],
+    },
+  },
+  banana: {
+    en: {
+      name: 'Banana',
+      actionDescription: 'Yellow, sweet and easy to peel!',
+      promptText: 'Now say: Banana!',
+      acceptedAliases: ['banana'],
+    },
+    es: {
+      name: 'Plátano',
+      actionDescription: '¡Amarillo, dulce y fácil de pelar!',
+      promptText: '¡Ahora di: Plátano!',
+      acceptedAliases: ['platano', 'plátano', 'banana'],
+    },
+    de: {
+      name: 'Banane',
+      actionDescription: 'Gelbe, süße und leckere Banane!',
+      promptText: 'Jetzt sprich: Banane!',
+      acceptedAliases: ['banane'],
+    },
+    fr: {
+      name: 'Banane',
+      actionDescription: 'Jaune, douce et facile à éplucher !',
+      promptText: 'Maintenant dis : Banane !',
+      acceptedAliases: ['banane'],
+    },
+  },
+  morango: {
+    en: {
+      name: 'Strawberry',
+      actionDescription: 'Juicy red strawberry with tiny seeds!',
+      promptText: 'Now say: Strawberry!',
+      acceptedAliases: ['strawberry', 'berry'],
+    },
+    es: {
+      name: 'Fresa',
+      actionDescription: '¡Fresa roja jugosa y muy rica!',
+      promptText: '¡Ahora di: Fresa!',
+      acceptedAliases: ['fresa', 'frutilla'],
+    },
+    de: {
+      name: 'Erdbeere',
+      actionDescription: 'Süße, rote und saftige Erdbeere!',
+      promptText: 'Jetzt sprich: Erdbeere!',
+      acceptedAliases: ['erdbeere'],
+    },
+    fr: {
+      name: 'Fraise',
+      actionDescription: 'Fraise rouge, juteuse et parfumée !',
+      promptText: 'Maintenant dis : Fraise !',
+      acceptedAliases: ['fraise'],
+    },
+  },
+  uva: {
+    en: {
+      name: 'Grape',
+      actionDescription: 'Sweet purple grapes in bunches!',
+      promptText: 'Now say: Grape!',
+      acceptedAliases: ['grape', 'grapes'],
+    },
+    es: {
+      name: 'Uva',
+      actionDescription: '¡Uvas moradas deliciosas en racimos!',
+      promptText: '¡Ahora di: Uva!',
+      acceptedAliases: ['uva', 'uvas'],
+    },
+    de: {
+      name: 'Traube',
+      actionDescription: 'Süße lila Trauben am Strauch!',
+      promptText: 'Jetzt sprich: Traube!',
+      acceptedAliases: ['traube', 'trauben'],
+    },
+    fr: {
+      name: 'Raisin',
+      actionDescription: 'Délicieuses petites billes de raisin violet !',
+      promptText: 'Maintenant dis : Raisin !',
+      acceptedAliases: ['raisin'],
+    },
+  },
+  laranja: {
+    en: {
+      name: 'Orange',
+      actionDescription: 'Citrusy, sunny orange fruit full of vitamin C!',
+      promptText: 'Now say: Orange!',
+      acceptedAliases: ['orange'],
+    },
+    es: {
+      name: 'Naranja',
+      actionDescription: '¡Naranja jugosa llena de vitamina C!',
+      promptText: '¡Ahora di: Naranja!',
+      acceptedAliases: ['naranja'],
+    },
+    de: {
+      name: 'Orange',
+      actionDescription: 'Saftige fruchtige Orange voller Vitamine!',
+      promptText: 'Jetzt sprich: Orange!',
+      acceptedAliases: ['orange', 'apfelsine'],
+    },
+    fr: {
+      name: 'Orange',
+      actionDescription: 'Orange juteuse et pleine de vitamines !',
+      promptText: 'Maintenant dis : Orange !',
+      acceptedAliases: ['orange'],
+    },
+  },
+  // Colors
+  azul: {
+    en: {
+      name: 'Blue',
+      actionDescription: 'The color of the sky and the deep ocean!',
+      promptText: 'Now say: Blue!',
+      acceptedAliases: ['blue'],
+    },
+    es: {
+      name: 'Azul',
+      actionDescription: '¡El color del cielo y del mar profundo!',
+      promptText: '¡Ahora di: Azul!',
+      acceptedAliases: ['azul'],
+    },
+    de: {
+      name: 'Blau',
+      actionDescription: 'Die Farbe des Himmels und des Meeres!',
+      promptText: 'Jetzt sprich: Blau!',
+      acceptedAliases: ['blau'],
+    },
+    fr: {
+      name: 'Bleu',
+      actionDescription: 'La couleur du ciel et de la mer !',
+      promptText: 'Maintenant dis : Bleu !',
+      acceptedAliases: ['bleu'],
+    },
+  },
+  vermelho: {
+    en: {
+      name: 'Red',
+      actionDescription: 'The vibrant color of apples and hearts!',
+      promptText: 'Now say: Red!',
+      acceptedAliases: ['red'],
+    },
+    es: {
+      name: 'Rojo',
+      actionDescription: '¡El color brillante del corazón y las manzanas!',
+      promptText: '¡Ahora di: Rojo!',
+      acceptedAliases: ['rojo'],
+    },
+    de: {
+      name: 'Rot',
+      actionDescription: 'Die leuchtende Farbe von Äpfeln und Herzen!',
+      promptText: 'Jetzt sprich: Rot!',
+      acceptedAliases: ['rot'],
+    },
+    fr: {
+      name: 'Rouge',
+      actionDescription: 'La belle couleur des fraises et des cœurs !',
+      promptText: 'Maintenant dis : Rouge !',
+      acceptedAliases: ['rouge'],
+    },
+  },
+  amarelo: {
+    en: {
+      name: 'Yellow',
+      actionDescription: 'The radiant color of the warm sun!',
+      promptText: 'Now say: Yellow!',
+      acceptedAliases: ['yellow'],
+    },
+    es: {
+      name: 'Amarillo',
+      actionDescription: '¡El color radiante del sol brillante!',
+      promptText: '¡Ahora di: Amarillo!',
+      acceptedAliases: ['amarillo'],
+    },
+    de: {
+      name: 'Gelb',
+      actionDescription: 'Die strahlende Farbe der warmen Sonne!',
+      promptText: 'Jetzt sprich: Gelb!',
+      acceptedAliases: ['gelb'],
+    },
+    fr: {
+      name: 'Jaune',
+      actionDescription: 'La couleur éclatante du grand soleil !',
+      promptText: 'Maintenant dis : Jaune !',
+      acceptedAliases: ['jaune'],
+    },
+  },
+  verde: {
+    en: {
+      name: 'Green',
+      actionDescription: 'The fresh color of leaves and forest trees!',
+      promptText: 'Now say: Green!',
+      acceptedAliases: ['green'],
+    },
+    es: {
+      name: 'Verde',
+      actionDescription: '¡El color fresco de las hojas y la naturaleza!',
+      promptText: '¡Ahora di: Verde!',
+      acceptedAliases: ['verde'],
+    },
+    de: {
+      name: 'Grün',
+      actionDescription: 'Die frische Farbe der Blätter und Wiesen!',
+      promptText: 'Jetzt sprich: Grün!',
+      acceptedAliases: ['grün', 'gruen'],
+    },
+    fr: {
+      name: 'Vert',
+      actionDescription: 'La fraîche couleur des feuilles et des arbres !',
+      promptText: 'Maintenant dis : Vert !',
+      acceptedAliases: ['vert'],
+    },
+  },
+  rosa: {
+    en: {
+      name: 'Pink',
+      actionDescription: 'The gentle color of sweet flowers and flamingos!',
+      promptText: 'Now say: Pink!',
+      acceptedAliases: ['pink'],
+    },
+    es: {
+      name: 'Rosa',
+      actionDescription: '¡El color suave de las flores y los flamencos!',
+      promptText: '¡Ahora di: Rosa!',
+      acceptedAliases: ['rosa', 'rosado'],
+    },
+    de: {
+      name: 'Rosa',
+      actionDescription: 'Die sanfte Farbe schöner Blumen!',
+      promptText: 'Jetzt sprich: Rosa!',
+      acceptedAliases: ['rosa', 'pink'],
+    },
+    fr: {
+      name: 'Rose',
+      actionDescription: 'La douce couleur des jolies fleurs !',
+      promptText: 'Maintenant dis : Rose !',
+      acceptedAliases: ['rose'],
+    },
+  },
+  // Body parts
+  olhos: {
+    en: {
+      name: 'Eyes',
+      actionDescription: 'Two bright eyes to see the world around you!',
+      promptText: 'Now say: Eyes!',
+      acceptedAliases: ['eyes', 'eye'],
+    },
+    es: {
+      name: 'Ojos',
+      actionDescription: '¡Dos ojitos para mirar todo a tu alrededor!',
+      promptText: '¡Ahora di: Ojos!',
+      acceptedAliases: ['ojos', 'ojo'],
+    },
+    de: {
+      name: 'Augen',
+      actionDescription: 'Zwei leuchtende Augen, um die Welt zu sehen!',
+      promptText: 'Jetzt sprich: Augen!',
+      acceptedAliases: ['augen', 'auge'],
+    },
+    fr: {
+      name: 'Yeux',
+      actionDescription: 'Deux jolis yeux pour voir le monde !',
+      promptText: 'Maintenant dis : Yeux !',
+      acceptedAliases: ['yeux', 'oeil', 'œil'],
+    },
+  },
+  boca: {
+    en: {
+      name: 'Mouth',
+      actionDescription: 'To smile, eat yummy food and talk!',
+      promptText: 'Now say: Mouth!',
+      acceptedAliases: ['mouth'],
+    },
+    es: {
+      name: 'Boca',
+      actionDescription: '¡Para sonreír, hablar y comer rico!',
+      promptText: '¡Ahora di: Boca!',
+      acceptedAliases: ['boca'],
+    },
+    de: {
+      name: 'Mund',
+      actionDescription: 'Zum Lächeln, Sprechen und Essen!',
+      promptText: 'Jetzt sprich: Mund!',
+      acceptedAliases: ['mund'],
+    },
+    fr: {
+      name: 'Bouche',
+      actionDescription: 'Pour sourire, parler et savourer !',
+      promptText: 'Maintenant dis : Bouche !',
+      acceptedAliases: ['bouche'],
+    },
+  },
+  maos: {
+    en: {
+      name: 'Hands',
+      actionDescription: 'Hands to clap, wave and hug!',
+      promptText: 'Now say: Hands!',
+      acceptedAliases: ['hands', 'hand'],
+    },
+    es: {
+      name: 'Manos',
+      actionDescription: '¡Manitas para aplaudir, saludar y abrazar!',
+      promptText: '¡Ahora di: Manos!',
+      acceptedAliases: ['manos', 'mano'],
+    },
+    de: {
+      name: 'Hände',
+      actionDescription: 'Hände zum Klatschen, Winken und Halten!',
+      promptText: 'Jetzt sprich: Hände!',
+      acceptedAliases: ['hände', 'haende', 'hand'],
+    },
+    fr: {
+      name: 'Mains',
+      actionDescription: 'Des petites mains pour applaudir et faire des coucous !',
+      promptText: 'Maintenant dis : Mains !',
+      acceptedAliases: ['mains', 'main'],
+    },
+  },
+  pes: {
+    en: {
+      name: 'Feet',
+      actionDescription: 'Two feet to run, jump and dance!',
+      promptText: 'Now say: Feet!',
+      acceptedAliases: ['feet', 'foot'],
+    },
+    es: {
+      name: 'Pies',
+      actionDescription: '¡Piecitos para correr, saltar y bailar!',
+      promptText: '¡Ahora di: Pies!',
+      acceptedAliases: ['pies', 'pie'],
+    },
+    de: {
+      name: 'Füße',
+      actionDescription: 'Füße zum Laufen, Springen und Tanzen!',
+      promptText: 'Jetzt sprich: Füße!',
+      acceptedAliases: ['füße', 'fuesse', 'fuss'],
+    },
+    fr: {
+      name: 'Pieds',
+      actionDescription: 'Des petits pieds pour courir et sauter partout !',
+      promptText: 'Maintenant dis : Pieds !',
+      acceptedAliases: ['pieds', 'pied'],
+    },
+  },
+  // Numbers 1 to 5
+  um: {
+    en: {
+      name: 'One',
+      actionDescription: 'Number 1: One bright shining star!',
+      promptText: 'Now say: One!',
+      acceptedAliases: ['one', '1'],
+    },
+    es: {
+      name: 'Uno',
+      actionDescription: 'Número 1: ¡Una estrella brillante!',
+      promptText: '¡Ahora di: Uno!',
+      acceptedAliases: ['uno', '1'],
+    },
+    de: {
+      name: 'Eins',
+      actionDescription: 'Nummer 1: Ein strahlender Stern!',
+      promptText: 'Jetzt sprich: Eins!',
+      acceptedAliases: ['eins', '1'],
+    },
+    fr: {
+      name: 'Un',
+      actionDescription: 'Numéro 1 : Une jolie étoile brillante !',
+      promptText: 'Maintenant dis : Un !',
+      acceptedAliases: ['un', '1'],
+    },
+  },
+  dois: {
+    en: {
+      name: 'Two',
+      actionDescription: 'Number 2: Two little birds singing!',
+      promptText: 'Now say: Two!',
+      acceptedAliases: ['two', '2'],
+    },
+    es: {
+      name: 'Dos',
+      actionDescription: 'Número 2: ¡Dos pajaritos cantando!',
+      promptText: '¡Ahora di: Dos!',
+      acceptedAliases: ['dos', '2'],
+    },
+    de: {
+      name: 'Zwei',
+      actionDescription: 'Nummer 2: Zwei kleine Vögel singen!',
+      promptText: 'Jetzt sprich: Zwei!',
+      acceptedAliases: ['zwei', '2'],
+    },
+    fr: {
+      name: 'Deux',
+      actionDescription: 'Numéro 2 : Deux petits oiseaux qui chantent !',
+      promptText: 'Maintenant dis : Deux !',
+      acceptedAliases: ['deux', '2'],
+    },
+  },
+  tres: {
+    en: {
+      name: 'Three',
+      actionDescription: 'Number 3: Three colorful balloons in the sky!',
+      promptText: 'Now say: Three!',
+      acceptedAliases: ['three', '3'],
+    },
+    es: {
+      name: 'Tres',
+      actionDescription: 'Número 3: ¡Tres globos de colores!',
+      promptText: '¡Ahora di: Tres!',
+      acceptedAliases: ['tres', '3'],
+    },
+    de: {
+      name: 'Drei',
+      actionDescription: 'Nummer 3: Drei bunte Luftballons!',
+      promptText: 'Jetzt sprich: Drei!',
+      acceptedAliases: ['drei', '3'],
+    },
+    fr: {
+      name: 'Trois',
+      actionDescription: 'Numéro 3 : Trois ballons colorés !',
+      promptText: 'Maintenant dis : Trois !',
+      acceptedAliases: ['trois', '3'],
+    },
+  },
+}
+
+export function getItemsByCategory(
+  categoryId: string,
+  lang: AppLanguage = 'pt-BR',
+): CategoryItem[] {
+  const items = ALL_CATEGORY_ITEMS[categoryId] || FARM_ANIMALS
+  return items.map((it) => getLocalizedItem(it, lang))
+}
+
+export function getAllItems(lang: AppLanguage = 'pt-BR'): CategoryItem[] {
+  const all = [...FARM_ANIMALS, ...DINOSAURS, ...FRUITS, ...COLORS, ...BODY_PARTS, ...NUMBERS]
+  return all.map((it) => getLocalizedItem(it, lang))
 }

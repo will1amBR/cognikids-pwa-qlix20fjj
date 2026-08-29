@@ -1,3 +1,27 @@
+export type AppLanguage = 'pt-BR' | 'en' | 'es' | 'de' | 'fr'
+
+export interface LanguageOption {
+  code: AppLanguage
+  label: string
+  nativeName: string
+  flag: string
+  speechLang: string
+}
+
+export const SUPPORTED_LANGUAGES: LanguageOption[] = [
+  {
+    code: 'pt-BR',
+    label: 'Português',
+    nativeName: 'Português (Brasil)',
+    flag: '🇧🇷',
+    speechLang: 'pt-BR',
+  },
+  { code: 'en', label: 'Inglês', nativeName: 'English', flag: '🇺🇸', speechLang: 'en-US' },
+  { code: 'es', label: 'Espanhol', nativeName: 'Español', flag: '🇪🇸', speechLang: 'es-ES' },
+  { code: 'de', label: 'Alemão', nativeName: 'Deutsch', flag: '🇩🇪', speechLang: 'de-DE' },
+  { code: 'fr', label: 'Francês', nativeName: 'Français', flag: '🇫🇷', speechLang: 'fr-FR' },
+]
+
 export interface Child {
   id: string
   user_id: string
@@ -8,6 +32,8 @@ export interface Child {
   class_group?: string
   daily_minutes?: number
   daily_activity_count?: number
+  learning_languages?: AppLanguage[] | string[]
+  primary_language?: AppLanguage | string
   created?: string
   updated?: string
 }
@@ -24,6 +50,7 @@ export interface GameSession {
   accuracy: number
   rounds_completed: number
   total_rounds: number
+  language?: string
   details?: Record<string, any>
   created: string
 }
@@ -585,8 +612,46 @@ export function calculateAgeMonths(birthDateStr: string): number {
   return Math.max(0, months)
 }
 
-export function formatChildAge(birthDateStr: string): string {
+export function formatChildAge(birthDateStr: string, lang: AppLanguage = 'pt-BR'): string {
   const months = calculateAgeMonths(birthDateStr)
+
+  if (lang === 'en') {
+    if (months < 1) return 'Newborn'
+    if (months < 12) return `${months} ${months === 1 ? 'month' : 'months'}`
+    const years = Math.floor(months / 12)
+    const remMonths = months % 12
+    if (remMonths === 0) return `${years} ${years === 1 ? 'year' : 'years'}`
+    return `${years} ${years === 1 ? 'yr' : 'yrs'} and ${remMonths} ${remMonths === 1 ? 'mo' : 'mos'}`
+  }
+
+  if (lang === 'es') {
+    if (months < 1) return 'Recién nacido'
+    if (months < 12) return `${months} ${months === 1 ? 'mes' : 'meses'}`
+    const years = Math.floor(months / 12)
+    const remMonths = months % 12
+    if (remMonths === 0) return `${years} ${years === 1 ? 'año' : 'años'}`
+    return `${years} ${years === 1 ? 'año' : 'años'} y ${remMonths} ${remMonths === 1 ? 'mes' : 'meses'}`
+  }
+
+  if (lang === 'de') {
+    if (months < 1) return 'Neugeborenes'
+    if (months < 12) return `${months} ${months === 1 ? 'Monat' : 'Monate'}`
+    const years = Math.floor(months / 12)
+    const remMonths = months % 12
+    if (remMonths === 0) return `${years} ${years === 1 ? 'Jahr' : 'Jahre'}`
+    return `${years} ${years === 1 ? 'Jahr' : 'Jahre'} und ${remMonths} ${remMonths === 1 ? 'Monat' : 'Monate'}`
+  }
+
+  if (lang === 'fr') {
+    if (months < 1) return 'Nouveau-né'
+    if (months < 12) return `${months} ${months === 1 ? 'mois' : 'mois'}`
+    const years = Math.floor(months / 12)
+    const remMonths = months % 12
+    if (remMonths === 0) return `${years} ${years === 1 ? 'an' : 'ans'}`
+    return `${years} ${years === 1 ? 'an' : 'ans'} et ${remMonths} ${remMonths === 1 ? 'mois' : 'mois'}`
+  }
+
+  // Default pt-BR
   if (months < 1) return 'Recém-nascido'
   if (months < 12) return `${months} ${months === 1 ? 'mês' : 'meses'}`
 

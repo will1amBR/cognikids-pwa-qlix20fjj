@@ -83,7 +83,20 @@ export class SpeechRecognitionService {
     )
   }
 
+  public setLanguage(lang: string): void {
+    if (this.recognition) {
+      let code = lang
+      if (lang === 'en') code = 'en-US'
+      else if (lang === 'es') code = 'es-ES'
+      else if (lang === 'de') code = 'de-DE'
+      else if (lang === 'fr') code = 'fr-FR'
+      else if (lang === 'pt') code = 'pt-BR'
+      this.recognition.lang = code
+    }
+  }
+
   public async startListening(callbacks: {
+    lang?: string
     onResult: RecognitionCallback
     onError?: ErrorCallback
     onEnd?: () => void
@@ -95,6 +108,10 @@ export class SpeechRecognitionService {
 
     if (this.isListening) {
       this.stopListening()
+    }
+
+    if (callbacks.lang) {
+      this.setLanguage(callbacks.lang)
     }
 
     // Try SpeechRecognition if available

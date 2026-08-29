@@ -11,6 +11,7 @@ export function generateEvolutionPdf(
   child: Child,
   summary: EvolutionSummary,
   achievements: ChildAchievement[] = [],
+  lang: string = 'pt-BR',
 ) {
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
@@ -20,11 +21,22 @@ export function generateEvolutionPdf(
 
   const periodLabel =
     summary.period === 'week' ? 'Semanal (Últimos 7 dias)' : 'Mensal (Últimos 30 dias)'
-  const formattedDate = new Date().toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
+  const formattedDate = new Date().toLocaleDateString(
+    lang === 'en'
+      ? 'en-US'
+      : lang === 'es'
+        ? 'es-ES'
+        : lang === 'de'
+          ? 'de-DE'
+          : lang === 'fr'
+            ? 'fr-FR'
+            : 'pt-BR',
+    {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    },
+  )
 
   const html = `
 <!DOCTYPE html>
@@ -253,8 +265,9 @@ export function generateEvolutionPdf(
     <div class="child-info">
       <h2>${child.name}</h2>
       <p>
-        <strong>Idade:</strong> ${formatChildAge(child.birth_date)} 
-        ${child.class_group ? `• <strong>Turma:</strong> ${child.class_group}` : ''}
+        <strong>Idade:</strong> ${formatChildAge(child.birth_date, lang as any)} 
+        ${child.primary_language ? `• <strong>Idioma:</strong> ${child.primary_language}` : ''}
+        ${child.learning_languages && Array.isArray(child.learning_languages) ? ` (${child.learning_languages.join(', ')})` : ''}
         • <strong>Rotina diária:</strong> ${child.daily_minutes || 15} min (${child.daily_activity_count || 3} atividades)
       </p>
     </div>
@@ -285,26 +298,31 @@ export function generateEvolutionPdf(
     </div>
   </div>
 
-  <!-- Assimilation By Dimension -->
+  <!-- Assimilation By Dimension & Status (Indo Bem vs Precisa Melhorar) -->
   <div class="section-title">
-    <span>🧠 Assimilação nas 5 Dimensões Cognitivas</span>
+    <span>🧠 Assimilação nas 5 Dimensões & Status de Desenvolvimento</span>
   </div>
 
   <div>
     ${summary.moduleBreakdown
-      .map(
-        (mod) => `
+      .map((mod) => {
+        const isDoingWell = mod.currentMastery >= 60
+        const statusBadge = isDoingWell
+          ? '<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 12px; font-size: 8pt; font-weight: 800;">✓ INDO BEM</span>'
+          : '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 8pt; font-weight: 800;">⚠️ PRECISA MELHORAR</span>'
+
+        return `
       <div class="module-row">
         <div class="module-header">
-          <span>${mod.icon} ${mod.title}</span>
+          <span>${mod.icon} ${mod.title} ${statusBadge}</span>
           <span><strong>${mod.currentMastery}%</strong> (${mod.delta >= 0 ? `+${mod.delta}%` : `${mod.delta}%`})</span>
         </div>
         <div class="progress-track">
           <div class="progress-bar" style="width: ${mod.currentMastery}%; background-color: ${mod.color};"></div>
         </div>
       </div>
-    `,
-      )
+    `
+      })
       .join('')}
   </div>
 

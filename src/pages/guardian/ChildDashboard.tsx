@@ -11,6 +11,8 @@ import type { Child, ChildAchievement, BadgeDefinition } from '@/types/cognikids
 import { COGNIKIDS_MODULES, COGNIKIDS_BADGES, formatChildAge } from '@/types/cognikids'
 import { BrainFlower } from '@/components/progress/BrainFlower'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { computeChildDevelopmentDiagnostic } from '@/lib/developmentDiagnostic'
+import { useLanguage } from '@/context/LanguageContext'
 import { Button } from '@/components/ui/button'
 import {
   Gamepad2,
@@ -42,6 +44,7 @@ export const ChildDashboardPage: React.FC = () => {
   const { childId } = useParams()
   const navigate = useNavigate()
   const { playPop } = useSound()
+  const { language, t } = useLanguage()
 
   const [child, setChild] = useState<Child | null>(null)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
@@ -114,6 +117,7 @@ export const ChildDashboardPage: React.FC = () => {
   }
 
   const avatarUrl = getChildAvatarUrl(child)
+  const diagnostic = computeChildDevelopmentDiagnostic(progressMap, language)
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
@@ -143,12 +147,17 @@ export const ChildDashboardPage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-800">{child.name}</h1>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-orange-100 text-orange-800">
-                  {formatChildAge(child.birth_date)}
+                  {formatChildAge(child.birth_date, language)}
                 </span>
                 {child.daily_minutes && (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-orange-500" />
                     <span>{child.daily_minutes} min/dia</span>
+                  </span>
+                )}
+                {child.primary_language && (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 flex items-center gap-1">
+                    <span>🗣️ {child.primary_language}</span>
                   </span>
                 )}
               </div>
@@ -199,6 +208,115 @@ export const ChildDashboardPage: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Status de Desenvolvimento: "Indo Bem" vs "Precisa Melhorar" */}
+      <div
+        className={`rounded-3xl p-6 border transition-all ${
+          diagnostic.overallStatus === 'doing_well'
+            ? 'bg-gradient-to-br from-emerald-500/10 via-emerald-50/50 to-teal-50/50 border-emerald-200'
+            : 'bg-gradient-to-br from-amber-500/10 via-amber-50/50 to-orange-50/50 border-amber-200'
+        }`}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 shadow-sm ${
+                diagnostic.overallStatus === 'doing_well'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-amber-500 text-white'
+              }`}
+            >
+              {diagnostic.overallStatus === 'doing_well' ? '🌟' : '🎯'}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-black text-slate-800">
+                  {diagnostic.statusLabel}
+                </h2>
+                <span
+                  className={`text-xs font-extrabold px-3 py-0.5 rounded-full ${
+                    diagnostic.overallStatus === 'doing_well'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  }`}
+                >
+                  {diagnostic.overallScore}% de Assimilação Geral
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+                {diagnostic.summary}
+              </p>
+            </div>
+          </div>
+
+          <Link to={`/app/reports/${child.id}`}>
+            <Button
+              variant="outline"
+              className="rounded-2xl border-slate-300 hover:bg-white text-xs font-bold shrink-0"
+            >
+              Ver relatório completo
+            </Button>
+          </Link>
+        </div>
+
+        {/* Diagnóstico e Como Subir de Nível por Área */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-5 pt-4 border-t border-slate-200/60">
+          {diagnostic.areas.map((area) => (
+            <div
+              key={area.moduleId}
+              className={`p-4 rounded-2xl border bg-white/95 shadow-xs flex flex-col justify-between ${
+                area.status === 'doing_well' ? 'border-emerald-200' : 'border-amber-200'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <span>{area.statusIcon}</span>
+                    <span>{area.moduleName}</span>
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                      area.status === 'doing_well'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-amber-100 text-amber-700'
+                    }`}
+                  >
+                    {area.score}%
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-snug">{area.summary}</p>
+
+                <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    💡 Reforço em casa:
+                  </p>
+                  <p className="text-[11px] text-slate-700 font-medium mt-0.5">
+                    {area.levelUpTips.homeReinforcement}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400">
+                  {area.status === 'doing_well' ? '✓ No ritmo esperado' : '⚠️ Foco de estímulo'}
+                </span>
+                <button
+                  onClick={() => {
+                    const mod = COGNIKIDS_MODULES.find((m) => m.id === area.moduleId)
+                    if (mod && mod.activities[0]) {
+                      handleSelectActivity(mod.activities[0].id)
+                    }
+                  }}
+                  className="text-[11px] font-bold text-orange-600 hover:text-orange-700 hover:underline"
+                >
+                  Jogar agora →
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

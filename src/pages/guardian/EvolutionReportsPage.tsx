@@ -11,6 +11,8 @@ import type { Child, EvolutionSummary, ChildAchievement } from '@/types/cognikid
 import { generateEvolutionPdf } from '@/lib/pdfReport'
 import { formatChildAge, COGNIKIDS_MODULES } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { evaluateModuleDevelopment } from '@/lib/developmentDiagnostic'
+import { useLanguage } from '@/context/LanguageContext'
 import { Button } from '@/components/ui/button'
 import { useSound } from '@/context/SoundContext'
 import {
@@ -41,6 +43,7 @@ export const EvolutionReportsPage: React.FC = () => {
   const { childId } = useParams()
   const navigate = useNavigate()
   const { playPop, playStarReward } = useSound()
+  const { language, t } = useLanguage()
 
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
@@ -77,7 +80,7 @@ export const EvolutionReportsPage: React.FC = () => {
     if (!selectedChild || !summary) return
     playStarReward(2)
     setIsExporting(true)
-    generateEvolutionPdf(selectedChild, summary, achievements)
+    generateEvolutionPdf(selectedChild, summary, achievements, language)
     setTimeout(() => setIsExporting(false), 1000)
   }
 
@@ -466,15 +469,16 @@ export const EvolutionReportsPage: React.FC = () => {
               {COGNIKIDS_MODULES.map((mod) => {
                 const modSummary = summary?.moduleBreakdown.find((m) => m.moduleId === mod.id)
                 const currentMastery = modSummary?.currentMastery || 50
-                const isPriority = currentMastery < 65
+                const diag = evaluateModuleDevelopment(mod.id, currentMastery, language)
+                const isDoingWell = diag.status === 'doing_well'
 
                 return (
                   <div
                     key={mod.id}
                     className={`rounded-3xl p-5 border-2 flex flex-col justify-between transition-all ${
-                      isPriority
-                        ? 'bg-amber-50/40 border-amber-300 shadow-sm'
-                        : 'bg-slate-50/60 border-slate-200/80'
+                      isDoingWell
+                        ? 'bg-emerald-50/40 border-emerald-300 shadow-sm'
+                        : 'bg-amber-50/50 border-amber-300 shadow-sm'
                     }`}
                   >
                     <div>
@@ -490,32 +494,31 @@ export const EvolutionReportsPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {isPriority ? (
-                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 shrink-0">
-                            Foco Prioritário
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
-                            Em Boa Evolução
-                          </span>
-                        )}
+                        <span
+                          className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                            isDoingWell
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}
+                        >
+                          {diag.statusLabel}
+                        </span>
                       </div>
 
-                      {/* Content Description */}
-                      <p className="text-xs text-slate-600 mb-3 leading-relaxed">
-                        {isPriority
-                          ? `Área com maior margem de crescimento no momento. Estimular com brincadeiras curtas em casa:`
-                          : `Ótima assimilação! Para consolidar e avançar para desafios mais complexos:`}
+                      {/* Diagnostic Summary */}
+                      <p className="text-xs text-slate-700 font-medium mb-2.5 leading-relaxed">
+                        {diag.summary}
                       </p>
 
-                      {/* Home Activities Tips */}
-                      <div className="space-y-2 bg-white/90 p-3 rounded-2xl border border-slate-200/60 text-xs">
-                        {mod.themes[0]?.homeTips.slice(0, 2).map((tip, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-slate-700">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                            <span className="leading-snug">{tip}</span>
-                          </div>
-                        ))}
+                      {/* Level Up & Home Activities Tips */}
+                      <div className="space-y-2 bg-white/95 p-3 rounded-2xl border border-slate-200/80 text-xs">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          {isDoingWell ? '🚀 Para subir ainda mais:' : '🎯 Como subir de nível:'}
+                        </p>
+                        <div className="flex items-start gap-2 text-slate-800">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                          <span className="leading-snug">{diag.levelUpTips.homeReinforcement}</span>
+                        </div>
                       </div>
                     </div>
 

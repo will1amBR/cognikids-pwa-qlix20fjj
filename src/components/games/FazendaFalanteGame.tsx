@@ -9,6 +9,9 @@ import { speechRecognitionService } from '@/lib/speechRecognition'
 import { evaluateSpeechAccuracy, EvaluationResult } from '@/lib/fuzzyMatching'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { useSound } from '@/context/SoundContext'
+import { useLanguage } from '@/context/LanguageContext'
+import type { AppLanguage } from '@/types/cognikids'
+import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import {
   Mic,
   Star,
@@ -18,7 +21,7 @@ import {
   RotateCcw,
   Check,
   Trophy,
-  Filter,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
@@ -32,6 +35,26 @@ type StepState = 'intro' | 'listening' | 'evaluating' | 'feedback' | 'completed'
 export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child }) => {
   const navigate = useNavigate()
   const { playPop, playStarReward, playVictory, playAnimalSound } = useSound()
+  const { language: uiLang, t } = useLanguage()
+
+  // Language state for this game
+  const [gameLanguage, setGameLanguage] = useState<AppLanguage>(() => {
+    if (
+      child.primary_language &&
+      SUPPORTED_LANGUAGES.some((l) => l.code === child.primary_language)
+    ) {
+      return child.primary_language as AppLanguage
+    }
+    if (
+      child.learning_languages &&
+      Array.isArray(child.learning_languages) &&
+      child.learning_languages.length > 0
+    ) {
+      const first = child.learning_languages[0] as AppLanguage
+      if (SUPPORTED_LANGUAGES.some((l) => l.code === first)) return first
+    }
+    return uiLang
+  })
 
   const childAgeMonths = calculateAgeMonths(child.birth_date)
   const [selectedCategory, setSelectedCategory] = useState<string>('farm')
@@ -54,9 +77,9 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
 
   const isMountedRef = useRef(true)
 
-  // Initialize rounds when category changes or component mounts
+  // Initialize rounds when category changes, language changes or component mounts
   useEffect(() => {
-    const items = getItemsByCategory(selectedCategory)
+    const items = getItemsByCategory(selectedCategory, gameLanguage)
     // Filter by child age if possible, or fallback to all in category
     const ageAppropriate = items.filter((i) => i.minAgeMonths <= childAgeMonths + 6)
     const pool = ageAppropriate.length >= 3 ? ageAppropriate : items
@@ -65,7 +88,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setCurrentRoundIdx(0)
     setSessionResults([])
     setStep('intro')
-  }, [selectedCategory, childAgeMonths, totalRounds])
+  }, [selectedCategory, childAgeMonths, totalRounds, gameLanguage])
 
   const currentAnimal = roundsList[currentRoundIdx] || roundsList[0]
 
@@ -87,26 +110,30 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setEvaluation(null)
     setTicoMood('talking')
 
-    const introText = `Olha: ${currentAnimal.name}! ${currentAnimal.actionDescription}`
-    const promptText = `Agora fale: ${currentAnimal.name}!`
-    setTicoMessage(`${currentAnimal.name}! Aperte o microfone e diga bem bonito!`)
+    const introText = `${currentAnimal.name}! ${currentAnimal.actionDescription}`
+    const promptText = currentAnimal.promptText || `Agora fale: ${currentAnimal.name}!`
+    setTicoMessage(`${currentAnimal.name}! 🎙️`)
 
     // 1. Play animal sound effect
     playAnimalSound(currentAnimal.soundKey)
 
-    // 2. Speak animal description + prompt
+    // 2. Speak animal description + prompt in chosen language
+    const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
+    const speechLang = langOption ? langOption.speechLang : 'pt-BR'
+
     const timer = setTimeout(() => {
       speechService.speak(`${introText} ${promptText}`, {
+        lang: speechLang,
         onEnd: () => {
           if (isMountedRef.current && step === 'intro') {
-            setTicoMessage(`Aperte o microfone e diga "${currentAnimal.name}"!`)
+            setTicoMessage(`${currentAnimal.name}! 🎙️`)
           }
         },
       })
     }, 600)
 
     return () => clearTimeout(timer)
-  }, [currentRoundIdx, currentAnimal])
+  }, [currentRoundIdx, currentAnimal, gameLanguage])
 
   // Start Voice Recording
   const handleStartRecording = async () => {
@@ -119,7 +146,11 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setTicoMood('listening')
     setTicoMessage(`Estou ouvindo você... fale "${currentAnimal.name}"! 🎙️`)
 
+    const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
+    const speechLang = langOption ? langOption.speechLang : 'pt-BR'
+
     await speechRecognitionService.startListening({
+      lang: speechLang,
       onAudioLevel: () => {},
       onResult: (res) => {
         if (!isMountedRef.current) return
@@ -157,6 +188,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       currentAnimal.name,
       currentAnimal.acceptedAliases,
       childAgeMonths,
+      gameLanguage,
     )
 
     setEvaluation(result)
@@ -169,7 +201,8 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setTicoMessage(result.praise)
 
     // Speak praise
-    speechService.speak(result.praise)
+    const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
+    speechService.speak(result.praise, { lang: langOption?.speechLang || 'pt-BR' })
   }
 
   // Move to next round or finish
@@ -206,8 +239,10 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         accuracy: avgScore,
         rounds_completed: totalRounds,
         total_rounds: totalRounds,
+        language: gameLanguage,
         details: {
           category: selectedCategory,
+          language: gameLanguage,
           items: roundsList.map((r) => r.name),
         },
       })
@@ -217,7 +252,10 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   const handleReplayPrompt = () => {
     if (!currentAnimal) return
     playAnimalSound(currentAnimal.soundKey)
-    speechService.speak(`Esse é o ${currentAnimal.name}. Agora fale: ${currentAnimal.name}!`)
+    const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
+    speechService.speak(currentAnimal.promptText || currentAnimal.name, {
+      lang: langOption?.speechLang || 'pt-BR',
+    })
   }
 
   // Completed Screen
@@ -317,28 +355,50 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       ticoInstruction={ticoMessage}
     >
       <div className="w-full max-w-lg flex flex-col items-center justify-between gap-4">
-        {/* Category Selector Pills */}
+        {/* Category Selector Pills & Language Switcher */}
         <div className="w-full flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {WORD_CATEGORIES.map((cat) => {
-            const isSelected = selectedCategory === cat.id
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  playPop()
-                  setSelectedCategory(cat.id)
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105'
-                    : 'bg-white/80 text-slate-600 hover:bg-white border border-slate-200'
-                }`}
-              >
-                <span>{cat.emoji}</span>
-                <span>{cat.name}</span>
-              </button>
-            )
-          })}
+          <div className="flex items-center gap-1.5">
+            {WORD_CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat.id
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    playPop()
+                    setSelectedCategory(cat.id)
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105'
+                      : 'bg-white/80 text-slate-600 hover:bg-white border border-slate-200'
+                  }`}
+                >
+                  <span>{cat.emoji}</span>
+                  <span>{cat.name}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Activity Language Selector */}
+          <div className="flex items-center gap-1 bg-white/90 px-2 py-1 rounded-full border border-orange-200 shadow-sm shrink-0">
+            <Globe className="w-3.5 h-3.5 text-orange-600" />
+            <select
+              value={gameLanguage}
+              onChange={(e) => {
+                playPop()
+                setGameLanguage(e.target.value as AppLanguage)
+              }}
+              className="text-xs font-bold text-orange-950 bg-transparent outline-none cursor-pointer"
+              aria-label="Idioma da Atividade"
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.flag} {lang.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Animal / Item Stage Card */}
@@ -405,9 +465,9 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
                 onClick={handleNextRound}
                 className="flex-1 h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/25"
               >
-                <span>Próximo</span>
+                <span>{t('game.nextWord')}</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
+              </Button>{' '}
             </div>
           </div>
         ) : (

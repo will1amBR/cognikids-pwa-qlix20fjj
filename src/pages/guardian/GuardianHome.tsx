@@ -25,6 +25,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 
 export const GuardianHome: React.FC = () => {
   const { user } = useAuth()
@@ -37,35 +38,38 @@ export const GuardianHome: React.FC = () => {
     {},
   )
   const [isLoading, setIsLoading] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  const reloadData = async () => {
+    setIsLoading(true)
+    const [kids, sessions] = await Promise.all([fetchChildren(), fetchRecentSessions(5)])
+    setChildrenList(kids)
+    setRecentSessions(sessions)
+
+    if (kids.length === 0) {
+      setShowOnboarding(true)
+    }
+
+    const progMap: Record<string, Record<string, number>> = {}
+    for (const kid of kids) {
+      const progList = await fetchChildModuleProgress(kid.id)
+      const kidMods: Record<string, number> = {}
+      progList.forEach((p) => {
+        kidMods[p.module_id] = p.mastery_percentage
+      })
+      COGNIKIDS_MODULES.forEach((m) => {
+        if (kidMods[m.id] === undefined) {
+          kidMods[m.id] = 45
+        }
+      })
+      progMap[kid.id] = kidMods
+    }
+    setChildrenProgress(progMap)
+    setIsLoading(false)
+  }
 
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true)
-      const [kids, sessions] = await Promise.all([fetchChildren(), fetchRecentSessions(5)])
-
-      setChildrenList(kids)
-      setRecentSessions(sessions)
-
-      // Load module progress for each child
-      const progMap: Record<string, Record<string, number>> = {}
-      for (const kid of kids) {
-        const progList = await fetchChildModuleProgress(kid.id)
-        const kidMods: Record<string, number> = {}
-        progList.forEach((p) => {
-          kidMods[p.module_id] = p.mastery_percentage
-        })
-        // Default values for remaining modules
-        COGNIKIDS_MODULES.forEach((m) => {
-          if (kidMods[m.id] === undefined) {
-            kidMods[m.id] = 45 // friendly starting base
-          }
-        })
-        progMap[kid.id] = kidMods
-      }
-      setChildrenProgress(progMap)
-      setIsLoading(false)
-    }
-    load()
+    reloadData()
   }, [])
 
   const handlePlayClick = (child: Child) => {
@@ -84,6 +88,14 @@ export const GuardianHome: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Guided Onboarding Wizard modal */}
+      <OnboardingWizard
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onChildCreated={async (newId) => {
+          await reloadData()
+        }}
+      />
       {/* Header Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -114,12 +126,13 @@ export const GuardianHome: React.FC = () => {
             </Button>
           </Link>
 
-          <Link to="/app/children/new">
-            <Button className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20 text-xs">
-              <Plus className="w-4 h-4 mr-1.5" />
-              Adicionar criança
-            </Button>
-          </Link>
+          <Button
+            onClick={() => setShowOnboarding(true)}
+            className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20 text-xs"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Adicionar criança
+          </Button>
         </div>
       </div>
 
@@ -135,15 +148,14 @@ export const GuardianHome: React.FC = () => {
             Cadastre o nome e a idade para personalizarmos os jogos com reconhecimento de voz e
             fases certinhas para o cérebro dela.
           </p>
-          <Link to="/app/children/new">
-            <Button
-              size="lg"
-              className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 px-6"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Criar perfil da criança
-            </Button>
-          </Link>
+          <Button
+            onClick={() => setShowOnboarding(true)}
+            size="lg"
+            className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 px-6"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Criar perfil com o Tico
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -240,8 +252,9 @@ export const GuardianHome: React.FC = () => {
           })}
 
           {/* Add Child Dashed Card */}
-          <Link
-            to="/app/children/new"
+          <button
+            type="button"
+            onClick={() => setShowOnboarding(true)}
             className="rounded-3xl border-2 border-dashed border-slate-300 hover:border-orange-400 hover:bg-orange-50/40 p-6 flex flex-col items-center justify-center text-center transition-all min-h-[280px] group"
           >
             <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-orange-100 text-slate-400 group-hover:text-orange-600 flex items-center justify-center mb-3 transition-colors">
@@ -251,9 +264,9 @@ export const GuardianHome: React.FC = () => {
               Adicionar criança
             </h3>
             <p className="text-xs text-slate-400 max-w-[200px] mt-1">
-              Cadastre outro filho ou dependente na mesma conta
+              Cadastre outro filho com calibração guiada de idade
             </p>
-          </Link>
+          </button>
         </div>
       )}
 

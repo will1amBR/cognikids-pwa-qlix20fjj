@@ -17,6 +17,7 @@ export interface PendingGameSession {
   accuracy: number
   rounds_completed: number
   total_rounds: number
+  language?: string
   details?: Record<string, any>
   created_at: string
 }
@@ -134,6 +135,7 @@ export class OfflineSyncService {
       accuracy: item.accuracy,
       rounds_completed: item.rounds_completed,
       total_rounds: item.total_rounds,
+      language: item.language || 'pt-BR',
       details: item.details || {},
     })
   }

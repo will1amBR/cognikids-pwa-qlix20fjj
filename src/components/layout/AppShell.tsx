@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useSound } from '@/context/SoundContext'
+import { useLanguage } from '@/context/LanguageContext'
 import { fetchChildren, getChildAvatarUrl } from '@/services/children'
 import type { Child } from '@/types/cognikids'
+import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { ConnectivityPill } from './ConnectivityPill'
 import {
@@ -35,6 +37,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -43,6 +47,7 @@ import { Button } from '@/components/ui/button'
 export const AppShell: React.FC = () => {
   const { user, logout, isValid } = useAuth()
   const { isMuted, toggleMute } = useSound()
+  const { language, setLanguage, t } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -115,23 +120,25 @@ export const AppShell: React.FC = () => {
   }
 
   const navItems = [
-    { label: 'Início', path: '/app', icon: Home },
-    { label: 'Perfis', path: '/app/children', icon: Users },
+    { label: t('nav.home'), path: '/app', icon: Home },
+    { label: t('nav.children'), path: '/app/children', icon: Users },
     {
-      label: 'Progresso',
+      label: t('nav.progress'),
       path: selectedChild ? `/app/child/${selectedChild.id}` : '/app/children',
       icon: BarChart3,
     },
     {
-      label: 'Relatórios',
+      label: t('nav.reports'),
       path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
       icon: TrendingUp,
     },
-    { label: 'Guia Pais', path: '/app/themes-guide', icon: BookOpen },
-    { label: 'Convites & Escola', path: '/app/community', icon: Share2 },
-    { label: 'Configurações', path: '/app/settings', icon: Settings },
+    { label: t('nav.themesGuide'), path: '/app/themes-guide', icon: BookOpen },
+    { label: t('nav.community'), path: '/app/community', icon: Share2 },
+    { label: t('nav.settings'), path: '/app/settings', icon: Settings },
   ]
   const guardianInitial = (user?.name || user?.email || 'R').charAt(0).toUpperCase()
+  const currentLangOption =
+    SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0]
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-20 lg:pb-0">
@@ -218,8 +225,45 @@ export const AppShell: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Connectivity Pill + Sound toggle + Guardian Menu */}
+        {/* Right: Language selector + Connectivity Pill + Sound toggle + Guardian Menu */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Topbar Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all shadow-xs"
+                title={t('nav.language')}
+              >
+                <span className="text-sm leading-none">{currentLangOption.flag}</span>
+                <span className="hidden sm:inline uppercase text-[11px] font-black text-slate-700">
+                  {currentLangOption.code.split('-')[0]}
+                </span>
+                <ChevronDown className="w-3 h-3 text-slate-500" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl shadow-xl">
+              <DropdownMenuLabel className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">
+                {t('nav.language')}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={language}
+                onValueChange={(val) => setLanguage(val as any)}
+              >
+                {SUPPORTED_LANGUAGES.map((l) => (
+                  <DropdownMenuRadioItem
+                    key={l.code}
+                    value={l.code}
+                    className="text-xs font-bold py-2 rounded-xl cursor-pointer"
+                  >
+                    <span className="mr-2 text-base">{l.flag}</span>
+                    <span>{l.label}</span>
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <ConnectivityPill />
 
           <button

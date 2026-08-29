@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T13:45:08.072Z",
+  "generatedAt": "2026-08-29T14:23:12.310Z",
   "collections": [
     {
       "name": "users",
@@ -46,6 +46,12 @@
         },
         {
           "name": "reminder_time",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "preferred_language",
           "type": "text",
           "required": false,
           "system": false
@@ -126,6 +132,18 @@
         },
         {
           "name": "class_group",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "learning_languages",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "primary_language",
           "type": "text",
           "required": false,
           "system": false
@@ -228,6 +246,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "language",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

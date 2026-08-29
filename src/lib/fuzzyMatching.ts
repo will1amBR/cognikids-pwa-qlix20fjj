@@ -100,21 +100,86 @@ export function evaluateSpeechAccuracy(
   targetWord: string,
   acceptedAliases: string[] = [],
   childAgeMonths: number = 36,
+  lang: string = 'pt-BR',
 ): EvaluationResult {
   const normTranscript = normalizePtText(transcript)
   const normTarget = normalizePtText(targetWord)
   const normAliases = acceptedAliases.map(normalizePtText)
+
+  // Language-specific praises
+  const praisesByLang: Record<string, { high: string[]; mid: string[]; low: string[] }> = {
+    'pt-BR': {
+      high: PRAISES_3_STARS,
+      mid: PRAISES_2_STARS,
+      low: PRAISES_1_STAR,
+    },
+    en: {
+      high: [
+        'Awesome! You said it perfectly! 🌟',
+        'Great job! Beautiful pronunciation! 🎉',
+        'Super! You are a speech star! 👏',
+      ],
+      mid: [
+        'Very good! You almost got it right! 🎈',
+        'Great try! Keep practicing! 👍',
+        'Nice job! 🚀',
+      ],
+      low: ['Good try! Let’s try again together! 💫', 'Love your voice! Keep practicing! 💖'],
+    },
+    es: {
+      high: [
+        '¡Increíble! ¡Lo dijiste perfecto! 🌟',
+        '¡Qué orgullo! ¡Excelente pronunciación! 🎉',
+        '¡Maravilloso! ¡Eres un campeón! 👏',
+      ],
+      mid: [
+        '¡Muy bien! ¡Casi perfecto! 🎈',
+        '¡Buen intento! ¡Sigue practicando! 👍',
+        '¡Genial! 🚀',
+      ],
+      low: ['¡Buen intento! ¡Intentemos otra vez juntos! 💫', '¡Me encanta tu voz! 💖'],
+    },
+    de: {
+      high: [
+        'Fantastisch! Perfekt gesprochen! 🌟',
+        'Großartig! Wunderbare Aussprache! 🎉',
+        'Super! Du bist ein Sprach-Champion! 👏',
+      ],
+      mid: ['Sehr gut! Fast perfekt! 🎈', 'Toller Versuch! Weiter so! 👍', 'Sehr schön! 🚀'],
+      low: ['Guter Versuch! Lass es uns nochmal probieren! 💫', 'Toll gesprochen! 💖'],
+    },
+    fr: {
+      high: [
+        'Incroyable ! Tu as dit parfaitement ! 🌟',
+        'Bravo ! Magnifique prononciation ! 🎉',
+        'Superbe ! Tu es un champion ! 👏',
+      ],
+      mid: ['Très bien ! Presque parfait ! 🎈', 'Bel essai ! Continue comme ça ! 👍', 'Super ! 🚀'],
+      low: ['Bel essai ! Essayons encore ensemble ! 💫', 'J’adore ta voix ! 💖'],
+    },
+  }
+
+  const langKey = lang.startsWith('en')
+    ? 'en'
+    : lang.startsWith('es')
+      ? 'es'
+      : lang.startsWith('de')
+        ? 'de'
+        : lang.startsWith('fr')
+          ? 'fr'
+          : 'pt-BR'
+  const praises = praisesByLang[langKey] || praisesByLang['pt-BR']
 
   // Age tolerance: toddlers (<36 months) have a more forgiving grading threshold
   const ageFactor = childAgeMonths <= 24 ? 0.25 : childAgeMonths <= 36 ? 0.15 : 0.05
 
   // 1. Direct exact match
   if (normTranscript === normTarget || normTranscript.split(' ').includes(normTarget)) {
-    const praise = PRAISES_3_STARS[Math.floor(Math.random() * PRAISES_3_STARS.length)]
+    const praise = praises.high[Math.floor(Math.random() * praises.high.length)]
     return {
       score: 100,
       stars: 3,
-      feedback: `Você falou exatamente "${targetWord}"!`,
+      feedback: `"${targetWord}" ✓`,
       praise,
       isRecognized: true,
       matchType: 'exact',
@@ -125,11 +190,11 @@ export function evaluateSpeechAccuracy(
   for (const alias of normAliases) {
     if (normTranscript === alias || normTranscript.includes(alias)) {
       const score = Math.min(100, Math.round(90 + ageFactor * 40))
-      const praise = PRAISES_3_STARS[Math.floor(Math.random() * PRAISES_3_STARS.length)]
+      const praise = praises.high[Math.floor(Math.random() * praises.high.length)]
       return {
         score,
         stars: 3,
-        feedback: `Muito bem! O som do bichinho também vale!`,
+        feedback: `"${alias}" ✓`,
         praise,
         isRecognized: true,
         matchType: 'alias',
@@ -149,31 +214,31 @@ export function evaluateSpeechAccuracy(
   const finalScore = Math.round(adjustedSim * 100)
 
   if (finalScore >= 75) {
-    const praise = PRAISES_3_STARS[Math.floor(Math.random() * PRAISES_3_STARS.length)]
+    const praise = praises.high[Math.floor(Math.random() * praises.high.length)]
     return {
       score: finalScore,
       stars: 3,
-      feedback: `Excelente pronúncia de "${targetWord}"!`,
+      feedback: `"${targetWord}" ✓`,
       praise,
       isRecognized: true,
       matchType: 'phonetic',
     }
   } else if (finalScore >= 45) {
-    const praise = PRAISES_2_STARS[Math.floor(Math.random() * PRAISES_2_STARS.length)]
+    const praise = praises.mid[Math.floor(Math.random() * praises.mid.length)]
     return {
       score: Math.max(50, finalScore),
       stars: 2,
-      feedback: `Quase lá! Ouvimos você falar bem pertinho de "${targetWord}".`,
+      feedback: `~ "${targetWord}"`,
       praise,
       isRecognized: true,
       matchType: 'partial',
     }
   } else {
-    const praise = PRAISES_1_STAR[Math.floor(Math.random() * PRAISES_1_STAR.length)]
+    const praise = praises.low[Math.floor(Math.random() * praises.low.length)]
     return {
       score: Math.max(30, finalScore),
       stars: 1,
-      feedback: `Ouvimos sua tentativa! Praticar faz a gente ficar craque!`,
+      feedback: `"${targetWord}"`,
       praise,
       isRecognized: false,
       matchType: 'attempt',
