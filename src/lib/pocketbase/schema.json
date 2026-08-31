@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T14:23:12.310Z",
+  "generatedAt": "2026-08-31T20:27:45.625Z",
   "collections": [
     {
       "name": "users",
@@ -52,6 +52,24 @@
         },
         {
           "name": "preferred_language",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vocab_reminder_enabled",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vocab_reminder_time",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vocab_reminder_language",
           "type": "text",
           "required": false,
           "system": false

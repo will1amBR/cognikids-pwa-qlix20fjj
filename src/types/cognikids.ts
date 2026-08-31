@@ -125,6 +125,22 @@ export interface SchoolAccessToken {
 export interface GuardianReminderConfig {
   reminder_enabled: boolean
   reminder_time: string // format "HH:MM" e.g. "18:30"
+  vocab_reminder_enabled?: boolean
+  vocab_reminder_time?: string
+  vocab_reminder_language?: AppLanguage | string
+}
+
+export interface LanguageEvolutionStat {
+  code: AppLanguage
+  label: string
+  nativeName: string
+  flag: string
+  totalSessions: number
+  averageAccuracy: number
+  totalStars: number
+  wordsPracticedCount: number
+  status: 'doing_well' | 'in_progress' | 'not_started'
+  statusLabel: string
 }
 
 export interface ModuleDefinition {
@@ -599,6 +615,7 @@ export interface EvolutionSummary {
     trend: 'up' | 'stable' | 'down'
     sessionsCount: number
   }[]
+  languageBreakdown: LanguageEvolutionStat[]
 }
 
 export function calculateAgeMonths(birthDateStr: string): number {

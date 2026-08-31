@@ -127,6 +127,11 @@ export type TranslationKey =
   | 'reports.pedagogicalTipsDesc'
   | 'reports.ticoTipTitle'
   | 'reports.ticoTipDesc'
+  | 'reports.languageComparison'
+  | 'reports.languageComparisonDesc'
+  | 'firstWords.mode'
+  | 'firstWords.badge'
+  | 'firstWords.slowAudio'
 
   // Settings & Reminders
   | 'settings.title'
@@ -298,6 +303,13 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'reports.ticoTipTitle': 'Dica do Mascote Tico:',
     'reports.ticoTipDesc':
       'Crianças na faixa dos 0 aos 60 meses evoluem em saltos naturais. Sessões curtas de 10 a 15 minutos diários com repetição de palavras e identificação de padrões trazem os melhores resultados!',
+    'reports.languageComparison': 'Comparativo de Desempenho por Idioma',
+    'reports.languageComparisonDesc':
+      'Assimilação real nos 5 idiomas suportados (Português, Inglês, Espanhol, Alemão e Francês)',
+
+    'firstWords.mode': 'Modo Primeiras Palavras',
+    'firstWords.badge': 'Iniciante',
+    'firstWords.slowAudio': 'Ouvir Devagar',
 
     'settings.title': 'Ajustes & Conta',
     'settings.subtitle': 'Configurações da conta, idioma da interface e sincronização offline',
@@ -469,6 +481,13 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'reports.ticoTipTitle': 'Tip from Tico:',
     'reports.ticoTipDesc':
       'Children aged 0 to 60 months evolve in natural developmental spurts. Short 10-15 minute daily sessions with repetition bring the best results!',
+    'reports.languageComparison': 'Language Performance Comparison',
+    'reports.languageComparisonDesc':
+      'Real assimilation across all 5 supported languages (PT, EN, ES, DE, FR)',
+
+    'firstWords.mode': 'First Words Mode',
+    'firstWords.badge': 'Beginner',
+    'firstWords.slowAudio': 'Listen Slowly',
 
     'settings.title': 'Settings & Account',
     'settings.subtitle': 'Account settings, interface language, and offline sync',
@@ -639,6 +658,13 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'reports.ticoTipTitle': 'Consejo de Tico:',
     'reports.ticoTipDesc':
       'Los niños de 0 a 60 meses evolucionan en saltos naturales. ¡Sesiones cortas de 10 a 15 minutos diarios dan los mejores resultados!',
+    'reports.languageComparison': 'Comparativa de Rendimiento por Idioma',
+    'reports.languageComparisonDesc':
+      'Asimilación real en los 5 idiomas soportados (PT, EN, ES, DE, FR)',
+
+    'firstWords.mode': 'Modo Primeras Palabras',
+    'firstWords.badge': 'Principiante',
+    'firstWords.slowAudio': 'Escuchar Despacio',
 
     'settings.title': 'Ajustes & Cuenta',
     'settings.subtitle':
@@ -809,6 +835,13 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'reports.ticoTipTitle': 'Tipp von Tico:',
     'reports.ticoTipDesc':
       'Kinder im Alter von 0 bis 60 Monaten entwickeln sich in natürlichen Sprüngen. Kurze 10-15-minütige tägliche Einheiten bringen die besten Ergebnisse!',
+    'reports.languageComparison': 'Leistungsvergleich nach Sprache',
+    'reports.languageComparisonDesc':
+      'Echte Sprachaufnahme in allen 5 unterstützten Sprachen (PT, EN, ES, DE, FR)',
+
+    'firstWords.mode': 'Erste-Wörter-Modus',
+    'firstWords.badge': 'Anfänger',
+    'firstWords.slowAudio': 'Langsam Hören',
 
     'settings.title': 'Einstellungen & Konto',
     'settings.subtitle':
@@ -981,7 +1014,14 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
       'Conseils concrets pour progresser et renforcer à la maison selon les résultats',
     'reports.ticoTipTitle': 'Conseil de Tico :',
     'reports.ticoTipDesc':
-      'Les enfants de 0 à 60 mois évoluent par bonds naturels. De courtes sessions quotidiennes de 10 à 15 minutes avec répétition apportent les meilleurs résultats !',
+      'Les enfants de 0 à 60 mois progressent par bonds naturels. Des sessions courtes de 10 à 15 minutes par jour donnent les meilleurs résultats !',
+    'reports.languageComparison': 'Comparatif de Performance par Langue',
+    'reports.languageComparisonDesc':
+      'Assimilation réelle dans les 5 langues supportées (PT, EN, ES, DE, FR)',
+
+    'firstWords.mode': 'Mode Premiers Mots',
+    'firstWords.badge': 'Débutant',
+    'firstWords.slowAudio': 'Écouter Lentement',
 
     'settings.title': 'Paramètres & Compte',
     'settings.subtitle':

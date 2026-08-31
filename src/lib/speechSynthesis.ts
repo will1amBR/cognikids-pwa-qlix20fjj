@@ -117,6 +117,20 @@ class SpeechService {
       window.speechSynthesis.speak(utterance)
     })
   }
+
+  /**
+   * Speaks text in a slow, clear, gentle pace designed for beginner First Words mode
+   */
+  public speakSlow(
+    text: string,
+    options: Omit<SpeechSynthesisOptions, 'rate'> = {},
+  ): Promise<void> {
+    return this.speak(text, {
+      ...options,
+      rate: 0.65, // extra slow for clear articulation
+      pitch: options.pitch ?? 1.15,
+    })
+  }
 }
 
 export const speechService = new SpeechService()

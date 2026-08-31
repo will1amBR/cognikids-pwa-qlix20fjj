@@ -9,6 +9,8 @@ export interface CategoryItem {
   promptText: string
   acceptedAliases: string[]
   difficulty?: 1 | 2 | 3
+  isFirstWord?: boolean
+  syllables?: Partial<Record<AppLanguage, string>>
   minAgeMonths: number
   category: 'farm' | 'dinos' | 'dinosaurs' | 'fruits' | 'colors' | 'body' | 'numbers'
   bgGradient?: string
@@ -20,6 +22,7 @@ export interface CategoryItem {
         actionDescription: string
         promptText: string
         acceptedAliases: string[]
+        syllables?: string
       }
     >
   >
@@ -104,6 +107,14 @@ export const FARM_ANIMALS: CategoryItem[] = [
     bgGradient: 'from-emerald-400 to-teal-600',
     minAgeMonths: 12,
     category: 'farm',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'VA - CA',
+      en: 'COW',
+      es: 'VA - CA',
+      de: 'KUH',
+      fr: 'VA - CHE',
+    },
   },
   {
     id: 'pato',
@@ -116,6 +127,14 @@ export const FARM_ANIMALS: CategoryItem[] = [
     bgGradient: 'from-sky-400 to-blue-600',
     minAgeMonths: 12,
     category: 'farm',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'PA - TO',
+      en: 'DUCK',
+      es: 'PA - TO',
+      de: 'EN - TE',
+      fr: 'CA - NARD',
+    },
   },
   {
     id: 'gato',
@@ -128,6 +147,14 @@ export const FARM_ANIMALS: CategoryItem[] = [
     bgGradient: 'from-purple-400 to-indigo-600',
     minAgeMonths: 12,
     category: 'farm',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'GA - TO',
+      en: 'CAT',
+      es: 'GA - TO',
+      de: 'KAT - ZE',
+      fr: 'CHAT',
+    },
   },
   {
     id: 'cachorro',
@@ -140,6 +167,14 @@ export const FARM_ANIMALS: CategoryItem[] = [
     bgGradient: 'from-amber-500 to-yellow-600',
     minAgeMonths: 12,
     category: 'farm',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'CÃO / CA - CHO - RRO',
+      en: 'DOG',
+      es: 'PE - RRO',
+      de: 'HUND',
+      fr: 'CHIEN',
+    },
   },
   {
     id: 'ovelha',
@@ -346,6 +381,14 @@ export const FRUITS: CategoryItem[] = [
     bgGradient: 'from-yellow-400 to-amber-500',
     minAgeMonths: 12,
     category: 'fruits',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'BA - NA - NA',
+      en: 'BA - NA - NA',
+      es: 'PLÁ - TA - NO',
+      de: 'BA - NA - NE',
+      fr: 'BA - NA - NE',
+    },
   },
   {
     id: 'maca',
@@ -358,6 +401,14 @@ export const FRUITS: CategoryItem[] = [
     bgGradient: 'from-red-400 to-rose-600',
     minAgeMonths: 12,
     category: 'fruits',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'MA - ÇÃ',
+      en: 'AP - PLE',
+      es: 'MAN - ZA - NA',
+      de: 'AP - FEL',
+      fr: 'POM - ME',
+    },
   },
   {
     id: 'uva',
@@ -370,6 +421,14 @@ export const FRUITS: CategoryItem[] = [
     bgGradient: 'from-purple-500 to-indigo-700',
     minAgeMonths: 12,
     category: 'fruits',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'U - VA',
+      en: 'GRAPE',
+      es: 'U - VA',
+      de: 'TRAU - BE',
+      fr: 'RAI - SIN',
+    },
   },
   {
     id: 'laranja',
@@ -556,18 +615,14 @@ export const BODY_PARTS: CategoryItem[] = [
     bgGradient: 'from-sky-400 to-blue-600',
     minAgeMonths: 12,
     category: 'body',
-  },
-  {
-    id: 'nariz',
-    name: 'Nariz',
-    emoji: '👃',
-    soundKey: 'sniff',
-    actionDescription: 'Com o nariz nós sentimos o cheirinho das flores: Sniff sniff!',
-    promptText: 'Agora fale: Nariz!',
-    acceptedAliases: ['nariz', 'narizinho', 'focinho', 'cheiro'],
-    bgGradient: 'from-amber-400 to-orange-500',
-    minAgeMonths: 12,
-    category: 'body',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'O - LHO',
+      en: 'EYES',
+      es: 'O - JOS',
+      de: 'AU - GEN',
+      fr: 'YEUX',
+    },
   },
   {
     id: 'boca',
@@ -580,18 +635,54 @@ export const BODY_PARTS: CategoryItem[] = [
     bgGradient: 'from-rose-400 to-red-600',
     minAgeMonths: 12,
     category: 'body',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'BO - CA',
+      en: 'MOUTH',
+      es: 'BO - CA',
+      de: 'MUND',
+      fr: 'BOU - CHE',
+    },
   },
   {
-    id: 'orelha',
-    name: 'Ouvido',
-    emoji: '👂',
-    soundKey: 'bell',
-    actionDescription: 'Com os ouvidos nós escutamos as historinhas e as musiquinhas!',
-    promptText: 'Agora fale: Ouvido!',
-    acceptedAliases: ['ouvido', 'orelha', 'orelhinha', 'escuta', 'audicao'],
-    bgGradient: 'from-purple-400 to-indigo-600',
+    id: 'mao',
+    name: 'Mão',
+    emoji: '✋',
+    soundKey: 'clap',
+    actionDescription: 'Com as mãos nós batemos palminhas: Palmas palmas!',
+    promptText: 'Agora fale: Mão!',
+    acceptedAliases: ['mao', 'mão', 'maozinha', 'mãozinha', 'palma', 'dedos'],
+    bgGradient: 'from-emerald-400 to-teal-600',
     minAgeMonths: 12,
     category: 'body',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'MÃO',
+      en: 'HANDS',
+      es: 'MA - NOS',
+      de: 'HÄN - DE',
+      fr: 'MAINS',
+    },
+  },
+  {
+    id: 'pe',
+    name: 'Pé',
+    emoji: '🦶',
+    soundKey: 'step',
+    actionDescription: 'Com os pés nós pulamos, corremos e dançamos: Pula pula!',
+    promptText: 'Agora fale: Pé!',
+    acceptedAliases: ['pe', 'pé', 'pezinho', 'pezinhos', 'sapato'],
+    bgGradient: 'from-cyan-500 to-blue-700',
+    minAgeMonths: 12,
+    category: 'body',
+    isFirstWord: true,
+    syllables: {
+      'pt-BR': 'PÉ',
+      en: 'FEET',
+      es: 'PIES',
+      de: 'FÜS - SE',
+      fr: 'PIEDS',
+    },
   },
   {
     id: 'mao',
@@ -786,6 +877,7 @@ export function getLocalizedItem(item: CategoryItem, lang: AppLanguage = 'pt-BR'
         actionDescription: trans.actionDescription || item.actionDescription,
         promptText: trans.promptText || `Now say: ${trans.name}!`,
         acceptedAliases: trans.acceptedAliases,
+        syllables: item.syllables,
       }
     }
     return item
@@ -798,7 +890,17 @@ export function getLocalizedItem(item: CategoryItem, lang: AppLanguage = 'pt-BR'
     actionDescription: trans.actionDescription,
     promptText: trans.promptText,
     acceptedAliases: trans.acceptedAliases,
+    syllables: item.syllables,
   }
+}
+
+/**
+ * Returns beginner-friendly "First Words" (curated short words, 1-2 syllables, simple phonemes)
+ */
+export function getFirstWordsItems(lang: AppLanguage = 'pt-BR'): CategoryItem[] {
+  const all = [...FARM_ANIMALS, ...FRUITS, ...BODY_PARTS, ...COLORS]
+  const firstWords = all.filter((it) => it.isFirstWord)
+  return firstWords.map((it) => getLocalizedItem(it, lang))
 }
 
 export const MULTILINGUAL_WORD_MAP: Record<

@@ -298,6 +298,57 @@ export function generateEvolutionPdf(
     </div>
   </div>
 
+  <!-- Multilingual Performance Comparison: Português x Inglês x Espanhol x Alemão x Francês -->
+  <div class="section-title">
+    <span>🌐 Comparativo de Desempenho por Idioma</span>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; font-size: 9pt;">
+    <thead>
+      <tr style="background: #f1f5f9; text-align: left; color: #475569; font-weight: 800; font-size: 8pt; text-transform: uppercase;">
+        <th style="padding: 8px 10px;">Idioma</th>
+        <th style="padding: 8px 10px; text-align: center;">Partidas</th>
+        <th style="padding: 8px 10px; text-align: center;">Assimilação / Precisão</th>
+        <th style="padding: 8px 10px; text-align: center;">Palavras Praticadas</th>
+        <th style="padding: 8px 10px; text-align: right;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${(summary.languageBreakdown || [])
+        .map((langStat) => {
+          const isHigh = langStat.averageAccuracy >= 70
+          const hasPlayed = langStat.totalSessions > 0
+          const statusBg = !hasPlayed ? '#f1f5f9' : isHigh ? '#dcfce7' : '#fef3c7'
+          const statusColor = !hasPlayed ? '#64748b' : isHigh ? '#166534' : '#92400e'
+
+          return `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 8px 10px; font-weight: bold; color: #0f172a;">
+            ${langStat.flag} ${langStat.label} <span style="font-size: 8pt; color: #64748b; font-weight: normal;">(${langStat.nativeName})</span>
+          </td>
+          <td style="padding: 8px 10px; text-align: center; color: #334155; font-weight: 600;">
+            ${langStat.totalSessions}
+          </td>
+          <td style="padding: 8px 10px; text-align: center;">
+            <div style="font-weight: 800; color: ${hasPlayed ? '#ea580c' : '#94a3b8'};">
+              ${hasPlayed ? `${langStat.averageAccuracy}%` : '—'}
+            </div>
+          </td>
+          <td style="padding: 8px 10px; text-align: center; color: #334155;">
+            ${hasPlayed ? `${langStat.wordsPracticedCount || langStat.totalSessions * 4} palavras` : '0'}
+          </td>
+          <td style="padding: 8px 10px; text-align: right;">
+            <span style="background: ${statusBg}; color: ${statusColor}; padding: 2px 8px; border-radius: 12px; font-size: 7.5pt; font-weight: 800; text-transform: uppercase;">
+              ${langStat.statusLabel}
+            </span>
+          </td>
+        </tr>
+      `
+        })
+        .join('')}
+    </tbody>
+  </table>
+
   <!-- Assimilation By Dimension & Status (Indo Bem vs Precisa Melhorar) -->
   <div class="section-title">
     <span>🧠 Assimilação nas 5 Dimensões & Status de Desenvolvimento</span>

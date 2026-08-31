@@ -4,15 +4,30 @@ import {
   saveReminderConfig,
   requestBrowserNotificationPermission,
   sendLocalNotification,
+  VOCAB_DAILY_PRACTICE_TIPS,
+  getRandomVocabTip,
+  VocabPracticeTip,
 } from '@/services/reminders'
-import type { GuardianReminderConfig } from '@/types/cognikids'
+import type { GuardianReminderConfig, AppLanguage } from '@/types/cognikids'
+import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
 import { useSound } from '@/context/SoundContext'
-import { Bell, BellRing, Sparkles, Clock, CheckCircle2, AlertCircle, Play } from 'lucide-react'
+import {
+  Bell,
+  BellRing,
+  Sparkles,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Play,
+  Languages,
+  Lightbulb,
+  BookOpen,
+} from 'lucide-react'
 
 export const RoutineReminderSettings: React.FC = () => {
   const { toast } = useToast()
@@ -21,20 +36,45 @@ export const RoutineReminderSettings: React.FC = () => {
   const [config, setConfig] = useState<GuardianReminderConfig>({
     reminder_enabled: false,
     reminder_time: '18:00',
+    vocab_reminder_enabled: false,
+    vocab_reminder_time: '10:00',
+    vocab_reminder_language: 'en',
   })
   const [permissionState, setPermissionState] = useState<NotificationPermission>('default')
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedTip, setSelectedTip] = useState<VocabPracticeTip>(() => getRandomVocabTip('en'))
 
   useEffect(() => {
     const load = async () => {
       const saved = await getReminderConfig()
       setConfig(saved)
+      const lang = (saved.vocab_reminder_language as AppLanguage) || 'en'
+      setSelectedTip(getRandomVocabTip(lang))
       if ('Notification' in window) {
         setPermissionState(Notification.permission)
       }
     }
     load()
   }, [])
+
+  const handleVocabToggle = async (enabled: boolean) => {
+    playPop()
+    const updated = { ...config, vocab_reminder_enabled: enabled }
+
+    if (enabled && 'Notification' in window && Notification.permission !== 'granted') {
+      const perm = await requestBrowserNotificationPermission()
+      setPermissionState(perm)
+    }
+
+    setConfig(updated)
+    await saveReminderConfig(updated)
+  }
+
+  const handleVocabLanguageChange = (lang: AppLanguage) => {
+    playPop()
+    setConfig((prev) => ({ ...prev, vocab_reminder_language: lang }))
+    setSelectedTip(getRandomVocabTip(lang))
+  }
 
   const handleToggle = async (enabled: boolean) => {
     playPop()
@@ -73,16 +113,28 @@ export const RoutineReminderSettings: React.FC = () => {
       await saveReminderConfig(config)
       playStarReward(2)
       toast({
-        title: 'Lembrete de rotina salvo! ⏰',
-        description: config.reminder_enabled
-          ? `Lembrete diário agendado para às ${config.reminder_time}.`
-          : 'Lembrete diário desativado.',
+        title: 'Lembretes atualizados! ⏰',
+        description: 'Suas preferências de rotina e revisão de vocabulário foram salvas.',
       })
     } catch (_) {
       toast({ title: 'Erro ao salvar configuração', variant: 'destructive' })
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handleTestVocabReminder = () => {
+    playPop()
+    const lang = (config.vocab_reminder_language as AppLanguage) || 'en'
+    const tip = selectedTip || getRandomVocabTip(lang)
+    sendLocalNotification(
+      `🗣️ Hora de Praticar ${tip.languageLabel} ${tip.flag}`,
+      `Palavras de hoje: "${tip.wordNative}" (${tip.wordTranslation}). Dica rápida: ${tip.practicalHomeTip}`,
+    )
+    toast({
+      title: `🗣️ Dica Prática de Revisão em ${tip.languageLabel}!`,
+      description: `"${tip.wordNative}" • ${tip.practicalHomeTip}`,
+    })
   }
 
   const handleTestReminder = () => {
@@ -187,18 +239,154 @@ export const RoutineReminderSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* Vocabulary Revision Reminders Section */}
+        <div className="pt-6 border-t border-slate-200/80 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                <Languages className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-slate-800">
+                    Lembretes de Revisão de Vocabulário
+                  </h3>
+                  <span className="text-[10px] font-black uppercase bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">
+                    Multilíngue
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Dicas práticas e lúdicas para o responsável praticar palavras do dia a dia com a
+                  criança
+                </p>
+              </div>
+            </div>
+
+            <Switch
+              checked={Boolean(config.vocab_reminder_enabled)}
+              onCheckedChange={handleVocabToggle}
+              aria-label="Ativar lembretes de vocabulário"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Horário da Revisão de Vocabulário */}
+            <div className="space-y-1.5 text-left bg-sky-50/50 p-4 rounded-2xl border border-sky-200/70">
+              <Label
+                htmlFor="vocabReminderTime"
+                className="text-xs font-bold text-slate-700 flex items-center gap-1.5"
+              >
+                <Clock className="w-3.5 h-3.5 text-sky-600" />
+                <span>Horário da Dica de Vocabulário</span>
+              </Label>
+              <Input
+                id="vocabReminderTime"
+                type="time"
+                value={config.vocab_reminder_time || '10:00'}
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, vocab_reminder_time: e.target.value }))
+                }
+                disabled={!config.vocab_reminder_enabled}
+                className="rounded-xl h-11 bg-white font-mono font-bold text-base"
+              />
+              <p className="text-[11px] text-slate-400">
+                Sugerido: manhã ou intervalo do almoço (ex: 10:00 ou 13:00).
+              </p>
+            </div>
+
+            {/* Idioma em Foco para Revisão */}
+            <div className="space-y-1.5 text-left bg-sky-50/50 p-4 rounded-2xl border border-sky-200/70">
+              <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-sky-600" />
+                <span>Idioma Alvo da Revisão</span>
+              </Label>
+              <select
+                value={config.vocab_reminder_language || 'en'}
+                onChange={(e) => handleVocabLanguageChange(e.target.value as AppLanguage)}
+                disabled={!config.vocab_reminder_enabled}
+                className="w-full rounded-xl h-11 px-3 bg-white font-bold text-sm border border-slate-200 text-slate-800 outline-none"
+              >
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.label} ({lang.nativeName})
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400">
+                Receba sugestões contextualizadas com o vocabulário das brincadeiras.
+              </p>
+            </div>
+          </div>
+
+          {/* Dica Prática em Destaque (Preview) */}
+          {selectedTip && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs font-extrabold text-amber-900 uppercase tracking-wide">
+                    Exemplo de Dica Diária ({selectedTip.languageLabel} {selectedTip.flag})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playPop()
+                    setSelectedTip(
+                      getRandomVocabTip((config.vocab_reminder_language as AppLanguage) || 'en'),
+                    )
+                  }}
+                  className="text-[11px] font-bold text-amber-800 hover:underline"
+                >
+                  Outra dica 🎲
+                </button>
+              </div>
+
+              <div className="bg-white/80 rounded-xl p-3 border border-amber-100 space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-slate-800">
+                    Palavras:{' '}
+                    <span className="text-orange-600 font-black">{selectedTip.wordNative}</span>
+                  </span>
+                  <span className="text-slate-500 font-medium">
+                    ({selectedTip.wordTranslation})
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  <b>Como praticar em casa:</b> {selectedTip.practicalHomeTip}
+                </p>
+                <p className="text-[11px] text-amber-700 font-medium italic">
+                  Frase de exemplo: {selectedTip.samplePhrase}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleTestReminder}
-            className="text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl"
-          >
-            <Play className="w-3.5 h-3.5 mr-1 text-orange-500" />
-            Testar Notificação Agora
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleTestReminder}
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl flex-1 sm:flex-initial"
+            >
+              <Play className="w-3.5 h-3.5 mr-1 text-orange-500" />
+              Testar Notificação Geral
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleTestVocabReminder}
+              className="text-xs font-bold text-sky-700 border-sky-200 hover:bg-sky-50 rounded-xl flex-1 sm:flex-initial"
+            >
+              <Languages className="w-3.5 h-3.5 mr-1 text-sky-600" />
+              Testar Dica de Vocabulário
+            </Button>
+          </div>
 
           <Button
             type="submit"

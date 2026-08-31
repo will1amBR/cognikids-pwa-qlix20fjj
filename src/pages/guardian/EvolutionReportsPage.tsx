@@ -36,6 +36,7 @@ import {
   FileDown,
   Printer,
   Download,
+  Languages,
 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -331,6 +332,145 @@ export const EvolutionReportsPage: React.FC = () => {
               <Printer className="w-3.5 h-3.5 mr-1.5" />
               <span>{isExporting ? 'Processando…' : 'Gerar PDF para Impressão'}</span>
             </Button>
+          </div>
+
+          {/* Multilingual Performance Comparison Section */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                  <Languages className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-800">
+                    Comparativo de Desempenho por Idioma
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Português 🇧🇷 x Inglês 🇺🇸 x Espanhol 🇪🇸 x Alemão 🇩🇪 x Francês 🇫🇷
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-[11px] font-bold px-3 py-1 bg-sky-50 text-sky-700 rounded-full border border-sky-200 self-start sm:self-auto">
+                Assimilação Multilíngue Real
+              </span>
+            </div>
+
+            {/* Language Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {summary?.languageBreakdown.map((langStat) => {
+                const hasPlayed = langStat.totalSessions > 0
+                const isDoingWell = langStat.averageAccuracy >= 70
+
+                return (
+                  <div
+                    key={langStat.code}
+                    className={`rounded-3xl p-5 border-2 transition-all flex flex-col justify-between ${
+                      !hasPlayed
+                        ? 'bg-slate-50/70 border-slate-200'
+                        : isDoingWell
+                          ? 'bg-emerald-50/40 border-emerald-300 shadow-sm'
+                          : 'bg-amber-50/40 border-amber-300 shadow-sm'
+                    }`}
+                  >
+                    <div>
+                      {/* Top Language Badge */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-3xl drop-shadow-sm">{langStat.flag}</span>
+                          <div>
+                            <h3 className="text-base font-black text-slate-800">
+                              {langStat.label}
+                            </h3>
+                            <p className="text-[11px] font-semibold text-slate-400">
+                              {langStat.nativeName}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                            !hasPlayed
+                              ? 'bg-slate-200 text-slate-600'
+                              : isDoingWell
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}
+                        >
+                          {langStat.statusLabel}
+                        </span>
+                      </div>
+
+                      {/* Stats numbers */}
+                      <div className="grid grid-cols-2 gap-2 my-3">
+                        <div className="bg-white/90 p-2.5 rounded-2xl border border-slate-200/80">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">
+                            Precisão da Fala
+                          </span>
+                          <div className="text-xl font-black text-slate-800 mt-0.5">
+                            {hasPlayed ? `${langStat.averageAccuracy}%` : '—'}
+                          </div>
+                        </div>
+
+                        <div className="bg-white/90 p-2.5 rounded-2xl border border-slate-200/80">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">
+                            Partidas
+                          </span>
+                          <div className="text-xl font-black text-slate-800 mt-0.5">
+                            {langStat.totalSessions}{' '}
+                            <span className="text-xs font-normal text-slate-400">
+                              {langStat.totalSessions === 1 ? 'jogada' : 'jogadas'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[11px] font-bold text-slate-500">
+                          <span>Nível de Assimilação</span>
+                          <span className="text-slate-800 font-extrabold">
+                            {hasPlayed ? `${langStat.averageAccuracy}%` : '0%'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${
+                              isDoingWell ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${langStat.averageAccuracy}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 mt-2.5">
+                        {hasPlayed
+                          ? `⭐ ${langStat.totalStars} estrelas ganhas • ${
+                              langStat.wordsPracticedCount || langStat.totalSessions * 4
+                            } vocábulos praticados`
+                          : 'Nenhuma partida gravada neste idioma ainda.'}
+                      </p>
+                    </div>
+
+                    {/* Button to practice words in this language */}
+                    <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-400">
+                        {langStat.code === 'pt-BR' ? 'Língua Materna' : 'Segunda Língua'}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/app/game/${selectedChild.id}/fazenda_falante`)}
+                        className="h-8 px-3 rounded-xl border-orange-200 text-orange-600 font-bold hover:bg-orange-50 text-xs"
+                      >
+                        <span>Praticar {langStat.label}</span>
+                        <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* Module Breakdown Comparison Cards */}

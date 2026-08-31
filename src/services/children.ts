@@ -8,8 +8,9 @@ import type {
   BadgeDefinition,
   InviteRecord,
   SchoolAccessToken,
+  LanguageEvolutionStat,
 } from '@/types/cognikids'
-import { COGNIKIDS_MODULES, COGNIKIDS_BADGES } from '@/types/cognikids'
+import { COGNIKIDS_MODULES, COGNIKIDS_BADGES, SUPPORTED_LANGUAGES } from '@/types/cognikids'
 
 // ================= CHILDREN ================= //
 
@@ -567,6 +568,64 @@ export async function calculateChildEvolution(
     }
   })
 
+  // Multilingual Performance Breakdown
+  const languageBreakdown: LanguageEvolutionStat[] = SUPPORTED_LANGUAGES.map((lang) => {
+    // Check sessions that match this language
+    // Sessions may have language field set e.g. "pt-BR", "en", "es", "de", "fr"
+    const langSessions = allSessions.filter((s) => {
+      const sessLang = s.language || (s.details && s.details.language)
+      if (sessLang) {
+        return sessLang === lang.code || (sessLang === 'pt' && lang.code === 'pt-BR')
+      }
+      // If language was not explicitly recorded, default to pt-BR if it was the default
+      return lang.code === 'pt-BR'
+    })
+
+    const totalLangSessions = langSessions.length
+    const totalLangStars = langSessions.reduce((acc, s) => acc + (s.stars || 1), 0)
+    const averageAccuracy =
+      totalLangSessions > 0
+        ? Math.round(
+            langSessions.reduce((acc, s) => acc + (s.accuracy || s.score || 80), 0) /
+              totalLangSessions,
+          )
+        : 0
+
+    // Unique words practiced in this language
+    const wordsSet = new Set<string>()
+    langSessions.forEach((s) => {
+      if (s.details && Array.isArray(s.details.items)) {
+        s.details.items.forEach((it: string) => wordsSet.add(it))
+      }
+    })
+
+    let status: 'doing_well' | 'in_progress' | 'not_started' = 'not_started'
+    let statusLabel = 'A iniciar'
+
+    if (totalLangSessions > 0) {
+      if (averageAccuracy >= 70) {
+        status = 'doing_well'
+        statusLabel = 'Excelente assimilação'
+      } else {
+        status = 'in_progress'
+        statusLabel = 'Em desenvolvimento'
+      }
+    }
+
+    return {
+      code: lang.code,
+      label: lang.label,
+      nativeName: lang.nativeName,
+      flag: lang.flag,
+      totalSessions: totalLangSessions,
+      averageAccuracy,
+      totalStars: totalLangStars,
+      wordsPracticedCount: wordsSet.size,
+      status,
+      statusLabel,
+    }
+  })
+
   return {
     period,
     totalSessions,
@@ -577,6 +636,7 @@ export async function calculateChildEvolution(
     accuracyChange,
     sessionsChange,
     moduleBreakdown,
+    languageBreakdown,
   }
 }
 

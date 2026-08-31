@@ -2,7 +2,13 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Child } from '@/types/cognikids'
 import { calculateAgeMonths } from '@/types/cognikids'
-import { AnimalItem, WORD_CATEGORIES, getItemsByCategory, CategoryInfo } from './farmAnimalsData'
+import {
+  AnimalItem,
+  WORD_CATEGORIES,
+  getItemsByCategory,
+  getFirstWordsItems,
+  CategoryInfo,
+} from './farmAnimalsData'
 import { GameShell } from '@/components/layout/GameShell'
 import { speechService } from '@/lib/speechSynthesis'
 import { speechRecognitionService } from '@/lib/speechRecognition'
@@ -58,9 +64,10 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
 
   const childAgeMonths = calculateAgeMonths(child.birth_date)
   const [selectedCategory, setSelectedCategory] = useState<string>('farm')
+  const [isFirstWordsMode, setIsFirstWordsMode] = useState<boolean>(false)
 
   // Calibrate rounds based on age (younger = 4 rounds, older = 5-6 rounds)
-  const totalRounds = childAgeMonths <= 24 ? 4 : 5
+  const totalRounds = isFirstWordsMode ? 4 : childAgeMonths <= 24 ? 4 : 5
 
   const [roundsList, setRoundsList] = useState<AnimalItem[]>([])
   const [currentRoundIdx, setCurrentRoundIdx] = useState(0)
@@ -79,16 +86,21 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
 
   // Initialize rounds when category changes, language changes or component mounts
   useEffect(() => {
-    const items = getItemsByCategory(selectedCategory, gameLanguage)
-    // Filter by child age if possible, or fallback to all in category
-    const ageAppropriate = items.filter((i) => i.minAgeMonths <= childAgeMonths + 6)
-    const pool = ageAppropriate.length >= 3 ? ageAppropriate : items
+    let pool: AnimalItem[]
+    if (isFirstWordsMode) {
+      pool = getFirstWordsItems(gameLanguage)
+    } else {
+      const items = getItemsByCategory(selectedCategory, gameLanguage)
+      // Filter by child age if possible, or fallback to all in category
+      const ageAppropriate = items.filter((i) => i.minAgeMonths <= childAgeMonths + 6)
+      pool = ageAppropriate.length >= 3 ? ageAppropriate : items
+    }
     const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, totalRounds)
     setRoundsList(shuffled)
     setCurrentRoundIdx(0)
     setSessionResults([])
     setStep('intro')
-  }, [selectedCategory, childAgeMonths, totalRounds, gameLanguage])
+  }, [isFirstWordsMode, selectedCategory, childAgeMonths, totalRounds, gameLanguage])
 
   const currentAnimal = roundsList[currentRoundIdx] || roundsList[0]
 
@@ -122,18 +134,29 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     const speechLang = langOption ? langOption.speechLang : 'pt-BR'
 
     const timer = setTimeout(() => {
-      speechService.speak(`${introText} ${promptText}`, {
-        lang: speechLang,
-        onEnd: () => {
-          if (isMountedRef.current && step === 'intro') {
-            setTicoMessage(`${currentAnimal.name}! 🎙️`)
-          }
-        },
-      })
+      if (isFirstWordsMode) {
+        speechService.speakSlow(`${introText} ${promptText}`, {
+          lang: speechLang,
+          onEnd: () => {
+            if (isMountedRef.current && step === 'intro') {
+              setTicoMessage(`${currentAnimal.name}! 🎙️`)
+            }
+          },
+        })
+      } else {
+        speechService.speak(`${introText} ${promptText}`, {
+          lang: speechLang,
+          onEnd: () => {
+            if (isMountedRef.current && step === 'intro') {
+              setTicoMessage(`${currentAnimal.name}! 🎙️`)
+            }
+          },
+        })
+      }
     }, 600)
 
     return () => clearTimeout(timer)
-  }, [currentRoundIdx, currentAnimal, gameLanguage])
+  }, [currentRoundIdx, currentAnimal, gameLanguage, isFirstWordsMode])
 
   // Start Voice Recording
   const handleStartRecording = async () => {
@@ -225,15 +248,16 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         : 90
       const avgStars = Math.max(1, Math.min(3, Math.round(avgScore / 33.3)))
 
-      const categoryName =
-        WORD_CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'Palavras'
+      const categoryName = isFirstWordsMode
+        ? 'Primeiras Palavras'
+        : WORD_CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'Palavras'
 
       await offlineSyncService.queueGameSession({
         user_id: child.user_id,
         child_id: child.id,
         module_id: 'speech',
         game_id: 'fazenda_falante',
-        game_title: `Fala & Voz: ${categoryName}`,
+        game_title: `Fala & Voz: ${categoryName}${isFirstWordsMode ? ' (Primeiras Palavras)' : ''}`,
         stars: avgStars,
         score: avgScore,
         accuracy: avgScore,
@@ -241,21 +265,28 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         total_rounds: totalRounds,
         language: gameLanguage,
         details: {
-          category: selectedCategory,
+          category: isFirstWordsMode ? 'primeiras_palavras' : selectedCategory,
           language: gameLanguage,
+          isFirstWordsMode,
           items: roundsList.map((r) => r.name),
         },
       })
     }
   }
 
-  const handleReplayPrompt = () => {
+  const handleReplayPrompt = (slow = false) => {
     if (!currentAnimal) return
     playAnimalSound(currentAnimal.soundKey)
     const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
-    speechService.speak(currentAnimal.promptText || currentAnimal.name, {
-      lang: langOption?.speechLang || 'pt-BR',
-    })
+    if (slow || isFirstWordsMode) {
+      speechService.speakSlow(currentAnimal.promptText || currentAnimal.name, {
+        lang: langOption?.speechLang || 'pt-BR',
+      })
+    } else {
+      speechService.speak(currentAnimal.promptText || currentAnimal.name, {
+        lang: langOption?.speechLang || 'pt-BR',
+      })
+    }
   }
 
   // Completed Screen
@@ -355,50 +386,92 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       ticoInstruction={ticoMessage}
     >
       <div className="w-full max-w-lg flex flex-col items-center justify-between gap-4">
-        {/* Category Selector Pills & Language Switcher */}
-        <div className="w-full flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <div className="flex items-center gap-1.5">
-            {WORD_CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.id
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    playPop()
-                    setSelectedCategory(cat.id)
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
-                    isSelected
-                      ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105'
-                      : 'bg-white/80 text-slate-600 hover:bg-white border border-slate-200'
-                  }`}
-                >
-                  <span>{cat.emoji}</span>
-                  <span>{cat.name}</span>
-                </button>
-              )
-            })}
+        {/* Top bar: First Words Toggle + Category Selector Pills & Language Switcher */}
+        <div className="w-full flex flex-col gap-2">
+          <div className="w-full flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-1.5">
+              {/* Special First Words mode button */}
+              <button
+                onClick={() => {
+                  playPop()
+                  setIsFirstWordsMode(true)
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-black shrink-0 transition-all flex items-center gap-1.5 ${
+                  isFirstWordsMode
+                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-105 ring-2 ring-amber-300'
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
+                }`}
+              >
+                <span>🍼</span>
+                <span>Primeiras Palavras</span>
+                <span className="text-[9px] bg-white/30 px-1.5 py-0.2 rounded-full uppercase">
+                  Iniciante
+                </span>
+              </button>
+
+              {WORD_CATEGORIES.map((cat) => {
+                const isSelected = !isFirstWordsMode && selectedCategory === cat.id
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      playPop()
+                      setIsFirstWordsMode(false)
+                      setSelectedCategory(cat.id)
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-105'
+                        : 'bg-white/80 text-slate-600 hover:bg-white border border-slate-200'
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    <span>{cat.name}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Activity Language Selector */}
+            <div className="flex items-center gap-1 bg-white/90 px-2.5 py-1 rounded-full border border-orange-200 shadow-sm shrink-0">
+              <Globe className="w-3.5 h-3.5 text-orange-600" />
+              <select
+                value={gameLanguage}
+                onChange={(e) => {
+                  playPop()
+                  setGameLanguage(e.target.value as AppLanguage)
+                }}
+                className="text-xs font-bold text-orange-950 bg-transparent outline-none cursor-pointer"
+                aria-label="Idioma da Atividade"
+              >
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Activity Language Selector */}
-          <div className="flex items-center gap-1 bg-white/90 px-2 py-1 rounded-full border border-orange-200 shadow-sm shrink-0">
-            <Globe className="w-3.5 h-3.5 text-orange-600" />
-            <select
-              value={gameLanguage}
-              onChange={(e) => {
-                playPop()
-                setGameLanguage(e.target.value as AppLanguage)
-              }}
-              className="text-xs font-bold text-orange-950 bg-transparent outline-none cursor-pointer"
-              aria-label="Idioma da Atividade"
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.flag} {lang.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Syllable and slow articulation banner for First Words mode */}
+          {isFirstWordsMode && (
+            <div className="w-full bg-amber-500/10 border border-amber-300/80 rounded-2xl px-3.5 py-2 flex items-center justify-between gap-2 text-amber-900 text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <b>Modo Primeiras Palavras ({gameLanguage.toUpperCase()}):</b> Ritmo calmo,
+                  fonemas simples e sílabas pausadas!
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleReplayPrompt(true)}
+                className="px-2 py-0.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold text-[11px] shrink-0"
+              >
+                Ouvir Devagar 🐢
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Animal / Item Stage Card */}
@@ -407,7 +480,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         >
           {/* Sound replay button */}
           <button
-            onClick={handleReplayPrompt}
+            onClick={() => handleReplayPrompt(false)}
             className="absolute top-4 right-4 w-11 h-11 rounded-2xl bg-white/25 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-95 shadow-sm"
             title="Ouvir som novamente"
             aria-label="Ouvir som"
@@ -423,6 +496,15 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2 text-center">
             {currentAnimal.name}
           </h2>
+
+          {/* Syllables breakdown pill when in First Words Mode or if syllable data exists */}
+          {currentAnimal.syllables && (
+            <div className="mt-1 bg-white/25 backdrop-blur-md px-3 py-0.5 rounded-full text-white font-extrabold text-xs tracking-widest uppercase shadow-sm">
+              {currentAnimal.syllables[gameLanguage] ||
+                currentAnimal.syllables['pt-BR'] ||
+                currentAnimal.name}
+            </div>
+          )}
 
           <p className="text-xs sm:text-sm font-semibold text-white/90 text-center mt-1 max-w-xs">
             {currentAnimal.actionDescription}

@@ -12,8 +12,12 @@ import {
   getReminderConfig,
   checkShouldTriggerReminder,
   markReminderTriggeredToday,
+  checkShouldTriggerVocabReminder,
+  markVocabReminderTriggeredToday,
+  getRandomVocabTip,
   sendLocalNotification,
 } from '@/services/reminders'
+import type { AppLanguage } from '@/types/cognikids'
 import { useToast } from '@/hooks/use-toast'
 import {
   Home,
@@ -79,11 +83,12 @@ export const AppShell: React.FC = () => {
 
     const checkReminder = async () => {
       const config = await getReminderConfig()
+      const kidName = selectedChild ? selectedChild.name : 'seu filho(a)'
+
+      // 1. Routine daily session reminder
       if (checkShouldTriggerReminder(config)) {
         markReminderTriggeredToday()
-        const kidName = selectedChild ? selectedChild.name : 'seu filho(a)'
 
-        // 1. In-app toast notification
         toast({
           title: `⏰ Hora da Sessão Diária de ${kidName}!`,
           description: `O Tico preparou joguinhos rápidos para hoje. Vamos brincar?`,
@@ -98,10 +103,35 @@ export const AppShell: React.FC = () => {
           ) : undefined,
         })
 
-        // 2. Browser notification
         sendLocalNotification(
           `⏰ Hora da Sessão Diária de ${kidName}!`,
           'O Tico preparou joguinhos rápidos para hoje. Vamos brincar no CogniKids?',
+        )
+      }
+
+      // 2. Vocabulary practice reminder
+      if (checkShouldTriggerVocabReminder(config)) {
+        markVocabReminderTriggeredToday()
+        const lang = (config.vocab_reminder_language as AppLanguage) || 'en'
+        const tip = getRandomVocabTip(lang)
+
+        toast({
+          title: `🗣️ Revisão em ${tip.languageLabel} com ${kidName}! ${tip.flag}`,
+          description: `Palavras de hoje: "${tip.wordNative}". Dica: ${tip.practicalHomeTip}`,
+          action: selectedChild ? (
+            <Button
+              size="sm"
+              onClick={() => navigate(`/app/game/${selectedChild.id}/fazenda_falante`)}
+              className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl"
+            >
+              Praticar
+            </Button>
+          ) : undefined,
+        })
+
+        sendLocalNotification(
+          `🗣️ Revisão em ${tip.languageLabel} com ${kidName}! ${tip.flag}`,
+          `Palavras de hoje: "${tip.wordNative}" (${tip.wordTranslation}). Dica: ${tip.practicalHomeTip}`,
         )
       }
     }
