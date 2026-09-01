@@ -25,6 +25,24 @@ export interface VocabPracticeTip {
   samplePhrase: string
 }
 
+export interface WordReviewItem {
+  word: string
+  language: AppLanguage
+  errorCount: number
+  attemptsCount: number
+  averageAccuracy: number
+  lastPracticed?: string
+  suggestedAction?: string
+}
+
+export interface LanguageVocabQueue {
+  language: AppLanguage
+  languageLabel: string
+  flag: string
+  totalToReview: number
+  words: WordReviewItem[]
+}
+
 export const VOCAB_DAILY_PRACTICE_TIPS: Record<AppLanguage, VocabPracticeTip[]> = {
   en: [
     {
@@ -441,4 +459,161 @@ export function checkShouldTriggerVocabReminder(config: GuardianReminderConfig):
 export function markVocabReminderTriggeredToday() {
   const todayStr = new Date().toISOString().split('T')[0]
   localStorage.setItem(LAST_VOCAB_NOTIFIED_KEY, todayStr)
+}
+
+/**
+ * Computes vocabulary review items per language based on actual game sessions (both synced and offline pending).
+ * Words with lowest accuracy (< 85%) or highest error count are prioritized.
+ */
+export function computeVocabReviewQueue(
+  sessions: GameSession[],
+  childLanguages: AppLanguage[] = ['pt-BR'],
+): Record<AppLanguage, WordReviewItem[]> {
+  const result: Record<AppLanguage, WordReviewItem[]> = {
+    'pt-BR': [],
+    en: [],
+    es: [],
+    fr: [],
+    de: [],
+    it: [],
+  }
+
+  const wordStats: Record<
+    string,
+    {
+      word: string
+      language: AppLanguage
+      totalScore: number
+      attempts: number
+      errors: number
+      lastDate: string
+    }
+  > = {}
+
+  // Process all sessions (speech sessions and words games)
+  sessions.forEach((session) => {
+    const lang = (session.language || 'pt-BR') as AppLanguage
+    const details = (session.details as any) || {}
+    const sessionDate = session.created || new Date().toISOString()
+
+    // 1. Check detailed word results
+    if (details.wordResults && Array.isArray(details.wordResults)) {
+      details.wordResults.forEach((wr: any) => {
+        if (!wr || !wr.word) return
+        const wordKey = `${lang}:::${String(wr.word).trim().toLowerCase()}`
+        const wordDisplay = String(wr.word).trim()
+        const score = typeof wr.score === 'number' ? wr.score : 80
+        const isError = wr.isRecognized === false || score < 75
+
+        if (!wordStats[wordKey]) {
+          wordStats[wordKey] = {
+            word: wordDisplay,
+            language: lang,
+            totalScore: score,
+            attempts: 1,
+            errors: isError ? 1 : 0,
+            lastDate: sessionDate,
+          }
+        } else {
+          wordStats[wordKey].totalScore += score
+          wordStats[wordKey].attempts += 1
+          if (isError) wordStats[wordKey].errors += 1
+          if (new Date(sessionDate) > new Date(wordStats[wordKey].lastDate)) {
+            wordStats[wordKey].lastDate = sessionDate
+          }
+        }
+      })
+    } else if (details.items && Array.isArray(details.items)) {
+      // General items listed
+      const sessionScore = session.score || 80
+      const isError = sessionScore < 75
+
+      details.items.forEach((item: any) => {
+        if (!item || typeof item !== 'string') return
+        const wordKey = `${lang}:::${item.trim().toLowerCase()}`
+        const wordDisplay = item.trim()
+
+        if (!wordStats[wordKey]) {
+          wordStats[wordKey] = {
+            word: wordDisplay,
+            language: lang,
+            totalScore: sessionScore,
+            attempts: 1,
+            errors: isError ? 1 : 0,
+            lastDate: sessionDate,
+          }
+        } else {
+          wordStats[wordKey].totalScore += sessionScore
+          wordStats[wordKey].attempts += 1
+          if (isError) wordStats[wordKey].errors += 1
+          if (new Date(sessionDate) > new Date(wordStats[wordKey].lastDate)) {
+            wordStats[wordKey].lastDate = sessionDate
+          }
+        }
+      })
+    }
+  })
+
+  // Group and rank words
+  Object.values(wordStats).forEach((stat) => {
+    const avgScore = Math.round(stat.totalScore / stat.attempts)
+    const item: WordReviewItem = {
+      word: stat.word,
+      language: stat.language,
+      errorCount: stat.errors,
+      attemptsCount: stat.attempts,
+      averageAccuracy: avgScore,
+      lastPracticed: stat.lastDate,
+      suggestedAction:
+        avgScore < 60
+          ? 'Revisão urgente'
+          : avgScore < 80
+            ? 'Reforçar fonética'
+            : 'Revisão de fixação',
+    }
+
+    if (!result[stat.language]) {
+      result[stat.language] = []
+    }
+    result[stat.language].push(item)
+  })
+
+  // Sort: highest errors first, then lowest accuracy, then last practiced
+  Object.keys(result).forEach((k) => {
+    const lang = k as AppLanguage
+    if (result[lang]) {
+      result[lang].sort((a, b) => {
+        if (b.errorCount !== a.errorCount) {
+          return b.errorCount - a.errorCount
+        }
+        return a.averageAccuracy - b.averageAccuracy
+      })
+    }
+  })
+
+  // Ensure every active child language has helpful default practice words if none or few exist in history
+  const defaultWordsByLang: Record<AppLanguage, string[]> = {
+    'pt-BR': ['Cachorro', 'Borboleta', 'Bicicleta', 'Abelha', 'Sorvete'],
+    en: ['Elephant', 'Butterfly', 'Bicycle', 'Strawberry', 'Giraffe'],
+    es: ['Mariposa', 'Caballo', 'Bicicleta', 'Manzana', 'Estrella'],
+    fr: ['Papillon', 'Chapeau', 'Bicyclette', 'Éléphant', 'Grenouille'],
+    de: ['Schmetterling', 'Fahrrad', 'Apfel', 'Elefant', 'Katze'],
+    it: ['Farfalla', 'Bicicletta', 'Cavallo', 'Gelato', 'Stella'],
+  }
+
+  childLanguages.forEach((lang) => {
+    if (!result[lang] || result[lang].length === 0) {
+      result[lang] = (defaultWordsByLang[lang] || defaultWordsByLang['pt-BR']).map((w) => ({
+        word: w,
+        language: lang,
+        errorCount: 1,
+        attemptsCount: 1,
+        averageAccuracy: 65,
+        lastPracticed: new Date().toISOString(),
+        suggestedAction: 'Sugestão para iniciar prática',
+      }))
+    }
+  })
+
+  return result
 }

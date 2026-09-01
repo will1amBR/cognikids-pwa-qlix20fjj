@@ -252,6 +252,16 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         ? 'Primeiras Palavras'
         : WORD_CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'Palavras'
 
+      const wordResults = roundsList.map((r, idx) => {
+        const evalRes = allResults[idx]
+        return {
+          word: r.name,
+          score: evalRes ? evalRes.score : 80,
+          stars: evalRes ? evalRes.stars : 2,
+          isRecognized: evalRes ? evalRes.isRecognized : true,
+        }
+      })
+
       await offlineSyncService.queueGameSession({
         user_id: child.user_id,
         child_id: child.id,
@@ -269,11 +279,11 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
           language: gameLanguage,
           isFirstWordsMode,
           items: roundsList.map((r) => r.name),
+          wordResults,
         },
       })
     }
   }
-
   const handleReplayPrompt = (slow = false) => {
     if (!currentAnimal) return
     playAnimalSound(currentAnimal.soundKey)

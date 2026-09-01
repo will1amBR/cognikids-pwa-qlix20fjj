@@ -37,7 +37,10 @@ import {
   Printer,
   Download,
   Languages,
+  History,
 } from 'lucide-react'
+import { BilingualBadge } from '@/components/mascot/BilingualBadge'
+import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export const EvolutionReportsPage: React.FC = () => {
@@ -148,25 +151,36 @@ export const EvolutionReportsPage: React.FC = () => {
 
         {/* Controls: Child switch + Period Toggle */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Child Picker */}
+          {/* Child Picker with Bilingual Badge */}
           {childrenList.length > 1 && (
             <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
               {childrenList.map((kid) => (
                 <button
                   key={kid.id}
                   onClick={() => handleSelectChild(kid)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     selectedChild?.id === kid.id
                       ? 'bg-orange-500 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  {kid.name}
+                  <span>{kid.name}</span>
                 </button>
               ))}
             </div>
           )}
 
+          {selectedChild && (
+            <Link to={`/app/history/${selectedChild.id}`}>
+              <Button
+                variant="outline"
+                className="h-10 px-3.5 rounded-2xl border-orange-200 text-orange-700 hover:bg-orange-50 text-xs font-bold flex items-center gap-1.5 shadow-xs"
+              >
+                <History className="w-4 h-4" />
+                <span>Histórico de Partidas</span>
+              </Button>
+            </Link>
+          )}
           {/* Period Toggle */}
           <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
             <button
@@ -333,6 +347,14 @@ export const EvolutionReportsPage: React.FC = () => {
               <span>{isExporting ? 'Processando…' : 'Gerar PDF para Impressão'}</span>
             </Button>
           </div>
+
+          {/* Fila de Palavras a Revisar Conectada no Relatório */}
+          <VocabReviewQueueCard
+            child={selectedChild}
+            onSelectWordToPractice={(word, lang) => {
+              navigate(`/app/game/${selectedChild.id}/fazenda_falante`)
+            }}
+          />
 
           {/* Multilingual Performance Comparison Section */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">

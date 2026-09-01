@@ -7,8 +7,10 @@ import {
   VOCAB_DAILY_PRACTICE_TIPS,
   getRandomVocabTip,
   VocabPracticeTip,
+  computeVocabReviewQueue,
 } from '@/services/reminders'
-import type { GuardianReminderConfig, AppLanguage } from '@/types/cognikids'
+import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
+import type { GuardianReminderConfig, AppLanguage, Child } from '@/types/cognikids'
 import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,7 +31,11 @@ import {
   BookOpen,
 } from 'lucide-react'
 
-export const RoutineReminderSettings: React.FC = () => {
+interface RoutineReminderSettingsProps {
+  child?: Child | null
+}
+
+export const RoutineReminderSettings: React.FC<RoutineReminderSettingsProps> = ({ child }) => {
   const { toast } = useToast()
   const { playPop, playStarReward } = useSound()
 
@@ -126,14 +132,15 @@ export const RoutineReminderSettings: React.FC = () => {
   const handleTestVocabReminder = () => {
     playPop()
     const lang = (config.vocab_reminder_language as AppLanguage) || 'en'
+    const langInfo = SUPPORTED_LANGUAGES.find((l) => l.code === lang)
     const tip = selectedTip || getRandomVocabTip(lang)
     sendLocalNotification(
-      `🗣️ Hora de Praticar ${tip.languageLabel} ${tip.flag}`,
-      `Palavras de hoje: "${tip.wordNative}" (${tip.wordTranslation}). Dica rápida: ${tip.practicalHomeTip}`,
+      `🗣️ Revisão de Vocabulário em ${langInfo?.label || tip.languageLabel} ${langInfo?.flag || tip.flag}`,
+      `Palavras prioritárias na fila: "${tip.wordNative}" (${tip.wordTranslation}). Dica: ${tip.practicalHomeTip}`,
     )
     toast({
-      title: `🗣️ Dica Prática de Revisão em ${tip.languageLabel}!`,
-      description: `"${tip.wordNative}" • ${tip.practicalHomeTip}`,
+      title: `🗣️ Fila de Revisão em ${langInfo?.label || tip.languageLabel} (${langInfo?.flag || tip.flag})`,
+      description: `Palavra em destaque: "${tip.wordNative}" • ${tip.practicalHomeTip}`,
     })
   }
 
@@ -318,49 +325,13 @@ export const RoutineReminderSettings: React.FC = () => {
             </div>
           </div>
 
-          {/* Dica Prática em Destaque (Preview) */}
-          {selectedTip && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs font-extrabold text-amber-900 uppercase tracking-wide">
-                    Exemplo de Dica Diária ({selectedTip.languageLabel} {selectedTip.flag})
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playPop()
-                    setSelectedTip(
-                      getRandomVocabTip((config.vocab_reminder_language as AppLanguage) || 'en'),
-                    )
-                  }}
-                  className="text-[11px] font-bold text-amber-800 hover:underline"
-                >
-                  Outra dica 🎲
-                </button>
-              </div>
-
-              <div className="bg-white/80 rounded-xl p-3 border border-amber-100 space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-extrabold text-slate-800">
-                    Palavras:{' '}
-                    <span className="text-orange-600 font-black">{selectedTip.wordNative}</span>
-                  </span>
-                  <span className="text-slate-500 font-medium">
-                    ({selectedTip.wordTranslation})
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600">
-                  <b>Como praticar em casa:</b> {selectedTip.practicalHomeTip}
-                </p>
-                <p className="text-[11px] text-amber-700 font-medium italic">
-                  Frase de exemplo: {selectedTip.samplePhrase}
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Fila de Palavras do Vocabulário Conectada */}
+          <div className="pt-2">
+            <VocabReviewQueueCard
+              child={child}
+              initialLanguage={(config.vocab_reminder_language as AppLanguage) || 'pt-BR'}
+            />
+          </div>
         </div>
 
         {/* Action buttons */}

@@ -276,6 +276,20 @@ export const ChildFormPage: React.FC = () => {
           <Label className="text-xs font-bold text-slate-700">
             Idiomas que a criança está aprendendo
           </Label>
+
+          {learningLanguages.length > 1 && (
+            <div className="p-3 bg-amber-50 rounded-2xl border border-amber-300 flex items-center gap-2.5 text-xs text-amber-950">
+              <span className="text-xl">🌍</span>
+              <div>
+                <p className="font-black text-amber-900">Selo Especial Concedido!</p>
+                <p className="text-amber-800">
+                  Com {learningLanguages.length} idiomas selecionados, a criança exibirá o selo{' '}
+                  <strong>"Bilíngue em construção"</strong> no perfil e nas medalhas.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SUPPORTED_LANGUAGES.map((lang) => {
               const isChecked = learningLanguages.includes(lang.code)

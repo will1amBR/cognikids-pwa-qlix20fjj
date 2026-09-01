@@ -24,6 +24,7 @@ import { ChildDashboardPage } from '@/pages/guardian/ChildDashboard'
 import { SettingsPage } from '@/pages/guardian/SettingsPage'
 import { DailySessionPage } from '@/pages/guardian/DailySessionPage'
 import { EvolutionReportsPage } from '@/pages/guardian/EvolutionReportsPage'
+import { GameHistoryPage } from '@/pages/guardian/GameHistoryPage'
 import { GuardianThemesGuidePage } from '@/pages/guardian/GuardianThemesGuidePage'
 import { InvitesAndSchoolPage } from '@/pages/guardian/InvitesAndSchoolPage'
 import { SchoolViewPortalPage } from '@/pages/guardian/SchoolViewPortalPage'
@@ -58,7 +59,9 @@ const App: React.FC = () => {
                   <Route path="child/:childId" element={<ChildDashboardPage />} />
                   <Route path="reports" element={<EvolutionReportsPage />} />
                   <Route path="reports/:childId" element={<EvolutionReportsPage />} />
-                  <Route path="themes-guide" element={<GuardianThemesGuidePage />} />
+                  <Route path="history" element={<GameHistoryPage />} />
+                  <Route path="history/:childId" element={<GameHistoryPage />} />
+                  <Route path="themes-guide" element={<GuardianThemesGuidePage />} />{' '}
                   <Route path="community" element={<InvitesAndSchoolPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>

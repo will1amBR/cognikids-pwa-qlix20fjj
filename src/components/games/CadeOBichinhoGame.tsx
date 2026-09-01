@@ -102,6 +102,17 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
       accuracy: finalScore,
       rounds_completed: totalRounds,
       total_rounds: totalRounds,
+      language: 'pt-BR',
+      details: {
+        category: selectedCategory,
+        items: roundsList.map((r) => r.name),
+        wordResults: roundsList.map((r) => ({
+          word: r.name,
+          score: finalScore,
+          stars: 3,
+          isRecognized: true,
+        })),
+      },
     })
   }
 

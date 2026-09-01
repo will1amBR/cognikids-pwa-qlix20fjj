@@ -4,7 +4,8 @@ import { fetchChildren, deleteChild, getChildAvatarUrl } from '@/services/childr
 import type { Child } from '@/types/cognikids'
 import { formatChildAge } from '@/types/cognikids'
 import { Button } from '@/components/ui/button'
-import { Plus, Edit2, Trash2, UserPlus, Play, ArrowLeft } from 'lucide-react'
+import { Plus, Edit2, Trash2, UserPlus, Play, ArrowLeft, History } from 'lucide-react'
+import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -110,7 +111,10 @@ export const ChildrenListPage: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-slate-800">{child.name}</h3>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-black text-base text-slate-800">{child.name}</h3>
+                      <BilingualBadge child={child} size="sm" />
+                    </div>
                     <p className="text-xs font-semibold text-slate-500">
                       {formatChildAge(child.birth_date)}
                     </p>
@@ -121,8 +125,18 @@ export const ChildrenListPage: React.FC = () => {
                   <Button
                     size="sm"
                     variant="ghost"
+                    onClick={() => navigate(`/app/history/${child.id}`)}
+                    className="rounded-xl text-slate-600 hover:bg-slate-100 font-bold text-xs"
+                    title="Histórico de partidas"
+                  >
+                    <History className="w-3.5 h-3.5 mr-1" />
+                    Histórico
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={() => navigate(`/app/child/${child.id}`)}
-                    className="rounded-xl text-orange-600 hover:bg-orange-50 font-bold"
+                    className="rounded-xl text-orange-600 hover:bg-orange-50 font-bold text-xs"
                   >
                     <Play className="w-4 h-4 fill-current mr-1" />
                     Jogar

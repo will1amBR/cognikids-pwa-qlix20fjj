@@ -23,7 +23,10 @@ import {
   UserPlus,
   Flame,
   TrendingUp,
+  History,
 } from 'lucide-react'
+import { BilingualBadge } from '@/components/mascot/BilingualBadge'
+import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
 import { Button } from '@/components/ui/button'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 
@@ -187,9 +190,12 @@ export const GuardianHome: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-slate-800 group-hover:text-orange-600 transition-colors">
-                        {child.name}
-                      </h3>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="text-lg font-black text-slate-800 group-hover:text-orange-600 transition-colors">
+                          {child.name}
+                        </h3>
+                        <BilingualBadge child={child} size="sm" />
+                      </div>
                       <span className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 mt-1">
                         {ageText}
                       </span>
@@ -238,13 +244,22 @@ export const GuardianHome: React.FC = () => {
                       <span>Cérebro em Flor</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
-                    <Link
-                      to={`/app/reports/${child.id}`}
-                      className="hover:text-orange-600 flex items-center gap-1 transition-colors text-slate-400 hover:text-orange-600"
-                    >
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>Relatório</span>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/app/history/${child.id}`}
+                        className="hover:text-orange-600 flex items-center gap-1 transition-colors text-slate-400 hover:text-orange-600"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        <span>Histórico</span>
+                      </Link>
+                      <Link
+                        to={`/app/reports/${child.id}`}
+                        className="hover:text-orange-600 flex items-center gap-1 transition-colors text-slate-400 hover:text-orange-600"
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        <span>Relatório</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

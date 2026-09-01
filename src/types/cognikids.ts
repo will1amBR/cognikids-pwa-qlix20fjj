@@ -143,6 +143,14 @@ export interface LanguageEvolutionStat {
   statusLabel: string
 }
 
+export interface BilingualStatus {
+  isBilingualOrMultilingual: boolean
+  languagesCount: number
+  languages: AppLanguage[]
+  badgeTitle: string
+  badgeDescription: string
+}
+
 export interface ModuleDefinition {
   id: string
   title: string
@@ -168,6 +176,19 @@ export interface ModuleDefinition {
 }
 
 export const COGNIKIDS_BADGES: BadgeDefinition[] = [
+  // Selo Especial de Multi-idiomas
+  {
+    key: 'bilingual_in_progress',
+    moduleId: 'speech',
+    title: 'Bilíngue em construção',
+    description:
+      'Pratica mais de um idioma com o Tico, desenvolvendo múltiplos repertórios vocais e culturais!',
+    icon: '🌍',
+    tier: 'gold',
+    requirementText: 'Configure e pratique 2 ou mais idiomas no perfil da criança',
+    requiredSessions: 1,
+    requiredMastery: 30,
+  },
   // 1. Fala & Linguagem
   {
     key: 'speech_primeiras_palavras',

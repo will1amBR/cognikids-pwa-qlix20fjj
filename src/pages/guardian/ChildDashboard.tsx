@@ -29,7 +29,10 @@ import {
   Share2,
   School,
   Clock,
+  History,
 } from 'lucide-react'
+import { BilingualBadge } from '@/components/mascot/BilingualBadge'
+import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
 import {
   Dialog,
   DialogContent,
@@ -142,29 +145,24 @@ export const ChildDashboardPage: React.FC = () => {
                 child.name.charAt(0).toUpperCase()
               )}
             </div>
-
             <div>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-800">{child.name}</h1>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-orange-100 text-orange-800">
                   {formatChildAge(child.birth_date, language)}
                 </span>
+                <BilingualBadge child={child} showLanguages size="sm" />
                 {child.daily_minutes && (
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-orange-500" />
                     <span>{child.daily_minutes} min/dia</span>
                   </span>
                 )}
-                {child.primary_language && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 flex items-center gap-1">
-                    <span>🗣️ {child.primary_language}</span>
-                  </span>
-                )}
               </div>
               <p className="text-sm text-slate-500 mt-1 max-w-md">
                 Jornada lúdica de desenvolvimento em 5 áreas essenciais com o mascote Tico.
               </p>
-            </div>
+            </div>{' '}
           </div>
 
           {/* Medals Count + Actions */}
@@ -251,14 +249,25 @@ export const ChildDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <Link to={`/app/reports/${child.id}`}>
-            <Button
-              variant="outline"
-              className="rounded-2xl border-slate-300 hover:bg-white text-xs font-bold shrink-0"
-            >
-              Ver relatório completo
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to={`/app/history/${child.id}`}>
+              <Button
+                variant="outline"
+                className="rounded-2xl border-orange-200 text-orange-700 hover:bg-orange-50 text-xs font-bold shrink-0 flex items-center gap-1.5"
+              >
+                <History className="w-3.5 h-3.5" />
+                <span>Histórico por Idioma</span>
+              </Button>
+            </Link>
+            <Link to={`/app/reports/${child.id}`}>
+              <Button
+                variant="outline"
+                className="rounded-2xl border-slate-300 hover:bg-white text-xs font-bold shrink-0"
+              >
+                Relatório de Evolução
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Diagnóstico e Como Subir de Nível por Área */}
@@ -340,6 +349,14 @@ export const ChildDashboardPage: React.FC = () => {
 
         {/* Tab 1: Cérebro em Flor & Modules */}
         <TabsContent value="flower" className="space-y-6">
+          {/* Fila de Revisão de Vocabulário da Criança */}
+          <VocabReviewQueueCard
+            child={child}
+            compact
+            onSelectWordToPractice={(word, lang) => {
+              navigate(`/app/game/${child.id}/fazenda_falante`)
+            }}
+          />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Visual Flower Chart */}
             <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md flex flex-col items-center justify-center text-center">

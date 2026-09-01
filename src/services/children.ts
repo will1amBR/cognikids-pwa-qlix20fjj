@@ -95,6 +95,14 @@ export async function updateChild(
   }
 
   const res = await pb.collection('children').update<Child>(id, formData)
+
+  // Try to evaluate bilingual badge after updates
+  try {
+    await syncAndEvaluateAchievements(id)
+  } catch {
+    /* intentionally ignored */
+  }
+
   return res
 }
 
@@ -106,6 +114,35 @@ export async function deleteChild(id: string): Promise<boolean> {
 export function getChildAvatarUrl(child: Child): string | null {
   if (!child.avatar) return null
   return pb.files.getURL(child as any, child.avatar)
+}
+
+/**
+ * Helper to determine the child's bilingual / multilingual status badge
+ */
+export function getChildBilingualStatus(child?: Child | null): BilingualStatus {
+  const learningLangs =
+    child?.learning_languages && Array.isArray(child.learning_languages)
+      ? (child.learning_languages as AppLanguage[])
+      : child?.primary_language
+        ? [child.primary_language as AppLanguage]
+        : ['pt-BR']
+
+  const isBilingualOrMultilingual = learningLangs.length > 1
+
+  return {
+    isBilingualOrMultilingual,
+    languagesCount: learningLangs.length,
+    languages: learningLangs,
+    badgeTitle: learningLangs.length > 2 ? 'Multilíngue em construção' : 'Bilíngue em construção',
+    badgeDescription: isBilingualOrMultilingual
+      ? `Praticando ${learningLangs.length} idiomas com o Tico: ${learningLangs
+          .map((c) => {
+            const l = SUPPORTED_LANGUAGES.find((opt) => opt.code === c)
+            return l ? `${l.flag} ${l.label}` : c
+          })
+          .join(', ')}`
+      : 'Praticando 1 idioma no momento.',
+  }
 }
 
 // ================= SESSIONS & PROGRESS ================= //
@@ -193,19 +230,34 @@ export async function syncAndEvaluateAchievements(childId: string): Promise<Chil
 
   const newUnlocks: ChildAchievement[] = []
 
+  // Also check child learning languages for bilingual badge
+  let childRecord: Child | null = null
+  try {
+    childRecord = await fetchChildById(childId)
+  } catch {
+    /* intentionally ignored */
+  }
+
   for (const badge of COGNIKIDS_BADGES) {
     if (unlockedMap.has(badge.key)) continue
 
-    const modSessions = sessionsByModule[badge.moduleId] || 0
-    const modMastery = progressByModule[badge.moduleId] || (modSessions > 0 ? 50 : 0)
-
     let isEligible = false
-    if (badge.tier === 'bronze') {
-      isEligible = modSessions >= 1
-    } else if (badge.tier === 'silver') {
-      isEligible = modSessions >= 2 || modMastery >= badge.requiredMastery
-    } else if (badge.tier === 'gold') {
-      isEligible = (modSessions >= 3 && modMastery >= 75) || modMastery >= badge.requiredMastery
+
+    if (badge.key === 'bilingual_in_progress') {
+      const childLangCount = childRecord?.learning_languages?.length || 1
+      const sessionLanguages = new Set(sessions.map((s) => s.language).filter(Boolean))
+      isEligible = childLangCount > 1 || sessionLanguages.size > 1
+    } else {
+      const modSessions = sessionsByModule[badge.moduleId] || 0
+      const modMastery = progressByModule[badge.moduleId] || (modSessions > 0 ? 50 : 0)
+
+      if (badge.tier === 'bronze') {
+        isEligible = modSessions >= 1
+      } else if (badge.tier === 'silver') {
+        isEligible = modSessions >= 2 || modMastery >= badge.requiredMastery
+      } else if (badge.tier === 'gold') {
+        isEligible = (modSessions >= 3 && modMastery >= 75) || modMastery >= badge.requiredMastery
+      }
     }
 
     if (isEligible) {
@@ -594,8 +646,13 @@ export async function calculateChildEvolution(
     // Unique words practiced in this language
     const wordsSet = new Set<string>()
     langSessions.forEach((s) => {
-      if (s.details && Array.isArray(s.details.items)) {
-        s.details.items.forEach((it: string) => wordsSet.add(it))
+      const details = (s.details as any) || {}
+      if (details.wordResults && Array.isArray(details.wordResults)) {
+        details.wordResults.forEach((wr: any) => {
+          if (wr && wr.word) wordsSet.add(wr.word)
+        })
+      } else if (details.items && Array.isArray(details.items)) {
+        details.items.forEach((it: string) => wordsSet.add(it))
       }
     })
 

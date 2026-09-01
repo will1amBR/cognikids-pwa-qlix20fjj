@@ -35,6 +35,7 @@ import {
   BookOpen,
   Share2,
   TrendingUp,
+  History,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -112,26 +113,26 @@ export const AppShell: React.FC = () => {
       // 2. Vocabulary practice reminder
       if (checkShouldTriggerVocabReminder(config)) {
         markVocabReminderTriggeredToday()
-        const lang = (config.vocab_reminder_language as AppLanguage) || 'en'
+        const lang = (config.vocab_reminder_language as AppLanguage) || 'pt-BR'
         const tip = getRandomVocabTip(lang)
 
         toast({
-          title: `🗣️ Revisão em ${tip.languageLabel} com ${kidName}! ${tip.flag}`,
-          description: `Palavras de hoje: "${tip.wordNative}". Dica: ${tip.practicalHomeTip}`,
+          title: `🗣️ Fila de Revisão (${tip.languageLabel}) com ${kidName}! ${tip.flag}`,
+          description: `Vocábulo prioritário: "${tip.wordNative}" (${tip.wordTranslation}). ${tip.practicalHomeTip}`,
           action: selectedChild ? (
             <Button
               size="sm"
-              onClick={() => navigate(`/app/game/${selectedChild.id}/fazenda_falante`)}
+              onClick={() => navigate(`/app/history/${selectedChild.id}`)}
               className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl"
             >
-              Praticar
+              Ver Fila
             </Button>
           ) : undefined,
         })
 
         sendLocalNotification(
-          `🗣️ Revisão em ${tip.languageLabel} com ${kidName}! ${tip.flag}`,
-          `Palavras de hoje: "${tip.wordNative}" (${tip.wordTranslation}). Dica: ${tip.practicalHomeTip}`,
+          `🗣️ Fila de Revisão (${tip.languageLabel}) com ${kidName}! ${tip.flag}`,
+          `Vocábulo prioritário: "${tip.wordNative}" (${tip.wordTranslation}). Dica: ${tip.practicalHomeTip}`,
         )
       }
     }
@@ -161,6 +162,11 @@ export const AppShell: React.FC = () => {
       label: t('nav.reports'),
       path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
       icon: TrendingUp,
+    },
+    {
+      label: 'Histórico',
+      path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
+      icon: History,
     },
     { label: t('nav.themesGuide'), path: '/app/themes-guide', icon: BookOpen },
     { label: t('nav.community'), path: '/app/community', icon: Share2 },
