@@ -9,6 +9,7 @@ import { Sparkles, Globe } from 'lucide-react'
 interface BilingualBadgeProps {
   child?: Child | null
   showLanguages?: boolean
+  showLabel?: boolean
   size?: 'sm' | 'md' | 'lg'
   variant?: 'badge' | 'card' | 'inline'
   className?: string

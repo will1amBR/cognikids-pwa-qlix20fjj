@@ -25,12 +25,17 @@ import {
   Trophy,
 } from 'lucide-react'
 
-export const JuniorVocabBuilderGame: React.FC = () => {
-  const { childId } = useParams<{ childId: string }>()
+interface JuniorGameProps {
+  child?: Child | null
+}
+
+export const JuniorVocabBuilderGame: React.FC<JuniorGameProps> = ({ child: initialChild }) => {
+  const { childId: routeChildId } = useParams<{ childId: string }>()
+  const childId = initialChild?.id || routeChildId
   const navigate = useNavigate()
   const { playSound } = useSound()
 
-  const [child, setChild] = useState<Child | null>(null)
+  const [child, setChild] = useState<Child | null>(initialChild || null)
   const [currentLang, setCurrentLang] = useState<AppLanguage>('pt-BR')
   const [currentRound, setCurrentRound] = useState<number>(0)
   const [score, setScore] = useState<number>(0)
@@ -70,8 +75,8 @@ export const JuniorVocabBuilderGame: React.FC = () => {
       fetchChildById(childId).then((c) => {
         if (c) {
           setChild(c)
-          const preferred = (c.preferred_languages && c.preferred_languages[0]) || 'pt-BR'
-          setCurrentLang(preferred as AppLanguage)
+          const preferred = (c.primary_language || 'pt-BR') as AppLanguage
+          setCurrentLang(preferred)
         }
       })
     }
@@ -92,7 +97,7 @@ export const JuniorVocabBuilderGame: React.FC = () => {
   // Voice Recognition
   const handleToggleListening = () => {
     if (isListening) {
-      speechRecognitionService.stop()
+      speechRecognitionService.stopListening()
       setIsListening(false)
       return
     }
@@ -104,8 +109,8 @@ export const JuniorVocabBuilderGame: React.FC = () => {
 
     const targetText = mode === 'word' ? langContent.word : langContent.phrase
 
-    speechRecognitionService.start({
-      language: currentLang,
+    speechRecognitionService.startListening({
+      lang: currentLang,
       onResult: (result) => {
         setSpeechTranscript(result.transcript)
         if (result.isFinal) {
@@ -125,15 +130,15 @@ export const JuniorVocabBuilderGame: React.FC = () => {
 
   const evaluateSpoken = (transcript: string, targetText: string) => {
     const evalRes = evaluateSpeechAccuracy(transcript, targetText)
-    const accuracy = evalRes.accuracyPercentage
+    const accuracy = evalRes.score || 80
 
     let points = 20
     if (accuracy >= 80) {
-      playSound('success')
+      playSound('correct')
       setSpeechFeedback(`Excelente! Precisão de ${accuracy}%! 🎉`)
       points = 30
     } else if (accuracy >= 60) {
-      playSound('star')
+      playSound('pop')
       setSpeechFeedback(`Muito bom! Precisão de ${accuracy}%. Quase perfeito!`)
       points = 20
     } else {
@@ -178,9 +183,9 @@ export const JuniorVocabBuilderGame: React.FC = () => {
       offlineSyncService.saveSession({
         user_id: child.user_id,
         child_id: child.id,
-        module_id: 'fala_linguagem',
+        module_id: 'junior_vocab',
         game_id: 'junior_vocab_builder',
-        game_title: 'Mestre do Vocabulário Junior',
+        game_title: 'Construtor de Vocabulário & Frases',
         stars: calculatedStars,
         score: score,
         accuracy: Math.min(100, Math.round((score / (totalRounds * 30)) * 100)),
@@ -200,18 +205,9 @@ export const JuniorVocabBuilderGame: React.FC = () => {
 
   if (isCompleted) {
     return (
-      <GameShell
-        title="Mestre do Vocabulário Junior"
-        subtitle="Sessão concluída!"
-        onBack={() => navigate('/junior')}
-        hideFooter
-      >
+      <GameShell title="Mestre do Vocabulário Junior" onBack={() => navigate('/junior')}>
         <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot
-            emotion="happy"
-            size="lg"
-            message="Incrível! Seu vocabulário está cada vez mais rico!"
-          />
+          <TicoMascot mood="celebrating" size="lg" />
 
           <Card className="p-6 rounded-3xl border-2 border-orange-200 bg-gradient-to-b from-orange-50 to-white shadow-md">
             <h3 className="text-2xl font-black text-slate-800 mb-2">Parabéns, Júnior!</h3>
@@ -270,7 +266,6 @@ export const JuniorVocabBuilderGame: React.FC = () => {
   return (
     <GameShell
       title="CogniKids Junior: Mestre do Vocabulário"
-      subtitle={`Rodada ${currentRound + 1} de ${totalRounds} • ${langInfo.flag} ${langInfo.label}`}
       score={score}
       stars={stars}
       currentRound={currentRound + 1}

@@ -13,12 +13,17 @@ import type { AppLanguage, Child } from '@/types/cognikids'
 import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { Check, X, RefreshCw, Trophy, ArrowRight, Lightbulb } from 'lucide-react'
 
-export const JuniorMathQuestGame: React.FC = () => {
-  const { childId } = useParams<{ childId: string }>()
+interface JuniorGameProps {
+  child?: Child | null
+}
+
+export const JuniorMathQuestGame: React.FC<JuniorGameProps> = ({ child: initialChild }) => {
+  const { childId: routeChildId } = useParams<{ childId: string }>()
+  const childId = initialChild?.id || routeChildId
   const navigate = useNavigate()
   const { playSound } = useSound()
 
-  const [child, setChild] = useState<Child | null>(null)
+  const [child, setChild] = useState<Child | null>(initialChild || null)
   const [currentLang, setCurrentLang] = useState<AppLanguage>('pt-BR')
   const [currentRound, setCurrentRound] = useState<number>(0)
   const [score, setScore] = useState<number>(0)
@@ -37,8 +42,8 @@ export const JuniorMathQuestGame: React.FC = () => {
       fetchChildById(childId).then((c) => {
         if (c) {
           setChild(c)
-          const preferred = (c.preferred_languages && c.preferred_languages[0]) || 'pt-BR'
-          setCurrentLang(preferred as AppLanguage)
+          const preferred = (c.primary_language || 'pt-BR') as AppLanguage
+          setCurrentLang(preferred)
         }
       })
     }
@@ -69,11 +74,11 @@ export const JuniorMathQuestGame: React.FC = () => {
     setIsCorrect(correct)
 
     if (correct) {
-      playSound('success')
+      playSound('correct')
       setScore((prev) => prev + 25)
       setCorrectAnswersCount((prev) => prev + 1)
     } else {
-      playSound('wrong')
+      playSound('error')
     }
   }
 
@@ -100,9 +105,9 @@ export const JuniorMathQuestGame: React.FC = () => {
       offlineSyncService.saveSession({
         user_id: child.user_id,
         child_id: child.id,
-        module_id: 'logica_cognicao',
+        module_id: 'junior_math',
         game_id: 'junior_math_quest',
-        game_title: 'Missão Matemática Junior',
+        game_title: 'Missão Matemática do Tico',
         stars,
         score,
         accuracy,
@@ -125,18 +130,9 @@ export const JuniorMathQuestGame: React.FC = () => {
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
     return (
-      <GameShell
-        title="Missão Matemática Junior"
-        subtitle="Desafio concluído!"
-        onBack={() => navigate('/junior')}
-        hideFooter
-      >
+      <GameShell title="Missão Matemática Junior" onBack={() => navigate('/junior')}>
         <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot
-            emotion="happy"
-            size="lg"
-            message="Que mente brilhante! Os números são seus grandes amigos!"
-          />
+          <TicoMascot mood="celebrating" size="lg" />
 
           <Card className="p-6 rounded-3xl border-2 border-sky-200 bg-gradient-to-b from-sky-50 to-white shadow-md">
             <h3 className="text-2xl font-black text-slate-800 mb-1">Missão Concluída!</h3>
@@ -187,7 +183,6 @@ export const JuniorMathQuestGame: React.FC = () => {
   return (
     <GameShell
       title="CogniKids Junior: Missão Matemática"
-      subtitle={`Pergunta ${currentRound + 1} de ${totalRounds} • ${langInfo.flag} ${langInfo.label}`}
       score={score}
       stars={3}
       currentRound={currentRound + 1}

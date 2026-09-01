@@ -150,45 +150,128 @@ export const AppShell: React.FC = () => {
     localStorage.setItem('cognikids_selected_child_id', child.id)
   }
 
-  const navItems = [
-    { label: t('nav.home'), path: '/app', icon: Home },
-    { label: t('nav.children'), path: '/app/children', icon: Users },
-    {
-      label: t('nav.progress'),
-      path: selectedChild ? `/app/child/${selectedChild.id}` : '/app/children',
-      icon: BarChart3,
-    },
-    {
-      label: t('nav.reports'),
-      path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
-      icon: TrendingUp,
-    },
-    {
-      label: 'Histórico',
-      path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
-      icon: History,
-    },
-    { label: t('nav.themesGuide'), path: '/app/themes-guide', icon: BookOpen },
-    { label: t('nav.community'), path: '/app/community', icon: Share2 },
-    { label: t('nav.settings'), path: '/app/settings', icon: Settings },
-  ]
+  const isJuniorRoute = location.pathname.startsWith('/junior')
+  const isSelectedChildJunior = selectedChild?.birth_date
+    ? (new Date().getFullYear() - new Date(selectedChild.birth_date).getFullYear()) * 12 +
+        (new Date().getMonth() - new Date(selectedChild.birth_date).getMonth()) >=
+      72
+    : false
+
+  const navItems = isJuniorRoute
+    ? [
+        {
+          label: 'Junior Início',
+          path: '/junior',
+          icon: Home,
+        },
+        {
+          label: 'Painel & Progresso',
+          path: '/junior/progress',
+          icon: BarChart3,
+        },
+        {
+          label: 'CogniKids Infantil (0-5a)',
+          path: '/app',
+          icon: Sparkles,
+        },
+        { label: t('nav.children'), path: '/app/children', icon: Users },
+        {
+          label: 'Histórico Geral',
+          path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
+          icon: History,
+        },
+        {
+          label: t('nav.reports'),
+          path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
+          icon: BarChart3,
+        },
+        { label: t('nav.settings'), path: '/app/settings', icon: Settings },
+      ]
+    : [
+        {
+          label: t('nav.home'),
+          path: '/app',
+          icon: Home,
+        },
+        {
+          label: 'CogniKids Junior (6-10a)',
+          path: '/junior',
+          icon: Sparkles,
+          highlight: true,
+        },
+        { label: t('nav.children'), path: '/app/children', icon: Users },
+        {
+          label: t('nav.progress'),
+          path: selectedChild ? `/app/child/${selectedChild.id}` : '/app/children',
+          icon: BarChart3,
+        },
+        {
+          label: t('nav.reports'),
+          path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
+          icon: BarChart3,
+        },
+        {
+          label: 'Histórico',
+          path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
+          icon: History,
+        },
+        { label: 'Guia Temático', path: '/app/themes-guide', icon: BookOpen },
+        { label: t('nav.community'), path: '/app/community', icon: Users },
+        { label: t('nav.settings'), path: '/app/settings', icon: Settings },
+      ]
+
   const guardianInitial = (user?.name || user?.email || 'R').charAt(0).toUpperCase()
   const currentLangOption =
     SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0]
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-20 lg:pb-0">
-      {/* Top Bar (64px) */}
-      <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between shadow-sm">
-        {/* Left: Brand Wordmark */}
-        <Link to="/app" className="flex items-center gap-2 group">
-          <TicoMascot size="sm" mood="happy" animate={false} />
-          <div className="flex flex-col">
-            <span className="font-black text-xl tracking-tight bg-gradient-to-r from-orange-500 via-amber-500 to-sky-600 bg-clip-text text-transparent">
-              CogniKids
+      {/* Junior Banner if in Junior Mode */}
+      {isJuniorRoute && (
+        <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 text-white px-4 py-1.5 text-xs font-bold flex items-center justify-between border-b border-indigo-700/50">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400">🚀 CogniKids Junior Ativo</span>
+            <span className="hidden sm:inline opacity-80 text-[11px]">
+              • Modo avançado para 6 a 10 anos
             </span>
           </div>
-        </Link>
+          <Link to="/app" className="text-[11px] underline text-indigo-200 hover:text-white">
+            Voltar ao Infantil (0-5 anos) →
+          </Link>
+        </div>
+      )}
+      {/* Top Bar (64px) */}
+      <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between shadow-sm">
+        {/* Left: Brand Wordmark & Mode Switch */}
+        <div className="flex items-center gap-3">
+          <Link to={isJuniorRoute ? '/junior' : '/app'} className="flex items-center gap-2 group">
+            <TicoMascot size="sm" mood="happy" animate={false} />
+            <div className="flex flex-col">
+              <span
+                className={`font-black text-xl tracking-tight bg-gradient-to-r ${
+                  isJuniorRoute
+                    ? 'from-indigo-600 to-purple-600'
+                    : 'from-orange-500 via-amber-500 to-sky-600'
+                } bg-clip-text text-transparent`}
+              >
+                CogniKids {isJuniorRoute ? 'Junior' : ''}
+              </span>
+            </div>
+          </Link>
+
+          {/* Quick Switch Button */}
+          <Link
+            to={isJuniorRoute ? '/app' : '/junior'}
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition-all ${
+              isJuniorRoute
+                ? 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100'
+                : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{isJuniorRoute ? 'Ir p/ Infantil (0-5a)' : 'Ir p/ Junior (6-10a)'}</span>
+          </Link>
+        </div>
 
         {/* Center: Current Child Switcher */}
         <div className="flex items-center">
@@ -388,19 +471,39 @@ export const AppShell: React.FC = () => {
           })}
 
           {selectedChild && (
-            <div className="mt-8 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-orange-100 text-center">
+            <div
+              className={`mt-8 p-4 rounded-2xl border text-center ${
+                isJuniorRoute || isSelectedChildJunior
+                  ? 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100'
+                  : 'bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100'
+              }`}
+            >
               <div className="flex justify-center mb-2">
                 <TicoMascot size="sm" mood="talking" />
               </div>
               <p className="text-xs font-bold text-slate-800">{selectedChild.name} está pronta!</p>
-              <p className="text-[11px] text-slate-500 mb-3">Módulos adaptados à idade.</p>
+              <p className="text-[11px] text-slate-500 mb-3">
+                {isSelectedChildJunior
+                  ? 'Perfil Junior (6 a 10 anos)'
+                  : 'Módulos adaptados à idade.'}
+              </p>
               <Button
                 size="sm"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-sm text-xs"
-                onClick={() => navigate(`/app/child/${selectedChild.id}`)}
+                className={`w-full text-white font-bold rounded-xl shadow-sm text-xs ${
+                  isJuniorRoute || isSelectedChildJunior
+                    ? 'bg-indigo-600 hover:bg-indigo-700'
+                    : 'bg-orange-500 hover:bg-orange-600'
+                }`}
+                onClick={() => {
+                  if (isSelectedChildJunior) {
+                    navigate('/junior')
+                  } else {
+                    navigate(`/app/child/${selectedChild.id}`)
+                  }
+                }}
               >
                 <Gamepad2 className="w-3.5 h-3.5 mr-1.5" />
-                Abrir Jogos
+                {isSelectedChildJunior ? 'Abrir Missões Junior' : 'Abrir Jogos'}
               </Button>
             </div>
           )}

@@ -3,16 +3,19 @@ import React from 'react'
 interface MascotProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   mood?: 'happy' | 'talking' | 'celebrating' | 'listening' | 'waving'
+  emotion?: 'happy' | 'talking' | 'celebrating' | 'listening' | 'waving'
   className?: string
   animate?: boolean
 }
 
 export const TicoMascot: React.FC<MascotProps> = ({
   size = 'md',
-  mood = 'happy',
+  mood,
+  emotion,
   className = '',
   animate = true,
 }) => {
+  const activeMood = mood || emotion || 'happy'
   const sizeClasses = {
     sm: 'w-10 h-10',
     md: 'w-16 h-16',
@@ -114,7 +117,7 @@ export const TicoMascot: React.FC<MascotProps> = ({
         <path d="M32 64 C25 72 26 86 38 90 C42 85 44 75 38 68 Z" fill="#334155" />
 
         {/* Expressions based on mood */}
-        {mood === 'celebrating' && (
+        {activeMood === 'celebrating' && (
           <g>
             {/* Tiny party hat */}
             <polygon points="46,18 36,36 56,36" fill="#FFB703" />
@@ -122,7 +125,7 @@ export const TicoMascot: React.FC<MascotProps> = ({
           </g>
         )}
 
-        {mood === 'talking' && (
+        {activeMood === 'talking' && (
           /* Sound waves near beak */
           <g stroke="#FF7A45" strokeWidth="2.5" strokeLinecap="round" fill="none">
             <path d="M116 42 C120 46 120 54 116 58" />
@@ -130,7 +133,7 @@ export const TicoMascot: React.FC<MascotProps> = ({
           </g>
         )}
 
-        {mood === 'listening' && (
+        {activeMood === 'listening' && (
           /* Cute headphone accent */
           <g>
             <path

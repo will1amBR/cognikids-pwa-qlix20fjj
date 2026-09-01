@@ -26,6 +26,8 @@ export interface VocabPracticeTip {
   samplePhrase: string
 }
 
+import type { GameSession } from '@/types/cognikids'
+
 export interface WordReviewItem {
   word: string
   language: AppLanguage
@@ -678,7 +680,6 @@ export function computeVocabReviewQueue(
     es: [],
     fr: [],
     de: [],
-    it: [],
   }
 
   const wordStats: Record<
@@ -808,13 +809,12 @@ export function computeVocabReviewQueue(
   })
 
   // Ensure every active child language has helpful default practice words if none exist in history
-  const defaultWordsByLang: Record<AppLanguage, string[]> = {
+  const defaultWordsByLang: Partial<Record<AppLanguage, string[]>> = {
     'pt-BR': ['Cachorro', 'Borboleta', 'Bicicleta', 'Abelha', 'Sorvete'],
     en: ['Elephant', 'Butterfly', 'Bicycle', 'Strawberry', 'Giraffe'],
     es: ['Mariposa', 'Caballo', 'Bicicleta', 'Manzana', 'Estrella'],
     fr: ['Papillon', 'Chapeau', 'Bicyclette', 'Éléphant', 'Grenouille'],
     de: ['Schmetterling', 'Fahrrad', 'Apfel', 'Elefant', 'Katze'],
-    it: ['Farfalla', 'Bicicletta', 'Cavallo', 'Gelato', 'Stella'],
   }
 
   childLanguages.forEach((lang) => {

@@ -24,12 +24,17 @@ import {
   HelpCircle,
 } from 'lucide-react'
 
-export const JuniorDictationGame: React.FC = () => {
-  const { childId } = useParams<{ childId: string }>()
+interface JuniorGameProps {
+  child?: Child | null
+}
+
+export const JuniorDictationGame: React.FC<JuniorGameProps> = ({ child: initialChild }) => {
+  const { childId: routeChildId } = useParams<{ childId: string }>()
+  const childId = initialChild?.id || routeChildId
   const navigate = useNavigate()
   const { playSound } = useSound()
 
-  const [child, setChild] = useState<Child | null>(null)
+  const [child, setChild] = useState<Child | null>(initialChild || null)
   const [currentLang, setCurrentLang] = useState<AppLanguage>('pt-BR')
   const [currentRound, setCurrentRound] = useState<number>(0)
   const [userInput, setUserInput] = useState<string>('')
@@ -50,8 +55,8 @@ export const JuniorDictationGame: React.FC = () => {
       fetchChildById(childId).then((c) => {
         if (c) {
           setChild(c)
-          const preferred = (c.preferred_languages && c.preferred_languages[0]) || 'pt-BR'
-          setCurrentLang(preferred as AppLanguage)
+          const preferred = (c.primary_language || 'pt-BR') as AppLanguage
+          setCurrentLang(preferred)
         }
       })
     }
@@ -106,11 +111,11 @@ export const JuniorDictationGame: React.FC = () => {
     setIsCorrect(match)
 
     if (match) {
-      playSound('success')
+      playSound('correct')
       setScore((prev) => prev + (showHint ? 20 : 30))
       setCorrectCount((prev) => prev + 1)
     } else {
-      playSound('wrong')
+      playSound('error')
     }
   }
 
@@ -138,9 +143,9 @@ export const JuniorDictationGame: React.FC = () => {
       offlineSyncService.saveSession({
         user_id: child.user_id,
         child_id: child.id,
-        module_id: 'fala_linguagem',
-        game_id: 'junior_dictation_voice',
-        game_title: 'Ditado de Voz & Ortografia Junior',
+        module_id: 'junior_dictation',
+        game_id: 'junior_dictation_game',
+        game_title: 'Ditado & Soletração Inteligente',
         stars,
         score,
         accuracy,
@@ -163,18 +168,9 @@ export const JuniorDictationGame: React.FC = () => {
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
     return (
-      <GameShell
-        title="Ditado de Voz & Ortografia Junior"
-        subtitle="Sessão concluída!"
-        onBack={() => navigate('/junior')}
-        hideFooter
-      >
+      <GameShell title="Ditado de Voz & Ortografia Junior" onBack={() => navigate('/junior')}>
         <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot
-            emotion="happy"
-            size="lg"
-            message="Sua escrita e ouvido estão super afinados!"
-          />
+          <TicoMascot mood="celebrating" size="lg" />
 
           <Card className="p-6 rounded-3xl border-2 border-purple-200 bg-gradient-to-b from-purple-50 to-white shadow-md">
             <h3 className="text-2xl font-black text-slate-800 mb-1">Ditado Finalizado!</h3>
@@ -225,7 +221,6 @@ export const JuniorDictationGame: React.FC = () => {
   return (
     <GameShell
       title="CogniKids Junior: Ditado & Ortografia"
-      subtitle={`Palavra ${currentRound + 1} de ${totalRounds} • ${langInfo.flag} ${langInfo.label}`}
       score={score}
       stars={3}
       currentRound={currentRound + 1}

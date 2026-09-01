@@ -51,7 +51,15 @@ export const JuniorHome: React.FC = () => {
       setChildren(list)
 
       // Find children in junior age (6-10 years => 72-120 months) or fallback to any
-      const juniorKids = list.filter((c) => (c.age_months || 0) >= 72)
+      const juniorKids = list.filter((c) => {
+        if (c.birth_date) {
+          const diffMonths =
+            (new Date().getFullYear() - new Date(c.birth_date).getFullYear()) * 12 +
+            (new Date().getMonth() - new Date(c.birth_date).getMonth())
+          return diffMonths >= 72
+        }
+        return false
+      })
       const active = juniorKids.length > 0 ? juniorKids[0] : list[0] || null
       setSelectedChild(active)
 
@@ -68,7 +76,7 @@ export const JuniorHome: React.FC = () => {
   const loadChildSessions = async (childId: string) => {
     try {
       const serverSessions = await fetchChildSessions(childId, 100)
-      const pending = offlineSyncService.getPendingSessions().filter((p) => p.child_id === childId)
+      const pending = offlineSyncService.getPendingSessions().filter((p: any) => p.child_id === childId)
 
       const formattedPending: GameSession[] = pending.map((p, idx) => ({
         id: `pending_${idx}`,
@@ -131,8 +139,17 @@ export const JuniorHome: React.FC = () => {
     }
   }
 
-  const juniorKids = children.filter((c) => (c.age_months || 0) >= 72)
-  const infantKids = children.filter((c) => (c.age_months || 0) < 72)
+  const getChildAgeMonths = (c: Child) => {
+    if (!c.birth_date) return c.age_months || 0
+    return Math.max(
+      0,
+      (new Date().getFullYear() - new Date(c.birth_date).getFullYear()) * 12 +
+        (new Date().getMonth() - new Date(c.birth_date).getMonth()),
+    )
+  }
+
+  const juniorKids = children.filter((c) => getChildAgeMonths(c) >= 72)
+  const infantKids = children.filter((c) => getChildAgeMonths(c) < 72)
 
   return (
     <div className="space-y-8 pb-16">
@@ -213,7 +230,7 @@ export const JuniorHome: React.FC = () => {
         <div className="flex flex-wrap gap-2.5 pt-1">
           {children.map((k) => {
             const isSelected = selectedChild?.id === k.id
-            const ageMonths = k.age_months || 0
+            const ageMonths = getChildAgeMonths(k)
             const ageYears = (ageMonths / 12).toFixed(1)
             const isJuniorAge = ageMonths >= 72
 

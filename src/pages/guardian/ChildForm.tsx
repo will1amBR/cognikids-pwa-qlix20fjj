@@ -480,15 +480,15 @@ export const ChildFormPage: React.FC = () => {
           </Button>
           <Button
             type="submit"
-            disabled={isSaving || !name.trim() || !birthDate}
+            disabled={isLoading || !name.trim() || !birthDate}
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black shadow-md"
           >
-            {isSaving ? (
+            {isLoading ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Salvando...
               </span>
-            ) : isEdit ? (
+            ) : isEditing ? (
               'Salvar Alterações'
             ) : isJuniorAge ? (
               'Cadastrar & Ir para Junior 🚀'

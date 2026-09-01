@@ -82,6 +82,40 @@ export class OfflineSyncService {
     this.notify()
   }
 
+  public getPendingQueue(): PendingGameSession[] {
+    return this.getQueue()
+  }
+
+  public getPendingSessions(): PendingGameSession[] {
+    return this.getQueue()
+  }
+
+  public async saveGameSession(session: any): Promise<void> {
+    const user_id = pb.authStore.record?.id || session.user_id || 'anonymous'
+    return this.queueGameSession({
+      user_id,
+      child_id: session.child_id,
+      module_id: session.module_id,
+      game_id: session.game_id,
+      game_title: session.game_title,
+      stars: session.stars || 1,
+      score: session.score || 80,
+      accuracy: session.accuracy || 80,
+      rounds_completed: session.rounds_completed || 1,
+      total_rounds: session.total_rounds || 1,
+      language: session.language || 'pt-BR',
+      details: session.details || {},
+    })
+  }
+
+  public async saveSession(session: any): Promise<void> {
+    return this.saveGameSession(session)
+  }
+
+  public async enqueueSession(session: any): Promise<void> {
+    return this.saveGameSession(session)
+  }
+
   public async queueGameSession(
     session: Omit<PendingGameSession, 'id' | 'created_at'>,
   ): Promise<void> {

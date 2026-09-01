@@ -17,10 +17,13 @@ import {
 interface GameShellProps {
   title: string
   moduleColor?: string
-  currentRound: number
-  totalRounds: number
+  currentRound?: number
+  totalRounds?: number
+  score?: number
+  stars?: number
   childName?: string
-  exitPath: string
+  exitPath?: string
+  onBack?: () => void
   children: React.ReactNode
   ticoMood?: 'happy' | 'talking' | 'celebrating' | 'listening' | 'waving'
   ticoInstruction?: string
@@ -29,10 +32,13 @@ interface GameShellProps {
 export const GameShell: React.FC<GameShellProps> = ({
   title,
   moduleColor = '#FF7A45',
-  currentRound,
-  totalRounds,
+  currentRound = 1,
+  totalRounds = 1,
+  score,
+  stars,
   childName,
-  exitPath,
+  exitPath = '/app',
+  onBack,
   children,
   ticoMood = 'talking',
   ticoInstruction,
@@ -42,12 +48,20 @@ export const GameShell: React.FC<GameShellProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false)
 
   const handleExitClick = () => {
+    if (onBack) {
+      onBack()
+      return
+    }
     playPop()
     setShowExitConfirm(true)
   }
 
   const confirmExit = () => {
-    navigate(exitPath)
+    if (onBack) {
+      onBack()
+    } else {
+      navigate(exitPath)
+    }
   }
 
   return (

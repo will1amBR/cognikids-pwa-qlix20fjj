@@ -9,6 +9,8 @@ import type {
   InviteRecord,
   SchoolAccessToken,
   LanguageEvolutionStat,
+  BilingualStatus,
+  AppLanguage,
 } from '@/types/cognikids'
 import { COGNIKIDS_MODULES, COGNIKIDS_BADGES, SUPPORTED_LANGUAGES } from '@/types/cognikids'
 
@@ -132,7 +134,7 @@ export function getChildBilingualStatus(child?: Child | null): BilingualStatus {
   return {
     isBilingualOrMultilingual,
     languagesCount: learningLangs.length,
-    languages: learningLangs,
+    languages: learningLangs as AppLanguage[],
     badgeTitle: learningLangs.length > 2 ? 'Multilíngue em construção' : 'Bilíngue em construção',
     badgeDescription: isBilingualOrMultilingual
       ? `Praticando ${learningLangs.length} idiomas com o Tico: ${learningLangs
@@ -588,7 +590,43 @@ export async function calculateChildEvolution(
     progMap[p.module_id] = p.mastery_percentage
   })
 
-  const moduleBreakdown = COGNIKIDS_MODULES.map((mod) => {
+  // Determine if child is junior (has junior sessions or age >= 72 months)
+  const isJuniorProfile =
+    allSessions.some((s) => s.module_id.startsWith('junior_')) ||
+    Object.keys(progMap).some((k) => k.startsWith('junior_'))
+
+  // Use appropriate modules or combine
+  const relevantModules = isJuniorProfile
+    ? [
+        ...COGNIKIDS_MODULES,
+        {
+          id: 'junior_vocab',
+          title: 'Vocabulário & Fala Pro',
+          color: '#6366F1',
+          icon: '🗣️',
+        },
+        {
+          id: 'junior_math',
+          title: 'Matemática & Contas',
+          color: '#06B6D4',
+          icon: '🔢',
+        },
+        {
+          id: 'junior_logic',
+          title: 'Matriz Lógica & Padrões',
+          color: '#8B5CF6',
+          icon: '🧩',
+        },
+        {
+          id: 'junior_dictation',
+          title: 'Ditado & Ortografia',
+          color: '#EC4899',
+          icon: '✍️',
+        },
+      ]
+    : COGNIKIDS_MODULES
+
+  const moduleBreakdown = relevantModules.map((mod: any) => {
     const modSessionsCurrent = currentWindowSessions.filter((s) => s.module_id === mod.id)
     const modSessionsPrev = previousWindowSessions.filter((s) => s.module_id === mod.id)
 

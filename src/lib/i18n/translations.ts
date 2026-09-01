@@ -168,6 +168,18 @@ export type TranslationKey =
   | 'module.socioemotional'
   | 'module.socioemotionalSub'
   | 'module.socioemotionalDesc'
+  | 'module.junior_vocab'
+  | 'module.junior_vocabSub'
+  | 'module.junior_vocabDesc'
+  | 'module.junior_math'
+  | 'module.junior_mathSub'
+  | 'module.junior_mathDesc'
+  | 'module.junior_logic'
+  | 'module.junior_logicSub'
+  | 'module.junior_logicDesc'
+  | 'module.junior_dictation'
+  | 'module.junior_dictationSub'
+  | 'module.junior_dictationDesc'
 
 export const translations: Record<AppLanguage, Record<TranslationKey, string>> = {
   'pt-BR': {
@@ -347,6 +359,19 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'module.socioemotionalSub': 'Sentimentos e Autonomia',
     'module.socioemotionalDesc':
       'Reconhecimento de emoções, autorregulação e autonomia no vestir/clima.',
+    'module.junior_vocab': 'Vocabulário & Fala Pro',
+    'module.junior_vocabSub': 'Expressão Verbal Avançada',
+    'module.junior_vocabDesc': 'Pronúncia de termos ricos, frases e sinônimos nos 5 idiomas.',
+    'module.junior_math': 'Matemática & Contas',
+    'module.junior_mathSub': 'Cálculo Mental e Resolução de Problemas',
+    'module.junior_mathDesc':
+      'Adição, subtração, multiplicação lúdica e raciocínio lógico-matemático.',
+    'module.junior_logic': 'Matriz Lógica & Padrões',
+    'module.junior_logicSub': 'Dedução Visual e Raciocínio 2x2',
+    'module.junior_logicDesc': 'Matrizes visuais 2x2, rotação mental e sequências analíticas.',
+    'module.junior_dictation': 'Ditado & Ortografia',
+    'module.junior_dictationSub': 'Escuta Atenta e Soletração',
+    'module.junior_dictationDesc': 'Escuta atenta e escrita correta nos 5 idiomas com o Tico.',
   },
 
   en: {
@@ -524,6 +549,20 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'module.socioemotionalSub': 'Feelings and Autonomy',
     'module.socioemotionalDesc':
       'Emotion recognition, self-regulation, and dressing/weather autonomy.',
+    'module.junior_vocab': 'Advanced Vocab & Speech',
+    'module.junior_vocabSub': 'Expressive Vocabulary',
+    'module.junior_vocabDesc':
+      'Advanced speech, sentence structure, and vocabulary across 5 languages.',
+    'module.junior_math': 'Math Quest & Numbers',
+    'module.junior_mathSub': 'Mental Math and Logic',
+    'module.junior_mathDesc': 'Addition, subtraction, multiplication, and real-world math puzzles.',
+    'module.junior_logic': 'Logic Matrix & Patterns',
+    'module.junior_logicSub': '2x2 Visual Deduction',
+    'module.junior_logicDesc': '2x2 matrices, spatial reasoning, and pattern sequences.',
+    'module.junior_dictation': 'Dictation & Spelling',
+    'module.junior_dictationSub': 'Active Listening & Writing',
+    'module.junior_dictationDesc':
+      'Multilingual listening, phoneme spelling, and keyboard writing.',
   },
 
   es: {
@@ -703,6 +742,18 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'module.socioemotionalSub': 'Sentimientos y Autonomía',
     'module.socioemotionalDesc':
       'Reconocimiento de emociones, autorregulación y autonomía en el clima.',
+    'module.junior_vocab': 'Vocabulario & Habla Pro',
+    'module.junior_vocabSub': 'Expresión Verbal Avanzada',
+    'module.junior_vocabDesc': 'Pronunciación avanzada, frases y vocabulario en 5 idiomas.',
+    'module.junior_math': 'Matemáticas & Cuentas',
+    'module.junior_mathSub': 'Cálculo Mental y Problemas',
+    'module.junior_mathDesc': 'Suma, resta, multiplicación y retos lógicos cotidianos.',
+    'module.junior_logic': 'Matriz Lógica & Patrones',
+    'module.junior_logicSub': 'Deducción Visual 2x2',
+    'module.junior_logicDesc': 'Matrices visuales 2x2, rotación mental y patrones analíticos.',
+    'module.junior_dictation': 'Dictado & Ortografía',
+    'module.junior_dictationSub': 'Escucha Atenta y Escritura',
+    'module.junior_dictationDesc': 'Escucha y ortografía correcta en 5 idiomas con Tico.',
   },
 
   de: {
@@ -880,6 +931,18 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'module.socioemotionalSub': 'Gefühle und Selbstständigkeit',
     'module.socioemotionalDesc':
       'Erkennen von Emotionen, Selbstregulation und wettergerechtes Anziehen.',
+    'module.junior_vocab': 'Wortschatz & Sprechen Pro',
+    'module.junior_vocabSub': 'Fortgeschrittener Ausdruck',
+    'module.junior_vocabDesc': 'Anspruchsvoller Wortschatz und Satzbildung in 5 Sprachen.',
+    'module.junior_math': 'Mathe & Rechnen',
+    'module.junior_mathSub': 'Kopfrechnen und Denkaufgaben',
+    'module.junior_mathDesc': 'Addition, Subtraktion, Multiplikation und Logikaufgaben.',
+    'module.junior_logic': 'Logik-Matrix & Muster',
+    'module.junior_logicSub': '2x2 Visuelle Schlussfolgerung',
+    'module.junior_logicDesc': '2x2 Logikmatrizen, räumliches Denken und Musterfolgen.',
+    'module.junior_dictation': 'Diktat & Rechtschreibung',
+    'module.junior_dictationSub': 'Aktives Hören und Schreiben',
+    'module.junior_dictationDesc': 'Hörverstehen und sichere Schreibweise in 5 Sprachen.',
   },
 
   fr: {
@@ -1061,5 +1124,18 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     'module.socioemotionalSub': 'Émotions et Autonomie',
     'module.socioemotionalDesc':
       'Reconnaissance des émotions, régulation et autonomie habillage/météo.',
+    'module.junior_vocab': 'Vocabulaire & Expression Pro',
+    'module.junior_vocabSub': 'Expression Verbale Avancée',
+    'module.junior_vocabDesc': 'Prononciation de mots complexes et phrases en 5 langues.',
+    'module.junior_math': 'Maths & Calculs',
+    'module.junior_mathSub': 'Calcul Mental et Énigmes',
+    'module.junior_mathDesc': 'Addition, soustraction, multiplication et résolution de problèmes.',
+    'module.junior_logic': 'Matrice Logique & Suites',
+    'module.junior_logicSub': 'Déduction Visuelle 2x2',
+    'module.junior_logicDesc': 'Matrices 2x2, rotation mentale et suites logiques.',
+    'module.junior_dictation': 'Dictée & Orthographe',
+    'module.junior_dictationSub': 'Écoute Active et Écriture',
+    'module.junior_dictationDesc':
+      'Écoute attentive et orthographe correcte en 5 langues avec Tico.',
   },
 }

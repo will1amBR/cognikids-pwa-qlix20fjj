@@ -77,7 +77,7 @@ export const ChildDashboardPage: React.FC = () => {
           fetchChildSessions(kid.id, 100),
         ])
 
-        const pending = offlineSyncService.getPendingSessions().filter((p) => p.child_id === kid.id)
+        const pending = offlineSyncService.getPendingQueue().filter((p: any) => p.child_id === kid.id)
 
         const formattedPending: GameSession[] = pending.map(
           (p, idx) =>

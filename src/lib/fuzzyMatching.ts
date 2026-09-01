@@ -72,6 +72,7 @@ export interface EvaluationResult {
   praise: string
   isRecognized: boolean
   matchType: 'exact' | 'phonetic' | 'alias' | 'partial' | 'attempt'
+  accuracyScore?: number
 }
 
 const PRAISES_3_STARS = [

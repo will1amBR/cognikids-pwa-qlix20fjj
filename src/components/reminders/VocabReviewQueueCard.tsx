@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   BookmarkCheck,
   Flame,
+  Check,
+  ArrowDownRight,
+  CheckCircle,
 } from 'lucide-react'
 import type { AppLanguage, GameSession, Child } from '@/types/cognikids'
 import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
@@ -23,7 +26,6 @@ import {
   markWordAsReviewed,
   getReviewedWords,
 } from '@/services/reminders'
-import { Check, BookmarkCheck, ArrowDownRight, CheckCircle } from 'lucide-react'
 import { speechService } from '@/lib/speechSynthesis'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { fetchChildSessions } from '@/services/children'
@@ -50,7 +52,6 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
     es: [],
     fr: [],
     de: [],
-    it: [],
   })
   const [weeklyReviewedCount, setWeeklyReviewedCount] = useState<number>(0)
   const [totalReviewedCount, setTotalReviewedCount] = useState<number>(0)
@@ -87,9 +88,8 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
       }
 
       // Merge pending offline sessions
-      const pending = offlineSyncService.getPendingSessions()
-      const childPending = child?.id ? pending.filter((p) => p.child_id === child.id) : pending
-
+      const pending = offlineSyncService.getPendingQueue()
+      const childPending = child?.id ? pending.filter((p: any) => p.child_id === child.id) : pending
       const combined: GameSession[] = [
         ...childPending.map(
           (p, idx) =>

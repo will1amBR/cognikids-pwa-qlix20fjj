@@ -97,8 +97,8 @@ export const GameHistoryPage: React.FC = () => {
 
       // Include offline pending sessions
       const pending = offlineSyncService
-        .getPendingSessions()
-        .filter((p) => p.child_id === currentChild.id)
+        .getPendingQueue()
+        .filter((p: any) => p.child_id === currentChild.id)
 
       const formattedPending: GameSession[] = pending.map(
         (p, idx) =>
@@ -311,7 +311,7 @@ export const GameHistoryPage: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-orange-500/10 relative overflow-hidden">
         <div className="absolute right-2 top-2 opacity-15 pointer-events-none hidden sm:block">
-          <TicoMascot size="lg" mood="curious" animate={false} />
+          <TicoMascot size="lg" mood="happy" animate={false} />{' '}
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">

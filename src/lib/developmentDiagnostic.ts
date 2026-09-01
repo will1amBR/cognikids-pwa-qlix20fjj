@@ -213,6 +213,147 @@ const MODULE_DATA_MAP: Record<
       fr: 'Faites des grimaces devant la glace : visage surpris, joyeux et calme.',
     },
   },
+
+  junior_vocab: {
+    nameKey: 'module.junior_vocab',
+    ptName: 'Vocabulário & Fala Pro',
+    games: ['Construtor de Vocabulário & Frases'],
+    wellPractice: {
+      'pt-BR':
+        'Pronúncia fluida de termos complexos e estruturação de frases completas nos 5 idiomas.',
+      en: 'Fluent pronunciation of advanced words and complete sentence formulation.',
+      es: 'Pronunciación fluida de palabras complejas y construcción de frases completas.',
+      de: 'Flüssige Aussprache anspruchsvoller Wörter und ganzer Sätze.',
+      fr: 'Prononciation fluide de termes complexes et construction de phrases complètes.',
+    },
+    wellHome: {
+      'pt-BR':
+        'Incentive a criança a explicar termos científicos ou do dia a dia com suas próprias palavras.',
+      en: 'Encourage your child to explain science or everyday concepts in their own words.',
+      es: 'Anima al niño a explicar conceptos científicos con sus propias palabras.',
+      de: 'Ermutige das Kind, naturwissenschaftliche Begriffe mit eigenen Worten zu erklären.',
+      fr: 'Encouragez l’enfant à expliquer des concepts scientifiques avec ses propres mots.',
+    },
+    improvePractice: {
+      'pt-BR': 'Treino de pronúncia de palavras polissilábicas e leitura em voz alta.',
+      en: 'Practice multisyllabic pronunciation and reading aloud.',
+      es: 'Práctica de pronunciación de palabras polisilábicas y lectura en voz alta.',
+      de: 'Üben von mehrsilbigen Wörtern und lautes Vorlesen.',
+      fr: 'Entraînement à la prononciation des mots longs et lecture à voix haute.',
+    },
+    improveHome: {
+      'pt-BR':
+        'Leiam juntos um parágrafo de enciclopédia infantil e debatam o significado dos termos novos.',
+      en: 'Read an illustrated science book together and explore newly discovered words.',
+      es: 'Lean juntos un párrafo de libro infantil y comenten los términos nuevos.',
+      de: 'Lest zusammen ein Kindersachbuch und besprecht neue Begriffe.',
+      fr: 'Lisez ensemble un livre documentaire jeunesse et discutez des mots nouveaux.',
+    },
+  },
+
+  junior_math: {
+    nameKey: 'module.junior_math',
+    ptName: 'Matemática & Contas',
+    games: ['Missão Matemática do Tico'],
+    wellPractice: {
+      'pt-BR': 'Raciocínio ágil em adição, subtração, multiplicação e problemas do cotidiano.',
+      en: 'Agile calculation in addition, subtraction, multiplication and word problems.',
+      es: 'Cálculo mental ágil en suma, resta, multiplicación y problemas prácticos.',
+      de: 'Schnelles Kopfrechnen in Addition, Subtraktion, Multiplikation und Textaufgaben.',
+      fr: 'Calcul mental rapide en addition, soustraction, multiplication et problèmes.',
+    },
+    wellHome: {
+      'pt-BR': 'Faça perguntas lúdicas no mercado: "Se pegarmos 3 maçãs de R$ 2, quanto dá?".',
+      en: 'Ask playful grocery math questions: "If 3 apples cost 2 each, how much total?".',
+      es: 'Haz preguntas lúdicas al comprar: "Si compramos 3 manzanas a 2 cada una, ¿cuánto es?".',
+      de: 'Stelle spielerische Alltagsfragen beim Einkaufen: "3 Äpfel für je 2 Euro, wie viel?".',
+      fr: 'Posez des énigmes lors des courses : "Si 3 pommes coûtent 2€ chacune, quel total ?".',
+    },
+    improvePractice: {
+      'pt-BR': 'Fixação da tabuada com contagem em grupos e decomposição numérica.',
+      en: 'Reinforce times tables and group counting decomposition.',
+      es: 'Refuerzo de tablas de multiplicar y conteo en grupos.',
+      de: 'Festigung des Einmaleins und Gruppenzählen.',
+      fr: 'Renforcement des tables de multiplication et calcul par groupes.',
+    },
+    improveHome: {
+      'pt-BR': 'Utilize feijões ou blocos de lego para visualizar agrupamentos e divisões.',
+      en: 'Use Lego bricks or beans to visualize multiplication arrays and division.',
+      es: 'Usa bloques de construcción para visualizar multiplicaciones y divisiones.',
+      de: 'Nutze Bausteine, um Malreihen und Aufteilungen greifbar zu machen.',
+      fr: 'Utilisez des briques de construction pour visualiser les multiplications.',
+    },
+  },
+
+  junior_logic: {
+    nameKey: 'module.junior_logic',
+    ptName: 'Matriz Lógica & Padrões',
+    games: ['Matriz Lógica 2x2'],
+    wellPractice: {
+      'pt-BR': 'Excelente dedução analítica de matrizes visuais, rotação mental e sequências.',
+      en: 'Outstanding visual matrix deduction, mental rotation, and logical sequence solving.',
+      es: 'Excelente deducción de matrices visuales, rotación mental y patrones.',
+      de: 'Hervorragende visuelle Mustererkennung und logisches Denken in Matrizen.',
+      fr: 'Excellente déduction visuelle dans les matrices et raisonnement spatial.',
+    },
+    wellHome: {
+      'pt-BR': 'Proponha jogos de tabuleiro estratégicos como xadrez, damas ou quebra-cabeças 2D.',
+      en: 'Engage with strategic board games like chess, checkers, or 2D logic puzzles.',
+      es: 'Propón juegos de mesa estratégicos como ajedrez, damas o acertijos visuales.',
+      de: 'Spielt Strategiespiele wie Schach, Dame oder knifflige Logikrätsel.',
+      fr: 'Proposez des jeux de stratégie comme les échecs, dames ou casse-têtes.',
+    },
+    improvePractice: {
+      'pt-BR': 'Análise passo a passo de linhas e colunas em matrizes e dedução por eliminação.',
+      en: 'Step-by-step row/column matrix analysis and process-of-elimination.',
+      es: 'Análisis paso a paso de filas y columnas en matrices con descarte.',
+      de: 'Schrittweise Analyse von Zeilen und Spalten in Logikmatrizen.',
+      fr: 'Analyse méthodique des lignes et colonnes dans les matrices logiques.',
+    },
+    improveHome: {
+      'pt-BR':
+        'Desenhe um quadrado 2x2 no papel com 3 símbolos e peça para a criança deduzir o quarto.',
+      en: 'Draw a 2x2 grid with 3 shapes on paper and ask them to deduce the missing one.',
+      es: 'Dibuja una cuadrícula 2x2 con 3 figuras y pide descubrir la que falta.',
+      de: 'Zeichne ein 2x2-Gitter auf Papier und lass die fehlende Form erraten.',
+      fr: 'Dessinez une grille 2x2 sur papier et demandez de trouver le symbole manquant.',
+    },
+  },
+
+  junior_dictation: {
+    nameKey: 'module.junior_dictation',
+    ptName: 'Ditado & Ortografia',
+    games: ['Ditado & Soletração Inteligente'],
+    wellPractice: {
+      'pt-BR': 'Alta precisão ortográfica, escuta atenta e domínio de regras nos 5 idiomas.',
+      en: 'High spelling accuracy, attentive listening, and multilingual vocabulary grasp.',
+      es: 'Gran precisión ortográfica, escucha atenta y dominio léxico.',
+      de: 'Hohe Rechtschreibgenauigkeit, aufmerksames Zuhören und sichere Wortschreibung.',
+      fr: 'Grande précision orthographique, écoute attentive et maîtrise de l’écrit.',
+    },
+    wellHome: {
+      'pt-BR':
+        'Escreva bilhetinhos secretos com desafios para a criança ler e responder por escrito.',
+      en: 'Write short secret notes with fun missions for your child to read and reply in writing.',
+      es: 'Escribe notas secretas con misiones divertidas para que responda por escrito.',
+      de: 'Schreibt euch kleine Geheimnachrichten mit kurzen Aufgaben im Alltag.',
+      fr: 'Écrivez de petits mots secrets avec des énigmes à lire et répondre par écrit.',
+    },
+    improvePractice: {
+      'pt-BR': 'Atenção aos encontros consonantais, dígrafos e acentuação gráfica.',
+      en: 'Focus on consonant clusters, phonetic nuances, and spelling patterns.',
+      es: 'Atención a combinaciones de letras, dígrafos y acentos.',
+      de: 'Fokus auf Laut-Buchstaben-Zuordnung und Doppelkonsonanten.',
+      fr: 'Attention aux graphies complexes, accents et lettres muettes.',
+    },
+    improveHome: {
+      'pt-BR': 'Brinque de forca ou caça-palavras com as palavras aprendidas na semana.',
+      en: 'Play hangman or word-search puzzles featuring the weekly vocabulary.',
+      es: 'Jueguen al ahorcado o sopa de letras con las palabras de la semana.',
+      de: 'Spielt Galgenmännchen oder Wortsuchrätsel mit den Wochenwörtern.',
+      fr: 'Jouez au pendu ou aux mots croisés avec les mots de la semaine.',
+    },
+  },
 }
 
 // Score threshold: >= 60% = doing_well, < 60% = needs_improvement
@@ -291,8 +432,30 @@ export function computeChildDevelopmentDiagnostic(
   progressMap: Record<string, number>,
   lang: AppLanguage = 'pt-BR',
 ): ChildOverallDiagnostic {
-  const moduleIds = ['speech', 'memory', 'logic', 'motor', 'socioemotional']
-  const areas: AreaDiagnostic[] = moduleIds.map((modId) => {
+  const moduleIds = [
+    'speech',
+    'memory',
+    'logic',
+    'motor',
+    'socioemotional',
+    'junior_vocab',
+    'junior_math',
+    'junior_logic',
+    'junior_dictation',
+  ]
+  const activeIds = Object.keys(progressMap).some((k) => k.startsWith('junior_'))
+    ? [
+        'junior_vocab',
+        'junior_math',
+        'junior_logic',
+        'junior_dictation',
+        'speech',
+        'logic',
+        'memory',
+      ]
+    : ['speech', 'memory', 'logic', 'motor', 'socioemotional']
+
+  const areas: AreaDiagnostic[] = activeIds.map((modId) => {
     const score = progressMap[modId] !== undefined ? progressMap[modId] : 50
     return evaluateModuleDevelopment(modId, score, lang)
   })

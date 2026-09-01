@@ -32,12 +32,12 @@ export interface Child {
   class_group?: string
   daily_minutes?: number
   daily_activity_count?: number
-  learning_languages?: AppLanguage[] | string[]
-  primary_language?: AppLanguage | string
-  created?: string
-  updated?: string
+  learning_languages?: AppLanguage[]
+  primary_language?: AppLanguage
+  age_months?: number
+  created: string
+  updated: string
 }
-
 export interface GameSession {
   id: string
   user_id: string
@@ -149,6 +149,25 @@ export interface BilingualStatus {
   languages: AppLanguage[]
   badgeTitle: string
   badgeDescription: string
+}
+
+export interface WeeklyWordRankItem {
+  word: string
+  language: AppLanguage
+  practiceCount: number
+  correctCount: number
+  accuracy: number
+  lastPracticed: string
+}
+
+export interface BilingualStatus {
+  isBilingual: boolean
+  activeLanguages: AppLanguage[]
+  totalLanguages: number
+  primaryLanguage: AppLanguage
+  bilingualBonusPoints: number
+  level: 'iniciante' | 'explorador' | 'fluente'
+  description: string
 }
 
 export interface JuniorActivityDefinition {
@@ -691,6 +710,138 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
     ],
   },
 ]
+
+// ================= COGNIKIDS JUNIOR MODULES (6 a 10 ANOS / 72 a 120 MESES) ================= //
+
+export const JUNIOR_MODULES: ModuleDefinition[] = [
+  {
+    id: 'junior_vocab',
+    title: 'Vocabulário & Fala Pro',
+    subtitle: 'Expressão verbal e termos complexos nos 5 idiomas',
+    color: '#6366F1', // Indigo
+    lightColor: '#EEF2FF',
+    icon: '🗣️',
+    description:
+      'Pronúncia avançada, associação de palavras ricas, significado e formação de frases completas.',
+    minAgeMonths: 72,
+    maxAgeMonths: 120,
+    themes: [
+      {
+        title: 'Vocabulário Avançado & Expressão Verbal',
+        whatIsWorked: 'Construção de frases complexas, termos científicos e dicção multilíngue.',
+        homeTips: [
+          'Conversem sobre temas do dia e encoraje explicar conceitos científicos com detalhes.',
+          'Pratique a leitura de livros de aventura com vocabulário rico.',
+        ],
+      },
+    ],
+    activities: [
+      {
+        id: 'junior_vocab_builder',
+        title: 'Construtor de Vocabulário & Frases',
+        description:
+          'Pronuncie termos como astronauta, ecossistema e fotossíntese com reconhecimento de voz!',
+        ageRange: '6–10 anos',
+        badge: 'Voz Multilíngue',
+      },
+    ],
+  },
+  {
+    id: 'junior_math',
+    title: 'Matemática & Contas',
+    subtitle: 'Cálculo Mental e Raciocínio Quantitativo',
+    color: '#06B6D4', // Cyan
+    lightColor: '#ECFEFF',
+    icon: '🔢',
+    description:
+      'Adição, subtração, multiplicação lúdica, problemas do cotidiano e raciocínio lógico-matemático.',
+    minAgeMonths: 72,
+    maxAgeMonths: 120,
+    themes: [
+      {
+        title: 'Cálculo Mental e Resolução de Problemas',
+        whatIsWorked: 'Operações fundamentais (adição, subtração, multiplicação) e raciocínio quantitativo.',
+        homeTips: [
+          'Faça pequenos desafios com preços de compras ou troco em supermercado.',
+          'Proponha jogos de cartas que envolvam somas e tabuadas rápidas.',
+        ],
+      },
+    ],
+    activities: [
+      {
+        id: 'junior_math_quest',
+        title: 'Missão Matemática do Tico',
+        description: 'Resolva contas e desafios matemáticos em ritmo de aventura espacial!',
+        ageRange: '6–10 anos',
+        badge: 'Desafio',
+      },
+    ],
+  },
+  {
+    id: 'junior_logic',
+    title: 'Matriz Lógica & Padrões',
+    subtitle: 'Dedução Visual e Raciocínio 2x2',
+    color: '#8B5CF6', // Violet
+    lightColor: '#F5F3FF',
+    icon: '🧩',
+    description:
+      'Matrizes 2x2 de formas e cores, rotação mental, correspondência lógica e raciocínio analítico.',
+    minAgeMonths: 72,
+    maxAgeMonths: 120,
+    themes: [
+      {
+        title: 'Dedução Analítica e Padrões Espaciais',
+        whatIsWorked: 'Análise de relações entre linhas/colunas, eliminação lógica e rotação mental.',
+        homeTips: [
+          'Pratiquem jogos como xadrez, damas, sudokus infantis ou quebra-cabeças 2D.',
+          'Crie enigmas desenhados no papel para a criança completar.',
+        ],
+      },
+    ],
+    activities: [
+      {
+        id: 'junior_logic_matrix',
+        title: 'Matriz Lógica 2x2',
+        description: 'Analise linhas e colunas para descobrir qual figura completa a matriz visual!',
+        ageRange: '6–10 anos',
+        badge: 'Raciocínio',
+      },
+    ],
+  },
+  {
+    id: 'junior_dictation',
+    title: 'Ditado & Ortografia',
+    subtitle: 'Escuta Atenta e Soletração',
+    color: '#EC4899', // Pink
+    lightColor: '#FDF2F8',
+    icon: '✍️',
+    description:
+      'Escuta de palavras nos 5 idiomas, preenchimento de letras faltantes e digitação correta.',
+    minAgeMonths: 72,
+    maxAgeMonths: 120,
+    themes: [
+      {
+        title: 'Ortografia, Soletração e Consciência Grafofonêmica',
+        whatIsWorked: 'Atenção auditiva, memória fonológica e domínio ortográfico nos 5 idiomas.',
+        homeTips: [
+          'Brinquem de forca e caça-palavras com as palavras aprendidas na semana.',
+          'Escreva bilhetes com pequenas missões para ler e responder.',
+        ],
+      },
+    ],
+    activities: [
+      {
+        id: 'junior_dictation_game',
+        title: 'Ditado & Soletração Inteligente',
+        description: 'Ouça a palavra pronunciada pelo Tico e monte a soletração exata!',
+        ageRange: '6–10 anos',
+        badge: '5 Idiomas',
+      },
+    ],
+  },
+]
+
+export const ALL_COGNIKIDS_MODULES: ModuleDefinition[] = [...COGNIKIDS_MODULES, ...JUNIOR_MODULES]
 
 export interface DailyActivityItem {
   id: string

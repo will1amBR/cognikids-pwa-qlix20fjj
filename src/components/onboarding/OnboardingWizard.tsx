@@ -101,70 +101,70 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
         activitiesCount: 2,
       }
     }
-    if (m <= 36) {
+    if (m <= 60) {
       return {
-        stage: '19 a 36 meses (Explosão do Vocabulário & Padrões)',
-        focus: 'Fala guiada com microfone, associação de cores, formas e contagem lúdica',
+        stage: '37 a 60 meses (Raciocínio Lógico & Autonomia)',
+        focus: 'Pronúncia avançada, rimas fonéticas, memória de pares e autonomia diária',
         games: [
           {
-            name: 'Fazenda Falante (Fala & Voz)',
+            name: 'Fazenda Falante (Multilíngue)',
             area: 'Fala & Linguagem',
-            icon: '🎤',
+            icon: '🌍',
             color: 'bg-orange-100 text-orange-900',
           },
           {
-            name: 'Caixa das Formas',
+            name: 'Rima Divertida',
+            area: 'Consciência Fonológica',
+            icon: '🎵',
+            color: 'bg-purple-100 text-purple-900',
+          },
+          {
+            name: 'Memória dos Dinos',
+            area: 'Memória & Atenção',
+            icon: '🧩',
+            color: 'bg-sky-100 text-sky-900',
+          },
+          {
+            name: 'Sequência de Padrões',
             area: 'Lógica & Cognição',
-            icon: '🔷',
-            color: 'bg-amber-100 text-amber-900',
-          },
-          {
-            name: 'Carinhas Felizes',
-            area: 'Socioemocional',
-            icon: '😊',
-            color: 'bg-rose-100 text-rose-900',
-          },
-          {
-            name: 'Conta Dinos (1 a 5)',
-            area: 'Lógica & Números',
-            icon: '🦕',
-            color: 'bg-emerald-100 text-emerald-900',
+            icon: '⭐',
+            color: 'bg-indigo-100 text-indigo-900',
           },
         ],
-        routineMin: 12,
-        activitiesCount: 3,
+        routineMin: 15,
+        activitiesCount: 4,
       }
     }
     return {
-      stage: '37 a 60 meses (Raciocínio Lógico & Autonomia)',
-      focus: 'Pronúncia avançada, rimas fonéticas, memória de pares e autonomia diária',
+      stage: '6 a 10 anos (CogniKids Junior: Alfabetização & Raciocínio)',
+      focus: 'Vocabulário rico nos 5 idiomas, ditado por voz, cálculo mental e dedução lógica',
       games: [
         {
-          name: 'Fazenda Falante (Multilíngue)',
-          area: 'Fala & Linguagem',
-          icon: '🌍',
-          color: 'bg-orange-100 text-orange-900',
-        },
-        {
-          name: 'Rima Divertida',
-          area: 'Consciência Fonológica',
-          icon: '🎵',
-          color: 'bg-purple-100 text-purple-900',
-        },
-        {
-          name: 'Memória dos Dinos',
-          area: 'Memória & Atenção',
-          icon: '🧩',
-          color: 'bg-sky-100 text-sky-900',
-        },
-        {
-          name: 'Sequência de Padrões',
-          area: 'Lógica & Cognição',
-          icon: '⭐',
+          name: 'Construtor de Vocabulário',
+          area: 'Vocabulário Pro',
+          icon: '🚀',
           color: 'bg-indigo-100 text-indigo-900',
         },
+        {
+          name: 'Missão Matemática',
+          area: 'Matemática & Contas',
+          icon: '⚡',
+          color: 'bg-cyan-100 text-cyan-900',
+        },
+        {
+          name: 'Matriz Lógica 2x2',
+          area: 'Lógica & Dedução',
+          icon: '🧩',
+          color: 'bg-violet-100 text-violet-900',
+        },
+        {
+          name: 'Ditado Inteligente',
+          area: 'Ditado & Ortografia',
+          icon: '✍️',
+          color: 'bg-pink-100 text-pink-900',
+        },
       ],
-      routineMin: 15,
+      routineMin: 20,
       activitiesCount: 4,
     }
   }
@@ -377,16 +377,16 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
               <Slider
                 value={[ageMonths]}
                 min={2}
-                max={60}
+                max={120}
                 step={1}
                 onValueChange={(val) => setAgeMonths(val[0])}
                 className="py-3"
               />
 
               <div className="flex justify-between text-[11px] font-bold text-slate-400">
-                <span>0 meses (Bebê)</span>
-                <span>24 meses (2 anos)</span>
-                <span>60 meses (5 anos)</span>
+                <span>0m (Bebê)</span>
+                <span>60m (5a Infantil)</span>
+                <span className="text-indigo-600 font-black">72–120m (6–10a Junior)</span>
               </div>
             </div>
 

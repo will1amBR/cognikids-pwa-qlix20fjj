@@ -12,12 +12,17 @@ import { JUNIOR_LOGIC_PATTERNS, JuniorLogicPattern } from './juniorContentData'
 import type { AppLanguage, Child } from '@/types/cognikids'
 import { Check, X, RefreshCw, ArrowRight, Lightbulb } from 'lucide-react'
 
-export const JuniorLogicMatrixGame: React.FC = () => {
-  const { childId } = useParams<{ childId: string }>()
+interface JuniorGameProps {
+  child?: Child | null
+}
+
+export const JuniorLogicMatrixGame: React.FC<JuniorGameProps> = ({ child: initialChild }) => {
+  const { childId: routeChildId } = useParams<{ childId: string }>()
+  const childId = initialChild?.id || routeChildId
   const navigate = useNavigate()
   const { playSound } = useSound()
 
-  const [child, setChild] = useState<Child | null>(null)
+  const [child, setChild] = useState<Child | null>(initialChild || null)
   const [currentRound, setCurrentRound] = useState<number>(0)
   const [score, setScore] = useState<number>(0)
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
@@ -47,11 +52,11 @@ export const JuniorLogicMatrixGame: React.FC = () => {
     setIsCorrect(correct)
 
     if (correct) {
-      playSound('success')
+      playSound('correct')
       setScore((prev) => prev + 30)
       setCorrectCount((prev) => prev + 1)
     } else {
-      playSound('wrong')
+      playSound('error')
     }
   }
 
@@ -78,9 +83,9 @@ export const JuniorLogicMatrixGame: React.FC = () => {
       offlineSyncService.saveSession({
         user_id: child.user_id,
         child_id: child.id,
-        module_id: 'logica_cognicao',
+        module_id: 'junior_logic',
         game_id: 'junior_logic_matrix',
-        game_title: 'Matriz Lógica Junior',
+        game_title: 'Matriz Lógica 2x2',
         stars,
         score,
         accuracy,
@@ -101,18 +106,9 @@ export const JuniorLogicMatrixGame: React.FC = () => {
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
     return (
-      <GameShell
-        title="Matriz Lógica Junior"
-        subtitle="Raciocínio concluído!"
-        onBack={() => navigate('/junior')}
-        hideFooter
-      >
+      <GameShell title="Matriz Lógica Junior" onBack={() => navigate('/junior')}>
         <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot
-            emotion="happy"
-            size="lg"
-            message="Você decifrou todos os enigmas lógicos com maestria!"
-          />
+          <TicoMascot mood="celebrating" size="lg" />
 
           <Card className="p-6 rounded-3xl border-2 border-amber-200 bg-gradient-to-b from-amber-50 to-white shadow-md">
             <h3 className="text-2xl font-black text-slate-800 mb-1">Enigmas Decifrados!</h3>
@@ -163,7 +159,6 @@ export const JuniorLogicMatrixGame: React.FC = () => {
   return (
     <GameShell
       title="CogniKids Junior: Matriz Lógica"
-      subtitle={`Padrão ${currentRound + 1} de ${totalRounds} • Encontre o próximo elemento`}
       score={score}
       stars={3}
       currentRound={currentRound + 1}

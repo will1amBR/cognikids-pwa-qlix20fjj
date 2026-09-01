@@ -361,4 +361,20 @@ export const JUNIOR_LOGIC_PATTERNS: JuniorLogicPattern[] = [
     correctOption: '🌳',
     reason: 'Ciclo natural de 3 estágios da planta (semente, broto, árvore).',
   },
+  {
+    id: 'lp5',
+    title: 'Sequência Decrescente',
+    sequence: ['50', '40', '30', '20', '?'],
+    options: ['5', '10', '15', '0'],
+    correctOption: '10',
+    reason: 'Subtração constante de 10 em 10 (20 - 10 = 10).',
+  },
+  {
+    id: 'lp6',
+    title: 'Padrão Rotacional de Formas',
+    sequence: ['🔺', '▶️', '🔻', '◀️', '?'],
+    options: ['🔺', '💠', '⭐', '🔻'],
+    correctOption: '🔺',
+    reason: 'Giro no sentido horário completando uma volta completa.',
+  },
 ]
