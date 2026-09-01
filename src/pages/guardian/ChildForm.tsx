@@ -137,9 +137,18 @@ export const ChildFormPage: React.FC = () => {
           avatarFile,
         })
         localStorage.setItem('cognikids_selected_child_id', created.id)
-        toast({ title: 'Criança cadastrada com sucesso! 🎉' })
+        toast({
+          title: 'Criança cadastrada com sucesso! 🎉',
+          description: isJuniorAge
+            ? 'Direcionando automaticamente para o CogniKids Junior (6-10 anos)!'
+            : undefined,
+        })
       }
-      navigate('/app')
+      if (isJuniorAge) {
+        navigate('/junior')
+      } else {
+        navigate('/app')
+      }
     } catch (err: any) {
       toast({
         title: 'Erro ao salvar perfil',
@@ -152,6 +161,7 @@ export const ChildFormPage: React.FC = () => {
   }
 
   const calculatedMonths = birthDate ? calculateAgeMonths(new Date(birthDate).toISOString()) : 0
+  const isJuniorAge = calculatedMonths >= 72
 
   if (isFetching) {
     return (
@@ -226,7 +236,6 @@ export const ChildFormPage: React.FC = () => {
             <p className="text-[11px] text-slate-400">PNG, JPG ou WEBP até 2MB</p>
           </div>
         </div>
-
         {/* Nome */}
         <div className="space-y-1.5 text-left">
           <Label htmlFor="name" className="text-xs font-bold text-slate-700">
@@ -243,7 +252,6 @@ export const ChildFormPage: React.FC = () => {
             className="rounded-2xl h-11"
           />
         </div>
-
         {/* Data de Nascimento */}
         <div className="space-y-1.5 text-left">
           <div className="flex justify-between items-center">
@@ -251,8 +259,15 @@ export const ChildFormPage: React.FC = () => {
               Data de nascimento *
             </Label>
             {birthDate && (
-              <span className="text-xs font-bold text-orange-600">
-                {calculatedMonths} {calculatedMonths === 1 ? 'mês' : 'meses'}
+              <span
+                className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                  isJuniorAge
+                    ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                    : 'text-orange-600 bg-orange-50 border-orange-200'
+                }`}
+              >
+                {calculatedMonths} {calculatedMonths === 1 ? 'mês' : 'meses'}{' '}
+                {isJuniorAge ? '(Junior 🎒)' : '(Infantil 👶)'}
               </span>
             )}
           </div>
@@ -270,7 +285,6 @@ export const ChildFormPage: React.FC = () => {
             jogos.
           </p>
         </div>
-
         {/* Idiomas de Aprendizagem (Português, Inglês, Espanhol, Alemão, Francês) */}
         <div className="space-y-2 text-left">
           <Label className="text-xs font-bold text-slate-700">
@@ -330,7 +344,6 @@ export const ChildFormPage: React.FC = () => {
             idiomas.
           </p>
         </div>
-
         {/* Turma / Sala (Escola) */}
         <div className="space-y-1.5 text-left">
           <Label htmlFor="classGroup" className="text-xs font-bold text-slate-700">
@@ -349,7 +362,6 @@ export const ChildFormPage: React.FC = () => {
             Facilita o agrupamento e filtro no Portal Pedagógico da Escola.
           </p>
         </div>
-
         {/* Cor Favorita (5 swatches dos módulos) */}
         <div className="space-y-2 text-left">
           <Label className="text-xs font-bold text-slate-700">Cor favorita (tema do perfil)</Label>
@@ -375,7 +387,6 @@ export const ChildFormPage: React.FC = () => {
             })}
           </div>
         </div>
-
         {/* Configuração da Sessão Diária da Criança */}
         <div className="pt-2 border-t border-slate-100 space-y-4 text-left">
           <div className="flex items-center justify-between">
@@ -433,7 +444,30 @@ export const ChildFormPage: React.FC = () => {
             </div>
           </div>
         </div>
-
+        {/* Junior Age Info Alert */}
+        {calculatedMonths > 0 && (
+          <div
+            className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center gap-2.5 ${
+              isJuniorAge
+                ? 'bg-indigo-50/90 border-indigo-200 text-indigo-900'
+                : 'bg-orange-50/90 border-orange-200 text-orange-900'
+            }`}
+          >
+            <span className="text-xl shrink-0">{isJuniorAge ? '🚀' : '🌱'}</span>
+            <div>
+              <p className="font-bold">
+                {isJuniorAge
+                  ? `Criança com ${(calculatedMonths / 12).toFixed(1)} anos (${calculatedMonths}m) → Direcionamento Automático: CogniKids Junior (6 a 10 anos)`
+                  : `Criança com ${(calculatedMonths / 12).toFixed(1)} anos (${calculatedMonths}m) → CogniKids Infantil (0 a 5 anos)`}
+              </p>
+              <p className="opacity-80 text-[11px]">
+                {isJuniorAge
+                  ? 'Os jogos serão calibrados com vocabulário avançado, ditado por voz, matemática e lógica.'
+                  : 'Os jogos serão calibrados para primeiras palavras, Cérebro em Flor e estímulos sensoriais.'}
+              </p>
+            </div>
+          </div>
+        )}
         {/* Actions */}
         <div className="pt-4 flex gap-3">
           <Button
@@ -446,21 +480,23 @@ export const ChildFormPage: React.FC = () => {
           </Button>
           <Button
             type="submit"
-            disabled={isLoading}
-            className="flex-1 h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20"
+            disabled={isSaving || !name.trim() || !birthDate}
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black shadow-md"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                <span>Salvando…</span>
-              </>
-            ) : isEditing ? (
-              'Atualizar perfil'
+            {isSaving ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Salvando...
+              </span>
+            ) : isEdit ? (
+              'Salvar Alterações'
+            ) : isJuniorAge ? (
+              'Cadastrar & Ir para Junior 🚀'
             ) : (
-              'Salvar criança'
+              'Cadastrar Criança'
             )}
           </Button>
-        </div>
+        </div>{' '}
       </form>
     </div>
   )

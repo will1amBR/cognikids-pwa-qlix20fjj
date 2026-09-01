@@ -43,6 +43,9 @@ import { speechService } from '@/lib/speechSynthesis'
 import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { LanguageEvolutionTimeline } from '@/components/progress/LanguageEvolutionTimeline'
+import { WeeklyWordsRanking } from '@/components/progress/WeeklyWordsRanking'
+import { computeWeeklyWordsRanking, WeeklyWordRankItem } from '@/services/reminders'
 
 type PeriodFilter = 'all' | 'today' | '7days' | '30days' | 'custom'
 
@@ -53,6 +56,7 @@ export const GameHistoryPage: React.FC = () => {
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [currentChild, setCurrentChild] = useState<Child | null>(null)
   const [sessions, setSessions] = useState<GameSession[]>([])
+  const [weeklyRanking, setWeeklyRanking] = useState<WeeklyWordRankItem[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   // Filters state
@@ -123,6 +127,8 @@ export const GameHistoryPage: React.FC = () => {
       )
 
       setSessions(combined)
+      const ranking = computeWeeklyWordsRanking(combined, 8)
+      setWeeklyRanking(ranking)
     } catch (err) {
       console.warn('Error loading child sessions', err)
     } finally {
@@ -467,6 +473,24 @@ export const GameHistoryPage: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* 1) Gráfico de Evolução por Idioma ao Longo do Tempo */}
+      <LanguageEvolutionTimeline
+        sessions={filteredSessions}
+        selectedLanguage={selectedLanguage}
+        selectedPeriod={selectedPeriod}
+      />
+
+      {/* 2) Ranking suave de Palavras da Semana */}
+      <WeeklyWordsRanking
+        ranking={weeklyRanking}
+        childName={currentChild?.name}
+        onPracticeWord={(word, lang) => {
+          if (currentChild?.id) {
+            navigate(`/app/game/${currentChild.id}/fazenda_falante`)
+          }
+        }}
+      />
 
       {/* Main Content Layout: Filters & Session List + Word Review Queue Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

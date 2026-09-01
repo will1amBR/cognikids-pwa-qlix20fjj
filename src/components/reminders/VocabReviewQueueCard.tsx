@@ -20,7 +20,10 @@ import {
   WordReviewItem,
   getRandomVocabTip,
   getReminderConfig,
+  markWordAsReviewed,
+  getReviewedWords,
 } from '@/services/reminders'
+import { Check, BookmarkCheck, ArrowDownRight, CheckCircle } from 'lucide-react'
 import { speechService } from '@/lib/speechSynthesis'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { fetchChildSessions } from '@/services/children'
@@ -49,6 +52,8 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
     de: [],
     it: [],
   })
+  const [weeklyReviewedCount, setWeeklyReviewedCount] = useState<number>(0)
+  const [totalReviewedCount, setTotalReviewedCount] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(true)
   const [playingWord, setPlayingWord] = useState<string | null>(null)
 
@@ -109,12 +114,16 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
         ...sessions,
       ]
 
-      const computed = computeVocabReviewQueue(combined, childLanguages)
-      setQueueByLang(computed)
+      const computed = computeVocabReviewQueue(combined, childLanguages, child?.id)
+      setQueueByLang(computed.queue)
+      setWeeklyReviewedCount(computed.reviewedCountThisWeek)
+      setTotalReviewedCount(computed.totalReviewedCount)
     } catch (err) {
       console.warn('Failed to load vocab review sessions', err)
-      const fallback = computeVocabReviewQueue([], childLanguages)
-      setQueueByLang(fallback)
+      const fallback = computeVocabReviewQueue([], childLanguages, child?.id)
+      setQueueByLang(fallback.queue)
+      setWeeklyReviewedCount(fallback.reviewedCountThisWeek)
+      setTotalReviewedCount(fallback.totalReviewedCount)
     } finally {
       setLoading(false)
     }
@@ -135,7 +144,16 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
     }
   }
 
+  const handleMarkAsReviewed = (item: WordReviewItem) => {
+    if (!child?.id) return
+    markWordAsReviewed(child.id, item.word, item.language)
+    // Reload queue state to show immediate reduction/reordering
+    loadReviewData()
+  }
+
   const currentWords = queueByLang[selectedLang] || []
+  const unreviewedCount = currentWords.filter((w) => !w.isReviewed).length
+  const reviewedInLangCount = currentWords.filter((w) => w.isReviewed).length
   const availableLangs = SUPPORTED_LANGUAGES.filter((l) => childLanguages.includes(l.code))
 
   const activeTip = getRandomVocabTip(selectedLang)
@@ -214,6 +232,30 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
       </CardHeader>
 
       <CardContent className="p-4 sm:p-5 space-y-4">
+        {/* Weekly drop tracker banner */}
+        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-emerald-950">
+            <div className="w-7 h-7 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs">
+              ✓
+            </div>
+            <div>
+              <p className="font-black text-emerald-900">
+                {weeklyReviewedCount > 0
+                  ? `${weeklyReviewedCount} ${weeklyReviewedCount === 1 ? 'palavra revisada' : 'palavras revisadas'} esta semana!`
+                  : 'Fila pronta para revisão semanal'}
+              </p>
+              <p className="text-[11px] text-emerald-700">
+                {unreviewedCount > 0
+                  ? `${unreviewedCount} ${unreviewedCount === 1 ? 'pendente' : 'pendentes'} para praticar com o Tico`
+                  : 'Todas as palavras prioritárias foram revisadas!'}
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 self-end sm:self-auto">
+            Queda da Fila 📉
+          </span>
+        </div>
+
         {/* Selected language info pill */}
         <div className="flex items-center justify-between bg-orange-50/70 border border-orange-200/70 rounded-2xl p-2.5 px-3 text-xs text-orange-950">
           <div className="flex items-center gap-2">
@@ -225,15 +267,14 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
                 {SUPPORTED_LANGUAGES.find((l) => l.code === selectedLang)?.label}
               </span>
               <span className="text-slate-500 ml-1.5">
-                ({currentWords.length}{' '}
-                {currentWords.length === 1 ? 'palavra na fila' : 'palavras na fila'})
+                ({unreviewedCount} pendentes • {reviewedInLangCount} revisadas)
               </span>
             </div>
           </div>
           <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold shadow-xs">
-            {currentWords.filter((w) => w.errorCount > 0).length > 0
+            {currentWords.filter((w) => !w.isReviewed && w.errorCount > 0).length > 0
               ? 'Prioridade por Erros'
-              : 'Fixação Vocal'}
+              : 'Fixação & Revisadas'}
           </Badge>
         </div>
 
@@ -317,7 +358,30 @@ export const VocabReviewQueueCard: React.FC<VocabReviewQueueCardProps> = ({
                           className={`w-4 h-4 ${playingWord === item.word ? 'animate-bounce text-orange-600' : ''}`}
                         />
                       </Button>
-                      {onSelectWordToPractice && (
+
+                      {/* Action: Mark as reviewed toggle */}
+                      {item.isReviewed ? (
+                        <Badge
+                          variant="outline"
+                          className="h-8 px-2.5 text-[10px] font-bold bg-emerald-50 text-emerald-800 border-emerald-300 flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>Revisada</span>
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMarkAsReviewed(item)}
+                          className="h-8 px-2 text-[11px] font-bold rounded-xl border-emerald-300 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900"
+                          title="Marcar palavra como revisada pelo responsável"
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Revisada
+                        </Button>
+                      )}
+
+                      {onSelectWordToPractice && !item.isReviewed && (
                         <Button
                           size="sm"
                           onClick={() => onSelectWordToPractice(item.word, item.language)}

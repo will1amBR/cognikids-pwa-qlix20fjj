@@ -151,6 +151,20 @@ export interface BilingualStatus {
   badgeDescription: string
 }
 
+export interface JuniorActivityDefinition {
+  id: string
+  title: string
+  description: string
+  pillar: 'language' | 'math' | 'logic' | 'memory' | 'reading'
+  pillarTitle: string
+  icon: string
+  color: string
+  lightColor: string
+  ageRange: string
+  badge?: string
+  skillsWorked: string[]
+}
+
 export interface ModuleDefinition {
   id: string
   title: string
@@ -174,6 +188,79 @@ export interface ModuleDefinition {
     badge?: string
   }[]
 }
+
+export const COGNIKIDS_JUNIOR_ACTIVITIES: JuniorActivityDefinition[] = [
+  {
+    id: 'junior_vocab_builder',
+    title: 'Mestre do Vocabulário & Frases',
+    description:
+      'Fale palavras avançadas, construa frases e aprenda novas expressões nos 5 idiomas.',
+    pillar: 'language',
+    pillarTitle: 'Vocabulário & Fala',
+    icon: '🗣️',
+    color: '#FF7A45',
+    lightColor: '#FFF2EB',
+    ageRange: '6 a 10 anos',
+    badge: 'Microfone & Voz',
+    skillsWorked: ['Articulação fonética', 'Expressões idiomáticas', 'Formação de frases'],
+  },
+  {
+    id: 'junior_dictation_voice',
+    title: 'Ditado de Voz & Ortografia',
+    description:
+      'Ouça a palavra em áudio cristalino e digite ou fale a grafia correta com suporte multilíngue.',
+    pillar: 'reading',
+    pillarTitle: 'Leitura & Escrita',
+    icon: '✍️',
+    color: '#8B5CF6',
+    lightColor: '#F5F3FF',
+    ageRange: '6 a 10 anos',
+    badge: 'Novo',
+    skillsWorked: ['Consciência ortográfica', 'Percepção auditiva', 'Escrita correta'],
+  },
+  {
+    id: 'junior_math_quest',
+    title: 'Missão Matemática & Cálculos',
+    description:
+      'Resolva desafios de adição, subtração, multiplicação e problemas lúdicos do Tico.',
+    pillar: 'math',
+    pillarTitle: 'Matemática Básica',
+    icon: '🔢',
+    color: '#0EA5E9',
+    lightColor: '#F0F9FF',
+    ageRange: '6 a 10 anos',
+    badge: 'Popular',
+    skillsWorked: ['Cálculo mental', 'Raciocínio quantitativo', 'Resolução de problemas'],
+  },
+  {
+    id: 'junior_logic_matrix',
+    title: 'Matriz Lógica & Dedução',
+    description:
+      'Desvende padrões complexos, sequências geométricas e deduções com raciocínio analítico.',
+    pillar: 'logic',
+    pillarTitle: 'Lógica & Dedução',
+    icon: '🧠',
+    color: '#F59E0B',
+    lightColor: '#FEFCE8',
+    ageRange: '6 a 10 anos',
+    badge: 'Desafio',
+    skillsWorked: ['Pensamento dedutivo', 'Identificação de matrizes', 'Classificação'],
+  },
+  {
+    id: 'junior_memory_master',
+    title: 'Super Memória & Sequências',
+    description:
+      'Memorize sequências de símbolos, palavras nos idiomas e reproduza no tempo ideal.',
+    pillar: 'memory',
+    pillarTitle: 'Memória de Trabalho',
+    icon: '⚡',
+    color: '#10B981',
+    lightColor: '#ECFDF5',
+    ageRange: '6 a 10 anos',
+    badge: 'Agilidade',
+    skillsWorked: ['Retenção visual-espacial', 'Foco prolongado', 'Memória de curto prazo'],
+  },
+]
 
 export const COGNIKIDS_BADGES: BadgeDefinition[] = [
   // Selo Especial de Multi-idiomas

@@ -33,6 +33,10 @@ import {
 } from 'lucide-react'
 import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
+import { WeeklyWordsRanking } from '@/components/progress/WeeklyWordsRanking'
+import { computeWeeklyWordsRanking, WeeklyWordRankItem } from '@/services/reminders'
+import { offlineSyncService } from '@/lib/offlineSync'
+import { fetchChildSessions } from '@/services/children'
 import {
   Dialog,
   DialogContent,
@@ -52,6 +56,7 @@ export const ChildDashboardPage: React.FC = () => {
   const [child, setChild] = useState<Child | null>(null)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
   const [achievements, setAchievements] = useState<ChildAchievement[]>([])
+  const [weeklyRanking, setWeeklyRanking] = useState<WeeklyWordRankItem[]>([])
   const [selectedBadgeModal, setSelectedBadgeModal] = useState<BadgeDefinition | null>(null)
   const [selectedBadgeUnlocked, setSelectedBadgeUnlocked] = useState<ChildAchievement | null>(null)
   const [showGamePicker, setShowGamePicker] = useState(false)
@@ -66,10 +71,38 @@ export const ChildDashboardPage: React.FC = () => {
       setChild(kid)
 
       if (kid) {
-        const [progList, achList] = await Promise.all([
+        const [progList, achList, sessionList] = await Promise.all([
           fetchChildModuleProgress(kid.id),
           syncAndEvaluateAchievements(kid.id),
+          fetchChildSessions(kid.id, 100),
         ])
+
+        const pending = offlineSyncService.getPendingSessions().filter((p) => p.child_id === kid.id)
+
+        const formattedPending: GameSession[] = pending.map(
+          (p, idx) =>
+            ({
+              id: `pending_${idx}`,
+              user_id: p.user_id,
+              child_id: p.child_id,
+              module_id: p.module_id,
+              game_id: p.game_id,
+              game_title: p.game_title,
+              stars: p.stars,
+              score: p.score,
+              accuracy: p.accuracy,
+              rounds_completed: p.rounds_completed,
+              total_rounds: p.total_rounds,
+              language: p.language || 'pt-BR',
+              details: p.details,
+              created: new Date().toISOString(),
+              updated: new Date().toISOString(),
+            }) as GameSession,
+        )
+
+        const combined = [...formattedPending, ...sessionList]
+        const ranking = computeWeeklyWordsRanking(combined, 6)
+        setWeeklyRanking(ranking)
 
         const map: Record<string, number> = {}
         progList.forEach((p) => {
@@ -350,13 +383,22 @@ export const ChildDashboardPage: React.FC = () => {
         {/* Tab 1: Cérebro em Flor & Modules */}
         <TabsContent value="flower" className="space-y-6">
           {/* Fila de Revisão de Vocabulário da Criança */}
-          <VocabReviewQueueCard
-            child={child}
-            compact
-            onSelectWordToPractice={(word, lang) => {
-              navigate(`/app/game/${child.id}/fazenda_falante`)
-            }}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <VocabReviewQueueCard
+              child={child}
+              compact
+              onSelectWordToPractice={(word, lang) => {
+                navigate(`/app/game/${child.id}/fazenda_falante`)
+              }}
+            />
+            <WeeklyWordsRanking
+              ranking={weeklyRanking}
+              childName={child.name}
+              onPracticeWord={(word, lang) => {
+                navigate(`/app/game/${child.id}/fazenda_falante`)
+              }}
+            />
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Visual Flower Chart */}
             <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md flex flex-col items-center justify-center text-center">

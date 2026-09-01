@@ -228,10 +228,15 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
 
   const handleStartDailySession = () => {
     playPop()
+    const isJunior = ageMonths >= 72
     if (createdChildId) {
       localStorage.setItem('cognikids_selected_child_id', createdChildId)
       onClose()
-      navigate(`/app/daily/${createdChildId}`)
+      if (isJunior) {
+        navigate('/junior')
+      } else {
+        navigate(`/app/daily/${createdChildId}`)
+      }
     } else {
       onClose()
     }
@@ -239,10 +244,15 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
 
   const handleGoToDashboard = () => {
     playPop()
+    const isJunior = ageMonths >= 72
     if (createdChildId) {
       localStorage.setItem('cognikids_selected_child_id', createdChildId)
       onClose()
-      navigate(`/app/child/${createdChildId}`)
+      if (isJunior) {
+        navigate('/junior')
+      } else {
+        navigate(`/app/child/${createdChildId}`)
+      }
     } else {
       onClose()
     }

@@ -12,6 +12,7 @@ import type { GuardianReminderConfig, AppLanguage } from '@/types/cognikids'
 const LOCAL_STORAGE_KEY = 'cognikids_reminder_config'
 const LAST_NOTIFIED_KEY = 'cognikids_last_notified_date'
 const LAST_VOCAB_NOTIFIED_KEY = 'cognikids_last_vocab_notified_date'
+const REVIEWED_WORDS_STORAGE_KEY = 'cognikids_reviewed_words'
 
 export interface VocabPracticeTip {
   language: AppLanguage
@@ -33,6 +34,24 @@ export interface WordReviewItem {
   averageAccuracy: number
   lastPracticed?: string
   suggestedAction?: string
+  isReviewed?: boolean
+  reviewedAt?: string
+}
+
+export interface WeeklyWordRankItem {
+  word: string
+  language: AppLanguage
+  practiceCount: number
+  correctCount: number
+  accuracy: number
+  lastPracticed: string
+}
+
+export interface ReviewedWordRecord {
+  childId: string
+  word: string
+  language: AppLanguage
+  reviewedAt: string
 }
 
 export interface LanguageVocabQueue {
@@ -465,10 +484,194 @@ export function markVocabReminderTriggeredToday() {
  * Computes vocabulary review items per language based on actual game sessions (both synced and offline pending).
  * Words with lowest accuracy (< 85%) or highest error count are prioritized.
  */
+/**
+ * Retrieves the set of locally/persisted reviewed words for a child
+ */
+export function getReviewedWords(childId?: string): ReviewedWordRecord[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(REVIEWED_WORDS_STORAGE_KEY)
+    const list: ReviewedWordRecord[] = raw ? JSON.parse(raw) : []
+    if (childId) {
+      return list.filter((item) => item.childId === childId)
+    }
+    return list
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Marks a word as reviewed by guardian, persisting locally and syncing
+ */
+export function markWordAsReviewed(
+  childId: string,
+  word: string,
+  language: AppLanguage,
+): ReviewedWordRecord[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(REVIEWED_WORDS_STORAGE_KEY)
+    const list: ReviewedWordRecord[] = raw ? JSON.parse(raw) : []
+    const cleanWord = word.trim().toLowerCase()
+
+    // Remove if already exists to update date
+    const filtered = list.filter(
+      (item) =>
+        !(
+          item.childId === childId &&
+          item.language === language &&
+          item.word.trim().toLowerCase() === cleanWord
+        ),
+    )
+
+    const newRecord: ReviewedWordRecord = {
+      childId,
+      word: word.trim(),
+      language,
+      reviewedAt: new Date().toISOString(),
+    }
+    filtered.push(newRecord)
+    localStorage.setItem(REVIEWED_WORDS_STORAGE_KEY, JSON.stringify(filtered))
+    return filtered
+  } catch (e) {
+    console.warn('Failed to save reviewed word', e)
+    return []
+  }
+}
+
+/**
+ * Computes weekly vocabulary words ranking (last 7 days) from game sessions and offline pending
+ */
+export function computeWeeklyWordsRanking(
+  sessions: GameSession[],
+  limit: number = 8,
+): WeeklyWordRankItem[] {
+  const now = new Date()
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+  const wordMap: Record<
+    string,
+    {
+      word: string
+      language: AppLanguage
+      practiceCount: number
+      correctCount: number
+      totalAccuracy: number
+      lastPracticed: string
+    }
+  > = {}
+
+  sessions.forEach((s) => {
+    const sessionDate = new Date(s.created || now)
+    if (sessionDate < sevenDaysAgo) return
+
+    const lang = (s.language || 'pt-BR') as AppLanguage
+    const details = (s.details as any) || {}
+
+    if (details.wordResults && Array.isArray(details.wordResults)) {
+      details.wordResults.forEach((wr: any) => {
+        if (!wr || !wr.word) return
+        const wordText = String(wr.word).trim()
+        const wordKey = `${lang}:::${wordText.toLowerCase()}`
+        const score = typeof wr.score === 'number' ? wr.score : s.accuracy || 80
+        const isCorrect = wr.isRecognized !== false && score >= 70
+
+        if (!wordMap[wordKey]) {
+          wordMap[wordKey] = {
+            word: wordText,
+            language: lang,
+            practiceCount: 1,
+            correctCount: isCorrect ? 1 : 0,
+            totalAccuracy: score,
+            lastPracticed: sessionDate.toISOString(),
+          }
+        } else {
+          wordMap[wordKey].practiceCount += 1
+          if (isCorrect) wordMap[wordKey].correctCount += 1
+          wordMap[wordKey].totalAccuracy += score
+          if (sessionDate > new Date(wordMap[wordKey].lastPracticed)) {
+            wordMap[wordKey].lastPracticed = sessionDate.toISOString()
+          }
+        }
+      })
+    } else if (details.items && Array.isArray(details.items)) {
+      const score = s.accuracy || s.score || 80
+      const isCorrect = score >= 70
+      details.items.forEach((item: any) => {
+        if (!item || typeof item !== 'string') return
+        const wordText = item.trim()
+        const wordKey = `${lang}:::${wordText.toLowerCase()}`
+
+        if (!wordMap[wordKey]) {
+          wordMap[wordKey] = {
+            word: wordText,
+            language: lang,
+            practiceCount: 1,
+            correctCount: isCorrect ? 1 : 0,
+            totalAccuracy: score,
+            lastPracticed: sessionDate.toISOString(),
+          }
+        } else {
+          wordMap[wordKey].practiceCount += 1
+          if (isCorrect) wordMap[wordKey].correctCount += 1
+          wordMap[wordKey].totalAccuracy += score
+          if (sessionDate > new Date(wordMap[wordKey].lastPracticed)) {
+            wordMap[wordKey].lastPracticed = sessionDate.toISOString()
+          }
+        }
+      })
+    }
+  })
+
+  const list: WeeklyWordRankItem[] = Object.values(wordMap).map((item) => ({
+    word: item.word,
+    language: item.language,
+    practiceCount: item.practiceCount,
+    correctCount: item.correctCount,
+    accuracy: Math.round(item.totalAccuracy / item.practiceCount),
+    lastPracticed: item.lastPracticed,
+  }))
+
+  // Sort by practice count descending, then correct count, then accuracy
+  list.sort((a, b) => {
+    if (b.practiceCount !== a.practiceCount) {
+      return b.practiceCount - a.practiceCount
+    }
+    if (b.correctCount !== a.correctCount) {
+      return b.correctCount - a.correctCount
+    }
+    return b.accuracy - a.accuracy
+  })
+
+  return list.slice(0, limit)
+}
+
+/**
+ * Computes vocabulary review items per language based on actual game sessions.
+ * Respects reviewed status: reviewed words are filtered or placed at bottom.
+ */
 export function computeVocabReviewQueue(
   sessions: GameSession[],
   childLanguages: AppLanguage[] = ['pt-BR'],
-): Record<AppLanguage, WordReviewItem[]> {
+  childId?: string,
+): {
+  queue: Record<AppLanguage, WordReviewItem[]>
+  reviewedCountThisWeek: number
+  totalReviewedCount: number
+} {
+  const reviewedList = getReviewedWords(childId)
+  const reviewedMap = new Map<string, ReviewedWordRecord>()
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  let reviewedCountThisWeek = 0
+
+  reviewedList.forEach((r) => {
+    const key = `${r.language}:::${r.word.trim().toLowerCase()}`
+    reviewedMap.set(key, r)
+    if (new Date(r.reviewedAt) >= oneWeekAgo) {
+      reviewedCountThisWeek++
+    }
+  })
   const result: Record<AppLanguage, WordReviewItem[]> = {
     'pt-BR': [],
     en: [],
@@ -578,11 +781,24 @@ export function computeVocabReviewQueue(
     result[stat.language].push(item)
   })
 
-  // Sort: highest errors first, then lowest accuracy, then last practiced
+  // Apply reviewed flag & sort: unreviewed items first (by errors then accuracy), reviewed items at the end
   Object.keys(result).forEach((k) => {
     const lang = k as AppLanguage
     if (result[lang]) {
+      result[lang].forEach((item) => {
+        const key = `${lang}:::${item.word.trim().toLowerCase()}`
+        const rev = reviewedMap.get(key)
+        if (rev) {
+          item.isReviewed = true
+          item.reviewedAt = rev.reviewedAt
+        }
+      })
+
       result[lang].sort((a, b) => {
+        // Unreviewed first
+        if (Boolean(a.isReviewed) !== Boolean(b.isReviewed)) {
+          return a.isReviewed ? 1 : -1
+        }
         if (b.errorCount !== a.errorCount) {
           return b.errorCount - a.errorCount
         }
@@ -591,7 +807,7 @@ export function computeVocabReviewQueue(
     }
   })
 
-  // Ensure every active child language has helpful default practice words if none or few exist in history
+  // Ensure every active child language has helpful default practice words if none exist in history
   const defaultWordsByLang: Record<AppLanguage, string[]> = {
     'pt-BR': ['Cachorro', 'Borboleta', 'Bicicleta', 'Abelha', 'Sorvete'],
     en: ['Elephant', 'Butterfly', 'Bicycle', 'Strawberry', 'Giraffe'],
@@ -603,17 +819,27 @@ export function computeVocabReviewQueue(
 
   childLanguages.forEach((lang) => {
     if (!result[lang] || result[lang].length === 0) {
-      result[lang] = (defaultWordsByLang[lang] || defaultWordsByLang['pt-BR']).map((w) => ({
-        word: w,
-        language: lang,
-        errorCount: 1,
-        attemptsCount: 1,
-        averageAccuracy: 65,
-        lastPracticed: new Date().toISOString(),
-        suggestedAction: 'Sugestão para iniciar prática',
-      }))
+      result[lang] = (defaultWordsByLang[lang] || defaultWordsByLang['pt-BR']).map((w) => {
+        const key = `${lang}:::${w.toLowerCase()}`
+        const rev = reviewedMap.get(key)
+        return {
+          word: w,
+          language: lang,
+          errorCount: 1,
+          attemptsCount: 1,
+          averageAccuracy: 65,
+          lastPracticed: new Date().toISOString(),
+          suggestedAction: 'Sugestão para iniciar prática',
+          isReviewed: Boolean(rev),
+          reviewedAt: rev?.reviewedAt,
+        }
+      })
     }
   })
 
-  return result
+  return {
+    queue: result,
+    reviewedCountThisWeek,
+    totalReviewedCount: reviewedList.length,
+  }
 }
