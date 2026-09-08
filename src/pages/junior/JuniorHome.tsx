@@ -76,7 +76,9 @@ export const JuniorHome: React.FC = () => {
   const loadChildSessions = async (childId: string) => {
     try {
       const serverSessions = await fetchChildSessions(childId, 100)
-      const pending = offlineSyncService.getPendingSessions().filter((p: any) => p.child_id === childId)
+      const pending = offlineSyncService
+        .getPendingSessions()
+        .filter((p: any) => p.child_id === childId)
 
       const formattedPending: GameSession[] = pending.map((p, idx) => ({
         id: `pending_${idx}`,

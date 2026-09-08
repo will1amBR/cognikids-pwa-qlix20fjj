@@ -19,7 +19,8 @@ import { ClimaERoupaGame } from '@/components/games/ClimaERoupaGame'
 import { CarinhasFelizesGame } from '@/components/games/CarinhasFelizesGame'
 
 export const GameRunnerPage: React.FC = () => {
-  const { childId, module: activityId } = useParams()
+  const { childId, moduleId, activityId: subActivityId, module: routeModule } = useParams()
+  const activityId = subActivityId || moduleId || routeModule
   const navigate = useNavigate()
 
   const [child, setChild] = useState<Child | null>(null)

@@ -7,7 +7,7 @@ import {
   syncAndEvaluateAchievements,
   getChildAvatarUrl,
 } from '@/services/children'
-import type { Child, ChildAchievement, BadgeDefinition } from '@/types/cognikids'
+import type { Child, ChildAchievement, BadgeDefinition, GameSession } from '@/types/cognikids'
 import { COGNIKIDS_MODULES, COGNIKIDS_BADGES, formatChildAge } from '@/types/cognikids'
 import { BrainFlower } from '@/components/progress/BrainFlower'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
@@ -77,7 +77,9 @@ export const ChildDashboardPage: React.FC = () => {
           fetchChildSessions(kid.id, 100),
         ])
 
-        const pending = offlineSyncService.getPendingQueue().filter((p: any) => p.child_id === kid.id)
+        const pending = offlineSyncService
+          .getPendingQueue()
+          .filter((p: any) => p.child_id === kid.id)
 
         const formattedPending: GameSession[] = pending.map(
           (p, idx) =>

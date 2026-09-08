@@ -112,12 +112,18 @@ export function App() {
                 <Route path="children/new" element={<ChildFormPage />} />
                 <Route path="children/:id" element={<ChildDashboardPage />} />
                 <Route path="children/:id/edit" element={<ChildFormPage />} />
+                <Route path="child/:id" element={<ChildDashboardPage />} />
+                <Route path="daily/:id" element={<DailySessionPage />} />
                 <Route path="daily-session/:id" element={<DailySessionPage />} />
                 <Route path="history" element={<GameHistoryPage />} />
+                <Route path="history/:childId" element={<GameHistoryPage />} />
                 <Route path="reports" element={<EvolutionReportsPage />} />
+                <Route path="reports/:childId" element={<EvolutionReportsPage />} />
                 <Route path="invites" element={<InvitesAndSchoolPage />} />
                 <Route path="themes-guide" element={<GuardianThemesGuidePage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="game/:childId/:moduleId" element={<GameRunnerPage />} />
+                <Route path="game/:childId/:moduleId/:activityId" element={<GameRunnerPage />} />
               </Route>
 
               {/* CogniKids Junior (6 a 10 anos) inside AppShell */}

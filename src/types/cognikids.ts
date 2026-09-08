@@ -160,16 +160,6 @@ export interface WeeklyWordRankItem {
   lastPracticed: string
 }
 
-export interface BilingualStatus {
-  isBilingual: boolean
-  activeLanguages: AppLanguage[]
-  totalLanguages: number
-  primaryLanguage: AppLanguage
-  bilingualBonusPoints: number
-  level: 'iniciante' | 'explorador' | 'fluente'
-  description: string
-}
-
 export interface JuniorActivityDefinition {
   id: string
   title: string
@@ -760,7 +750,8 @@ export const JUNIOR_MODULES: ModuleDefinition[] = [
     themes: [
       {
         title: 'Cálculo Mental e Resolução de Problemas',
-        whatIsWorked: 'Operações fundamentais (adição, subtração, multiplicação) e raciocínio quantitativo.',
+        whatIsWorked:
+          'Operações fundamentais (adição, subtração, multiplicação) e raciocínio quantitativo.',
         homeTips: [
           'Faça pequenos desafios com preços de compras ou troco em supermercado.',
           'Proponha jogos de cartas que envolvam somas e tabuadas rápidas.',
@@ -791,7 +782,8 @@ export const JUNIOR_MODULES: ModuleDefinition[] = [
     themes: [
       {
         title: 'Dedução Analítica e Padrões Espaciais',
-        whatIsWorked: 'Análise de relações entre linhas/colunas, eliminação lógica e rotação mental.',
+        whatIsWorked:
+          'Análise de relações entre linhas/colunas, eliminação lógica e rotação mental.',
         homeTips: [
           'Pratiquem jogos como xadrez, damas, sudokus infantis ou quebra-cabeças 2D.',
           'Crie enigmas desenhados no papel para a criança completar.',
@@ -802,7 +794,8 @@ export const JUNIOR_MODULES: ModuleDefinition[] = [
       {
         id: 'junior_logic_matrix',
         title: 'Matriz Lógica 2x2',
-        description: 'Analise linhas e colunas para descobrir qual figura completa a matriz visual!',
+        description:
+          'Analise linhas e colunas para descobrir qual figura completa a matriz visual!',
         ageRange: '6–10 anos',
         badge: 'Raciocínio',
       },
