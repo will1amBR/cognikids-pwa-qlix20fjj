@@ -90,31 +90,104 @@ class SoundEffectsService {
     osc.stop(now + 0.36)
   }
 
-  // Celebratory victory fanfare
+  // Celebratory victory fanfare (elaborate multi-voice fanfare with sparkling arpeggios)
   public playVictory() {
     if (this.isMuted) return
     const ctx = this.getContext()
     if (!ctx) return
 
-    const notes = [523.25, 659.25, 783.99, 1046.5] // C5, E5, G5, C6
     const now = ctx.currentTime
+    // Grand celebratory fanfare: C5, E5, G5, C6, G5, C6, E6
+    const fanfareNotes = [
+      { f: 523.25, t: 0.0, d: 0.16 }, // C5
+      { f: 659.25, t: 0.14, d: 0.16 }, // E5
+      { f: 783.99, t: 0.28, d: 0.18 }, // G5
+      { f: 1046.5, t: 0.44, d: 0.32 }, // C6
+      { f: 880.0, t: 0.72, d: 0.14 }, // A5
+      { f: 1046.5, t: 0.86, d: 0.16 }, // C6
+      { f: 1318.5, t: 1.02, d: 0.8 }, // E6 grand finale
+    ]
 
-    notes.forEach((freq, idx) => {
+    fanfareNotes.forEach(({ f, t, d }) => {
+      const start = now + t
+      // Lead melodic tone
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      osc.type = 'sine'
-      const start = now + idx * 0.12
-      const dur = idx === notes.length - 1 ? 0.6 : 0.2
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(f, start)
 
-      osc.frequency.setValueAtTime(freq, start)
-      gain.gain.setValueAtTime(0.2, start)
-      gain.gain.exponentialRampToValueAtTime(0.001, start + dur)
+      gain.gain.setValueAtTime(0.001, start)
+      gain.gain.linearRampToValueAtTime(0.25, start + 0.03)
+      gain.gain.exponentialRampToValueAtTime(0.001, start + d)
 
       osc.connect(gain)
       gain.connect(ctx.destination)
       osc.start(start)
-      osc.stop(start + dur + 0.05)
+      osc.stop(start + d + 0.05)
+
+      // Soft harmonic shine
+      const shine = ctx.createOscillator()
+      const shineGain = ctx.createGain()
+      shine.type = 'sine'
+      shine.frequency.setValueAtTime(f * 2, start)
+
+      shineGain.gain.setValueAtTime(0.001, start)
+      shineGain.gain.linearRampToValueAtTime(0.08, start + 0.03)
+      shineGain.gain.exponentialRampToValueAtTime(0.001, start + d * 0.7)
+
+      shine.connect(shineGain)
+      shineGain.connect(ctx.destination)
+      shine.start(start)
+      shine.stop(start + d * 0.7 + 0.05)
     })
+  }
+
+  // Sparkling star reveal chime with sequential pitch
+  public playStarPop(index: number = 0) {
+    if (this.isMuted) return
+    const ctx = this.getContext()
+    if (!ctx) return
+    const now = ctx.currentTime
+
+    const pitches = [587.33, 739.99, 987.77, 1174.66] // D5, F#5, B5, D6
+    const freq = pitches[Math.min(index, pitches.length - 1)]
+
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(freq, now)
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.3, now + 0.18)
+
+    gain.gain.setValueAtTime(0.22, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28)
+
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start(now)
+    osc.stop(now + 0.3)
+  }
+
+  // Cheerful party horn / confetti whoosh
+  public playConfettiWhoosh() {
+    if (this.isMuted) return
+    const ctx = this.getContext()
+    if (!ctx) return
+    const now = ctx.currentTime
+
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = 'sawtooth'
+    osc.frequency.setValueAtTime(320, now)
+    osc.frequency.linearRampToValueAtTime(640, now + 0.15)
+    osc.frequency.linearRampToValueAtTime(480, now + 0.35)
+
+    gain.gain.setValueAtTime(0.12, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38)
+
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.start(now)
+    osc.stop(now + 0.4)
   }
 
   // Procedural animal, dinosaur, category sounds

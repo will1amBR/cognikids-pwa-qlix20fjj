@@ -7,6 +7,7 @@ import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { useSound } from '@/context/SoundContext'
 import { speechService } from '@/lib/speechSynthesis'
 import { Button } from '@/components/ui/button'
+import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
 import {
   Sparkles,
   Play,
@@ -322,52 +323,26 @@ export const DailySessionPage: React.FC = () => {
   // All Completed Trophy Screen
   if (sessionState === 'all_completed') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-50 p-4 sm:p-8 flex flex-col justify-between items-center select-none">
-        <div className="w-full max-w-lg my-auto py-8 bg-white/95 rounded-3xl p-6 sm:p-10 border border-orange-200 shadow-2xl flex flex-col items-center text-center animate-fade-in">
-          <div className="relative mb-3">
-            <TicoMascot size="lg" mood="celebrating" />
-            <div className="absolute -top-2 -right-3 text-3xl animate-bounce">🏆</div>
-          </div>
-
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-800">
-            Sessão Diária Concluída! 🎉
-          </h2>
-          <p className="text-sm text-slate-500 mt-1 max-w-sm">
-            {child.name} completou os 3 desafios de hoje com dedicação e alegria!
-          </p>
-
-          <div className="flex items-center gap-2 my-6">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-12 h-12 rounded-2xl bg-amber-400 text-white flex items-center justify-center shadow-md scale-105 rotate-3"
-              >
-                <Star className="w-7 h-7 fill-current" />
-              </div>
-            ))}
-          </div>
-
-          <div className="w-full bg-emerald-50 rounded-2xl p-4 border border-emerald-100 mb-6 text-left space-y-2">
-            <p className="text-xs font-bold text-emerald-900 uppercase">Resumo da sessão:</p>
-            {dailyPlan.map((p, i) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-2 text-xs font-semibold text-emerald-800"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{p.title}</span>
-              </div>
-            ))}
-          </div>
-
-          <Button
-            size="lg"
-            onClick={() => navigate(`/app/child/${child.id}`)}
-            className="w-full h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-lg shadow-orange-500/25"
-          >
-            Ver evolução no Cérebro em Flor
-          </Button>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-50 p-4 sm:p-8 flex flex-col justify-center items-center select-none">
+        <CelebrationScreen
+          title="Sessão Diária Concluída! 🏆"
+          subtitle={`${child.name} completou todos os ${dailyPlan.length} passos do treino diário!`}
+          childName={child.name}
+          score={98}
+          accuracy={96}
+          stars={3}
+          roundsCompleted={dailyPlan.length}
+          totalRounds={dailyPlan.length}
+          practicedWords={dailyPlan.map((p) => p.title)}
+          onPlayAgain={() => {
+            setCurrentStepIdx(0)
+            setSessionState('intro')
+          }}
+          onExit={() => navigate(`/app/child/${child.id}`)}
+          exitLabel="Ver Cérebro em Flor"
+          isJunior={false}
+          customPraise={`Parabéns, ${child.name}! Você cumpriu sua meta diária de hoje com nota máxima!`}
+        />
       </div>
     )
   }

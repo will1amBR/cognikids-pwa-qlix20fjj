@@ -9,6 +9,7 @@ import { useSound } from '@/context/SoundContext'
 import { AnimalItem, WORD_CATEGORIES, getItemsByCategory, getAllItems } from './farmAnimalsData'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
 
 interface CadeOBichinhoGameProps {
   child: Child
@@ -117,6 +118,7 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
   }
 
   if (isCompleted) {
+    const catName = WORD_CATEGORIES.find((c) => c.id === selectedCategory)?.name || 'Itens'
     return (
       <GameShell
         title="Cadê o Bichinho / Objeto?"
@@ -126,19 +128,25 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
         exitPath={`/app/child/${child.id}`}
         ticoMood="celebrating"
       >
-        <div className="bg-white/95 rounded-3xl p-8 border border-orange-200 shadow-2xl flex flex-col items-center text-center max-w-sm mx-auto animate-fade-in">
-          <TicoMascot size="lg" mood="celebrating" />
-          <h2 className="text-2xl font-black text-slate-800 mt-3">Você encontrou todos! 🎈</h2>
-          <p className="text-xs text-slate-500 mt-1 mb-6">
-            {child.name} tem uma ótima percepção auditiva e visual!
-          </p>
-          <Button
-            onClick={() => navigate(`/app/child/${child.id}`)}
-            className="w-full h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold"
-          >
-            Voltar ao progresso
-          </Button>
-        </div>
+        <CelebrationScreen
+          title="Você Encontrou Todos! 🎈"
+          subtitle={`${child.name} tem uma excelente percepção auditiva e visual!`}
+          childName={child.name}
+          score={95}
+          accuracy={95}
+          stars={3}
+          roundsCompleted={totalRounds}
+          totalRounds={totalRounds}
+          categoryName={catName}
+          practicedWords={roundsList.map((r) => r.name)}
+          onPlayAgain={() => {
+            setCurrentRoundIdx(0)
+            setIsCompleted(false)
+          }}
+          onExit={() => navigate(`/app/child/${child.id}`)}
+          exitLabel="Voltar ao progresso"
+          isJunior={false}
+        />
       </GameShell>
     )
   }

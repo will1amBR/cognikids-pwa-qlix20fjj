@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { GameShell } from '@/components/layout/GameShell'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -131,51 +132,28 @@ export const JuniorMathQuestGame: React.FC<JuniorGameProps> = ({ child: initialC
 
     return (
       <GameShell title="Missão Matemática Junior" onBack={() => navigate('/junior')}>
-        <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot mood="celebrating" size="lg" />
-
-          <Card className="p-6 rounded-3xl border-2 border-sky-200 bg-gradient-to-b from-sky-50 to-white shadow-md">
-            <h3 className="text-2xl font-black text-slate-800 mb-1">Missão Concluída!</h3>
-            <p className="text-xs text-slate-500 mb-3">Módulo de Matemática & Raciocínio</p>
-
-            <div className="flex justify-center gap-2 text-3xl mb-4">{'⭐'.repeat(stars)}</div>
-
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-sky-100/60 p-3 rounded-2xl">
-                <span className="text-[10px] font-bold text-sky-800 uppercase">Pontuação</span>
-                <p className="text-xl font-black text-sky-950">{score} pts</p>
-              </div>
-              <div className="bg-emerald-100/60 p-3 rounded-2xl">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase">Precisão</span>
-                <p className="text-xl font-black text-emerald-950">{accuracy}%</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-2xl"
-                onClick={() => {
-                  setIsCompleted(false)
-                  setCurrentRound(0)
-                  setScore(0)
-                  setSelectedOption(null)
-                  setIsAnswered(false)
-                  setCorrectAnswersCount(0)
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-1.5" />
-                Jogar de Novo
-              </Button>
-              <Button
-                className="flex-1 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold"
-                onClick={() => navigate('/junior')}
-              >
-                Voltar ao Junior
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <CelebrationScreen
+          title="Missão Concluída! 🚀"
+          subtitle="Módulo CogniKids Junior: Raciocínio Lógico & Desafios Numéricos"
+          childName="Junior"
+          score={score}
+          accuracy={accuracy}
+          stars={stars}
+          roundsCompleted={totalRounds}
+          totalRounds={totalRounds}
+          practicedWords={questions.slice(0, totalRounds).map((q) => q.questionPt)}
+          onPlayAgain={() => {
+            setIsCompleted(false)
+            setCurrentRound(0)
+            setScore(0)
+            setSelectedOption(null)
+            setIsAnswered(false)
+            setCorrectAnswersCount(0)
+          }}
+          onExit={() => navigate('/junior')}
+          exitLabel="Voltar ao Junior"
+          isJunior={true}
+        />
       </GameShell>
     )
   }

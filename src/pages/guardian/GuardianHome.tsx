@@ -29,6 +29,7 @@ import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
 import { Button } from '@/components/ui/button'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
+import { PwaInstallBanner } from '@/components/pwa/PwaInstallBanner'
 
 export const GuardianHome: React.FC = () => {
   const { user } = useAuth()
@@ -91,6 +92,9 @@ export const GuardianHome: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* PWA Install Banner with Native Prompt & Offline Benefits */}
+      <PwaInstallBanner />
+
       {/* Guided Onboarding Wizard modal */}
       <OnboardingWizard
         isOpen={showOnboarding}

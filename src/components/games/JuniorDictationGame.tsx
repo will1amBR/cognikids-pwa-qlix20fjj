@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { GameShell } from '@/components/layout/GameShell'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -169,51 +170,28 @@ export const JuniorDictationGame: React.FC<JuniorGameProps> = ({ child: initialC
 
     return (
       <GameShell title="Ditado de Voz & Ortografia Junior" onBack={() => navigate('/junior')}>
-        <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot mood="celebrating" size="lg" />
-
-          <Card className="p-6 rounded-3xl border-2 border-purple-200 bg-gradient-to-b from-purple-50 to-white shadow-md">
-            <h3 className="text-2xl font-black text-slate-800 mb-1">Ditado Finalizado!</h3>
-            <p className="text-xs text-slate-500 mb-3">Módulo de Leitura & Ortografia</p>
-
-            <div className="flex justify-center gap-2 text-3xl mb-4">{'⭐'.repeat(stars)}</div>
-
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-purple-100/60 p-3 rounded-2xl">
-                <span className="text-[10px] font-bold text-purple-800 uppercase">Pontos</span>
-                <p className="text-xl font-black text-purple-950">{score} pts</p>
-              </div>
-              <div className="bg-emerald-100/60 p-3 rounded-2xl">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase">Precisão</span>
-                <p className="text-xl font-black text-emerald-950">{accuracy}%</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-2xl"
-                onClick={() => {
-                  setIsCompleted(false)
-                  setCurrentRound(0)
-                  setScore(0)
-                  setUserInput('')
-                  setIsAnswered(false)
-                  setCorrectCount(0)
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-1.5" />
-                Jogar de Novo
-              </Button>
-              <Button
-                className="flex-1 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold"
-                onClick={() => navigate('/junior')}
-              >
-                Voltar ao Junior
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <CelebrationScreen
+          title="Ditado Concluído! ✍️"
+          subtitle="Módulo CogniKids Junior: Escrita e Ortografia Multilíngue"
+          childName="Junior"
+          score={score}
+          accuracy={accuracy}
+          stars={stars}
+          roundsCompleted={totalRounds}
+          totalRounds={totalRounds}
+          practicedWords={words.slice(0, totalRounds).map((w) => getLangData(w, currentLang).word)}
+          onPlayAgain={() => {
+            setIsCompleted(false)
+            setCurrentRound(0)
+            setScore(0)
+            setUserInput('')
+            setIsAnswered(false)
+            setCorrectCount(0)
+          }}
+          onExit={() => navigate('/junior')}
+          exitLabel="Voltar ao Junior"
+          isJunior={true}
+        />
       </GameShell>
     )
   }

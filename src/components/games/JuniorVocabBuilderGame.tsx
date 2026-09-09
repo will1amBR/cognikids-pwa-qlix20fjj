@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { GameShell } from '@/components/layout/GameShell'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -204,61 +205,33 @@ export const JuniorVocabBuilderGame: React.FC<JuniorGameProps> = ({ child: initi
   const langInfo = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[0]
 
   if (isCompleted) {
+    const accuracyVal = Math.min(100, Math.round((score / (totalRounds * 30)) * 100))
     return (
       <GameShell title="Mestre do Vocabulário Junior" onBack={() => navigate('/junior')}>
-        <div className="max-w-md mx-auto text-center space-y-6 py-8">
-          <TicoMascot mood="celebrating" size="lg" />
-
-          <Card className="p-6 rounded-3xl border-2 border-orange-200 bg-gradient-to-b from-orange-50 to-white shadow-md">
-            <h3 className="text-2xl font-black text-slate-800 mb-2">Parabéns, Júnior!</h3>
-            <div className="flex justify-center gap-2 text-3xl mb-4">{'⭐'.repeat(stars)}</div>
-            <p className="text-base text-slate-600 font-bold mb-4">
-              Pontuação Final: <span className="text-orange-600 font-black">{score} pontos</span>
-            </p>
-
-            <div className="space-y-2 text-left bg-white p-4 rounded-2xl border border-orange-100">
-              <span className="text-xs font-bold uppercase text-slate-400">
-                Palavras Praticadas
-              </span>
-              {wordResults.map((wr, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between text-xs py-1 border-b border-slate-100"
-                >
-                  <span className="font-bold text-slate-700">{wr.word}</span>
-                  <Badge
-                    variant={wr.isRecognized ? 'default' : 'secondary'}
-                    className="text-[10px]"
-                  >
-                    {wr.score}% acerto
-                  </Badge>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-2xl"
-                onClick={() => {
-                  setIsCompleted(false)
-                  setCurrentRound(0)
-                  setScore(0)
-                  setWordResults([])
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-1.5" />
-                Jogar de Novo
-              </Button>
-              <Button
-                className="flex-1 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold"
-                onClick={() => navigate('/junior')}
-              >
-                Voltar ao Junior
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <CelebrationScreen
+          title="Vocabulário Dominado! 🗣️"
+          subtitle="Módulo CogniKids Junior: Expressão Oral e Fluência Multilíngue"
+          childName="Junior"
+          score={score}
+          accuracy={accuracyVal}
+          stars={stars}
+          roundsCompleted={totalRounds}
+          totalRounds={totalRounds}
+          practicedWords={wordResults.map((r) => ({
+            word: r.word,
+            score: r.score,
+            isRecognized: r.score >= 70,
+          }))}
+          onPlayAgain={() => {
+            setIsCompleted(false)
+            setCurrentRound(0)
+            setScore(0)
+            setWordResults([])
+          }}
+          onExit={() => navigate('/junior')}
+          exitLabel="Voltar ao Junior"
+          isJunior={true}
+        />
       </GameShell>
     )
   }

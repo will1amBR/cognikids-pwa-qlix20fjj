@@ -69,6 +69,7 @@ export function App() {
 
               {/* Public/Token-Protected School Portal Route */}
               <Route path="/school-view" element={<SchoolViewPortalPage />} />
+              <Route path="/escola" element={<SchoolViewPortalPage />} />
 
               {/* Direct Game Runner Routes (Full Screen Game Experience) */}
               <Route

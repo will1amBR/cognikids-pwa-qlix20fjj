@@ -18,6 +18,7 @@ import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { fetchChildren, fetchChildSessions, getChildAvatarUrl } from '@/services/children'
 import { computeWeeklyWordsRanking, WeeklyWordRankItem } from '@/services/reminders'
 import { offlineSyncService } from '@/lib/offlineSync'
+import { PwaInstallBanner } from '@/components/pwa/PwaInstallBanner'
 import {
   Sparkles,
   ArrowRight,
@@ -155,6 +156,9 @@ export const JuniorHome: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-16">
+      {/* PWA Install Banner */}
+      <PwaInstallBanner />
+
       {/* Junior Hero Banner with Grown-Up Identity */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-indigo-700/50">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />

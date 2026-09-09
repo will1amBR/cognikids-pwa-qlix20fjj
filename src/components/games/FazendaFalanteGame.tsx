@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
 
 interface FazendaFalanteGameProps {
   child: Child
@@ -307,6 +308,16 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     const totalStars = Math.max(1, Math.min(3, Math.round(totalScore / 33.3)))
     const activeCategoryInfo = WORD_CATEGORIES.find((c) => c.id === selectedCategory)
 
+    const practicedWordsData = roundsList.map((r, idx) => {
+      const evalRes = sessionResults[idx]
+      return {
+        word: r.name,
+        score: evalRes ? evalRes.score : 85,
+        stars: evalRes ? evalRes.stars : 3,
+        isRecognized: evalRes ? evalRes.isRecognized : true,
+      }
+    })
+
     return (
       <GameShell
         title="Fala & Linguagem"
@@ -315,70 +326,26 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
         totalRounds={totalRounds}
         exitPath={`/app/child/${child.id}`}
         ticoMood="celebrating"
-        ticoInstruction={`Incrível, ${child.name}! Você praticou com alegria!`}
+        ticoInstruction={`Incrível, ${child.name}! Você praticou com muita alegria!`}
       >
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-orange-200 shadow-2xl flex flex-col items-center text-center max-w-lg mx-auto w-full animate-fade-in">
-          <div className="relative mb-3">
-            <TicoMascot size="lg" mood="celebrating" />
-            <div className="absolute -top-2 -right-2 text-3xl animate-bounce">🌟</div>
-          </div>
-
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-800">Partida Concluída! 🎉</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            {child.name} completou {totalRounds} palavras da categoria{' '}
-            <span className="font-bold text-orange-600">{activeCategoryInfo?.name}</span>!
-          </p>
-
-          {/* Stars */}
-          <div className="flex items-center gap-3 my-6">
-            {Array.from({ length: 3 }).map((_, idx) => (
-              <div
-                key={idx}
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-md transition-all duration-500 ${
-                  idx < totalStars
-                    ? 'bg-amber-400 text-white scale-110 rotate-3'
-                    : 'bg-slate-100 text-slate-300'
-                }`}
-              >
-                <Star className="w-8 h-8 fill-current" />
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 w-full mb-6">
-            <div className="flex justify-between items-center text-xs font-bold text-orange-950">
-              <span>Precisão da Fala:</span>
-              <span className="text-base text-orange-600">{totalScore}%</span>
-            </div>
-            <div className="w-full bg-orange-200/60 h-3 rounded-full overflow-hidden mt-1.5">
-              <div
-                className="bg-orange-500 h-full rounded-full transition-all duration-700"
-                style={{ width: `${totalScore}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <Button
-              onClick={() => {
-                setCurrentRoundIdx(0)
-                setSessionResults([])
-                setStep('intro')
-              }}
-              variant="outline"
-              className="flex-1 h-12 rounded-2xl border-slate-300 font-bold"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Jogar de novo
-            </Button>
-            <Button
-              onClick={() => navigate(`/app/child/${child.id}`)}
-              className="flex-1 h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-md shadow-orange-500/25"
-            >
-              Voltar ao progresso
-            </Button>
-          </div>
-        </div>
+        <CelebrationScreen
+          childName={child.name}
+          score={totalScore}
+          accuracy={totalScore}
+          stars={totalStars}
+          roundsCompleted={totalRounds}
+          totalRounds={totalRounds}
+          categoryName={isFirstWordsMode ? 'Primeiras Palavras' : activeCategoryInfo?.name}
+          practicedWords={practicedWordsData}
+          onPlayAgain={() => {
+            setCurrentRoundIdx(0)
+            setSessionResults([])
+            setStep('intro')
+          }}
+          onExit={() => navigate(`/app/child/${child.id}`)}
+          exitLabel="Voltar ao progresso"
+          isJunior={false}
+        />
       </GameShell>
     )
   }

@@ -119,10 +119,66 @@ export const LoginPage: React.FC = () => {
           )}
         </Button>
 
+        {/* Demo Account Public Presentation Card */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-sky-50 rounded-2xl p-3.5 border border-orange-200/80 text-left space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase tracking-wider text-orange-700 flex items-center gap-1.5">
+                <span>🎭</span>
+                <span>Conta de Demonstração Pública</span>
+              </span>
+              <span className="text-[10px] bg-orange-200/60 text-orange-900 font-extrabold px-2 py-0.5 rounded-full">
+                Dados Fictícios
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 leading-snug">
+              Ideal para apresentar o CogniKids à escola, coordenação ou testar com perfis prontos
+              (Theo 18m, Clara 4a e Arthur 8a Junior):
+            </p>
+            <div className="bg-white/80 rounded-xl p-2 font-mono text-[11px] text-slate-700 space-y-0.5 border border-orange-100">
+              <p>
+                <b>Login:</b> demo@cognikids.app
+              </p>
+              <p>
+                <b>Senha:</b> demo1234
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isLoading}
+              onClick={async () => {
+                setEmail('demo@cognikids.app')
+                setPassword('demo1234')
+                setIsLoading(true)
+                setGeneralError(null)
+                try {
+                  await login('demo@cognikids.app', 'demo1234')
+                  navigate('/app', { replace: true })
+                } catch (err: any) {
+                  setGeneralError('Não foi possível entrar na conta demo. Tente novamente.')
+                } finally {
+                  setIsLoading(false)
+                }
+              }}
+              className="w-full h-10 rounded-xl bg-white hover:bg-orange-50 border-orange-300 text-orange-700 font-extrabold text-xs shadow-xs"
+            >
+              🚀 Entrar direto com Conta Demo
+            </Button>
+          </div>
+        </div>
+
         <div className="pt-2 text-center text-xs text-slate-500">
           Ainda não tem conta?{' '}
           <Link to="/signup" className="text-orange-600 hover:text-orange-700 font-bold">
             Criar conta grátis
+          </Link>
+          <span className="mx-1.5 text-slate-300">•</span>
+          <Link
+            to="/escola?code=ESCOLA-DEMO01"
+            className="text-indigo-600 hover:text-indigo-700 font-bold"
+          >
+            Portal Escola (Demo)
           </Link>
         </div>
       </form>

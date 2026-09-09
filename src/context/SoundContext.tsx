@@ -7,6 +7,8 @@ interface SoundContextType {
   playPop: () => void
   playStarReward: (starNumber?: number) => void
   playVictory: () => void
+  playStarPop: (index?: number) => void
+  playConfettiWhoosh: () => void
   playAnimalSound: (animal: string) => void
   playSound: (type: string) => void
 }
@@ -37,9 +39,12 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         playPop: () => soundEffects.playPop(),
         playStarReward: (star) => soundEffects.playStarReward(star),
         playVictory: () => soundEffects.playVictory(),
+        playStarPop: (index) => soundEffects.playStarPop(index),
+        playConfettiWhoosh: () => soundEffects.playConfettiWhoosh(),
         playAnimalSound: (animal) => soundEffects.playAnimalSound(animal),
         playSound: (type: string) => {
           if (type === 'fanfare' || type === 'victory') soundEffects.playVictory()
+          else if (type === 'confetti') soundEffects.playConfettiWhoosh()
           else if (type === 'success' || type === 'star') soundEffects.playStarReward(3)
           else soundEffects.playPop()
         },

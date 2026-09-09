@@ -4,12 +4,18 @@ import App from './App.tsx'
 import './main.css'
 
 // @skip-protected: Do not remove. Required for React rendering.
-// Register Service Worker for PWA Offline Support
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Register Service Worker for PWA Offline Support (in production and preview)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.log('SW registration error:', err)
-    })
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        // Auto check updates
+        reg.update()
+      })
+      .catch((err) => {
+        console.log('SW registration error:', err)
+      })
   })
 }
 
