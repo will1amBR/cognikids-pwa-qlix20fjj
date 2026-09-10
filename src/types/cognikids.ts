@@ -102,10 +102,12 @@ export interface InviteRecord {
   accepted_by_user_id?: string
   accepted_child_name?: string
   accepted_at?: string
-  created?: string
-  updated?: string
+  school_name?: string
+  class_group?: string
+  invite_type?: 'peer' | 'school_classroom' | string
+  created: string
+  updated: string
 }
-
 export interface SchoolAccessToken {
   id: string
   user_id: string

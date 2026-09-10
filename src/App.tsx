@@ -31,6 +31,7 @@ import { JuniorGameRunnerPage } from './pages/junior/JuniorGameRunner'
 import { JuniorProgressPage } from './pages/junior/JuniorProgressPage'
 
 import { GameRunnerPage } from './pages/game/GameRunner'
+import { DemoPresentationKitPage } from './pages/DemoPresentationKitPage'
 import { NotFound } from './pages/NotFound'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -66,6 +67,9 @@ export function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
+
+              {/* School Presentation & Public Demo Kit */}
+              <Route path="/demo" element={<DemoPresentationKitPage />} />
 
               {/* Public/Token-Protected School Portal Route */}
               <Route path="/school-view" element={<SchoolViewPortalPage />} />

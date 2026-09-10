@@ -22,7 +22,10 @@ export const ChildFormPage: React.FC = () => {
   const [name, setName] = useState('')
   const [birthDate, setBirthDate] = useState('')
   const [favoriteColor, setFavoriteColor] = useState('#FF7A45')
-  const [classGroup, setClassGroup] = useState('')
+  const [classGroup, setClassGroup] = useState(() => {
+    return localStorage.getItem('cognikids_pending_class_group') || ''
+  })
+  const pendingSchoolName = localStorage.getItem('cognikids_pending_school_name') || ''
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [clearAvatar, setClearAvatar] = useState(false)
@@ -136,6 +139,9 @@ export const ChildFormPage: React.FC = () => {
           primary_language: primaryLanguage,
           avatarFile,
         })
+        localStorage.removeItem('cognikids_pending_invite_code')
+        localStorage.removeItem('cognikids_pending_class_group')
+        localStorage.removeItem('cognikids_pending_school_name')
         localStorage.setItem('cognikids_selected_child_id', created.id)
         toast({
           title: 'Criança cadastrada com sucesso! 🎉',
@@ -346,9 +352,16 @@ export const ChildFormPage: React.FC = () => {
         </div>
         {/* Turma / Sala (Escola) */}
         <div className="space-y-1.5 text-left">
-          <Label htmlFor="classGroup" className="text-xs font-bold text-slate-700">
-            Turma / Sala de aula (opcional)
-          </Label>
+          <div className="flex justify-between items-center">
+            <Label htmlFor="classGroup" className="text-xs font-bold text-slate-700">
+              Turma / Sala de aula (opcional)
+            </Label>
+            {pendingSchoolName && (
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                {pendingSchoolName}
+              </span>
+            )}
+          </div>
           <Input
             id="classGroup"
             type="text"
@@ -356,10 +369,12 @@ export const ChildFormPage: React.FC = () => {
             value={classGroup}
             onChange={(e) => setClassGroup(e.target.value)}
             disabled={isLoading}
-            className="rounded-2xl h-11"
+            className={`rounded-2xl h-11 ${classGroup ? 'border-indigo-300 bg-indigo-50/30' : ''}`}
           />
           <p className="text-[11px] text-slate-400">
-            Facilita o agrupamento e filtro no Portal Pedagógico da Escola.
+            {classGroup
+              ? '✓ Esta turma foi preenchida a partir do convite escolar e vinculará a criança ao portal da escola.'
+              : 'Facilita o agrupamento e filtro no Portal Pedagógico da Escola.'}
           </p>
         </div>
         {/* Cor Favorita (5 swatches dos módulos) */}

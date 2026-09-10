@@ -12,7 +12,9 @@ import {
   Smartphone,
   BellRing,
   Globe,
+  Compass,
 } from 'lucide-react'
+import { GuidedTourOverlay } from '@/components/tour/GuidedTourOverlay'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { offlineSyncService } from '@/lib/offlineSync'
@@ -31,6 +33,7 @@ export const SettingsPage: React.FC = () => {
   const [isRequestingEmailChange, setIsRequestingEmailChange] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isSavingLanguage, setIsSavingLanguage] = useState(false)
+  const [showTourModal, setShowTourModal] = useState(false)
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,6 +85,40 @@ export const SettingsPage: React.FC = () => {
           Configurações da conta do responsável e sincronização offline
         </p>
       </div>
+
+      {/* Guided Tour Reset Card */}
+      <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-100 rounded-3xl p-6 sm:p-8 border border-orange-200 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-sm">
+              <Compass className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800">Tour Guiado do Aplicativo</h2>
+              <p className="text-xs text-slate-600">
+                Conheça passo a passo os módulos, a rotina diária e as novidades
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowTourModal(true)}
+            className="rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs h-10 px-4 shadow-sm"
+          >
+            Ver tour novamente
+          </Button>
+        </div>
+      </div>
+
+      {showTourModal && (
+        <GuidedTourOverlay
+          isOpen={showTourModal}
+          onDismiss={() => setShowTourModal(false)}
+          onComplete={() => {
+            setShowTourModal(false)
+            toast({ title: 'Tour concluído! 🎉' })
+          }}
+        />
+      )}
 
       {/* Interface Language Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">

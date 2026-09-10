@@ -8,6 +8,7 @@ import type { Child } from '@/types/cognikids'
 import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { ConnectivityPill } from './ConnectivityPill'
+import { GuidedTourOverlay, useGuidedTour } from '@/components/tour/GuidedTourOverlay'
 import {
   getReminderConfig,
   checkShouldTriggerReminder,
@@ -59,6 +60,7 @@ export const AppShell: React.FC = () => {
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
   const { toast } = useToast()
+  const { isOpen: isTourOpen, closeTour } = useGuidedTour()
 
   useEffect(() => {
     if (!isValid) {
@@ -514,6 +516,14 @@ export const AppShell: React.FC = () => {
           <Outlet context={{ selectedChild, childrenList, setSelectedChild }} />
         </main>
       </div>
+
+      {/* Interactive Guided Tour for Guardians */}
+      <GuidedTourOverlay
+        isOpen={isTourOpen}
+        hasJuniorChild={isSelectedChildJunior}
+        onDismiss={closeTour}
+        onComplete={closeTour}
+      />
 
       {/* Mobile Bottom Tab Bar (<1024px) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex items-center justify-around px-2 shadow-lg">

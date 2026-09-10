@@ -30,16 +30,32 @@ export const IndexPage: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/demo" className="hidden sm:inline-block">
+            <Button
+              variant="outline"
+              className="rounded-full border-indigo-300 bg-white/80 hover:bg-indigo-50 text-indigo-700 font-extrabold text-xs shadow-xs"
+            >
+              🎭 Kit Apresentação
+            </Button>
+          </Link>
+          <Link to="/escola?code=ESCOLA-DEMO01">
+            <Button
+              variant="outline"
+              className="rounded-full border-indigo-200 bg-white/70 hover:bg-white text-indigo-800 font-bold text-xs"
+            >
+              🏫 Portal Escola
+            </Button>
+          </Link>
           <Link to="/login">
             <Button
               variant="ghost"
-              className="rounded-full text-slate-700 font-bold hover:bg-white/60"
+              className="rounded-full text-slate-700 font-bold hover:bg-white/60 text-xs sm:text-sm"
             >
               Entrar
             </Button>
           </Link>
           <Link to="/signup">
-            <Button className="rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20">
+            <Button className="rounded-full bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md shadow-orange-500/20 text-xs sm:text-sm">
               Criar conta
             </Button>
           </Link>
@@ -139,6 +155,50 @@ export const IndexPage: React.FC = () => {
               Já tenho conta
             </Button>
           </Link>
+        </div>
+
+        {/* Highlighted School Demo Direct Access Card */}
+        <div className="mt-6 w-full max-w-xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl p-4 sm:p-5 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-indigo-400/30">
+          <div className="text-left space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🏫</span>
+              <span className="text-xs font-black uppercase tracking-wider text-amber-300">
+                Apresentação Escolar Imediata
+              </span>
+            </div>
+            <p className="text-sm font-bold text-white leading-tight">
+              Acesso direto para diretores, coordenadores e pedagogos
+            </p>
+            <p className="text-xs text-indigo-200">
+              Código ativo:{' '}
+              <code className="bg-white/20 px-2 py-0.5 rounded font-mono font-bold text-white">
+                ESCOLA-DEMO01
+              </code>{' '}
+              (sem precisar logar)
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <Link to="/escola?code=ESCOLA-DEMO01" className="flex-1 sm:flex-initial">
+              <Button
+                size="sm"
+                className="w-full h-11 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-indigo-950 font-black text-xs shadow-md"
+              >
+                <span>Ver demonstração escolar</span>
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+            <Link to="/demo" className="sm:inline-block">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-11 px-3 rounded-xl border-white/30 text-white bg-white/10 hover:bg-white/20 font-bold text-xs"
+                title="Roteiro do Kit de Apresentação"
+              >
+                Roteiro
+              </Button>
+            </Link>
+          </div>
         </div>
       </main>
 

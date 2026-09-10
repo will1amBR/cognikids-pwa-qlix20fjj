@@ -23,7 +23,21 @@ import {
   Gamepad2,
   Clock,
   KeyRound,
+  Share2,
+  Copy,
+  Check,
+  Plus,
+  Ticket,
 } from 'lucide-react'
+import { createClassroomInviteCode, fetchUserInvites, lookupInviteCode } from '@/services/children'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 
 export const SchoolViewPortalPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -36,6 +50,41 @@ export const SchoolViewPortalPage: React.FC = () => {
   const [selectedChildId, setSelectedChildId] = useState<string>('')
   const [isLoading, setIsLoading] = useState(Boolean(codeParam))
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // School coupon generator state
+  const { toast } = useToast()
+  const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null)
+  const [showCouponModal, setShowCouponModal] = useState(false)
+  const [newCouponTurma, setNewCouponTurma] = useState('Maternal II')
+  const [newCouponCustomCode, setNewCouponCustomCode] = useState('')
+  const [isGeneratingCoupon, setIsGeneratingCoupon] = useState(false)
+  const [generatedCoupons, setGeneratedCoupons] = useState<
+    Array<{
+      code: string
+      classGroup: string
+      schoolName: string
+      url: string
+    }>
+  >([
+    {
+      code: 'MATRIC-BERCARIO',
+      classGroup: 'Berçário II',
+      schoolName: 'Colégio Futuro Criativo (Demo Oficial)',
+      url: `${window.location.origin}/signup?convite=MATRIC-BERCARIO`,
+    },
+    {
+      code: 'MATRIC-MATERNAL',
+      classGroup: 'Maternal II',
+      schoolName: 'Colégio Futuro Criativo (Demo Oficial)',
+      url: `${window.location.origin}/signup?convite=MATRIC-MATERNAL`,
+    },
+    {
+      code: 'MATRIC-JUNIOR',
+      classGroup: 'Jardim / 3º Ano',
+      schoolName: 'Colégio Futuro Criativo (Demo Oficial)',
+      url: `${window.location.origin}/signup?convite=MATRIC-JUNIOR`,
+    },
+  ])
 
   useEffect(() => {
     if (codeParam) {
@@ -384,6 +433,103 @@ export const SchoolViewPortalPage: React.FC = () => {
               </div>
             </div>
 
+            {/* School -> Parents Invitation / Coupon Generator Banner */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-indigo-200/90 shadow-md space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                    <Ticket className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black text-slate-800">
+                        Links e Cupons de Matrícula para os Pais
+                      </h2>
+                      <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                        Ativo
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Envie para os pais pelo WhatsApp. Ao criar a conta, o aluno já entra vinculado
+                      à turma correta!
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setShowCouponModal(true)}
+                  className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-600/20 flex items-center gap-1.5 shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Gerar Cupom de Turma</span>
+                </Button>
+              </div>
+
+              {/* List of Coupons per Turma */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                {generatedCoupons.map((c) => {
+                  const whatsappText = `Olá! A escola ${c.schoolName} convida você a cadastrar seu filho(a) no CogniKids para acompanhar o desenvolvimento cognitivo da turma ${c.classGroup}! Acesse o link direto com o convite da turma: ${c.url}`
+                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`
+
+                  return (
+                    <div
+                      key={c.code}
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-slate-800">
+                            Turma: {c.classGroup}
+                          </span>
+                          <span className="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            {c.code}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-mono truncate">{c.url}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(c.url)
+                            setCopiedCoupon(c.code)
+                            toast({ title: 'Link do convite copiado! 📋' })
+                            setTimeout(() => setCopiedCoupon(null), 2000)
+                          }}
+                          className="flex-1 h-9 rounded-xl border-slate-300 font-bold text-xs"
+                        >
+                          {copiedCoupon === c.code ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                              <span>Copiado!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 mr-1 text-slate-500" />
+                              <span>Copiar Link</span>
+                            </>
+                          )}
+                        </Button>
+
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm"
+                          title="Compartilhar no WhatsApp"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
             {/* Turma / Classroom Level Overview KPI */}
             {classroomStats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -691,6 +837,109 @@ export const SchoolViewPortalPage: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Modal: Create Classroom Coupon */}
+      <Dialog open={showCouponModal} onOpenChange={setShowCouponModal}>
+        <DialogContent className="rounded-3xl max-w-md p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-800">
+              Gerar Convite/Cupom de Turma para os Pais
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Crie um código de matrícula compartilhável para vincular novos alunos direto à turma
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault()
+              if (!newCouponTurma.trim()) return
+              setIsGeneratingCoupon(true)
+              try {
+                const school =
+                  portalData?.institutionName || 'Colégio Futuro Criativo (Demo Oficial)'
+                const created = await createClassroomInviteCode({
+                  schoolName: school,
+                  classGroup: newCouponTurma.trim(),
+                  customCode: newCouponCustomCode.trim() || undefined,
+                })
+
+                const newEntry = {
+                  code: created.invite_code,
+                  classGroup: created.class_group || newCouponTurma.trim(),
+                  schoolName: school,
+                  url: `${window.location.origin}/signup?convite=${created.invite_code}`,
+                }
+
+                setGeneratedCoupons((prev) => [newEntry, ...prev])
+                setShowCouponModal(false)
+                setNewCouponCustomCode('')
+                toast({
+                  title: 'Cupom de turma gerado! 🎉',
+                  description: `Código: ${created.invite_code} para ${newCouponTurma}`,
+                })
+              } catch (_) {
+                // Fallback offline / demo
+                const fallbackCode = newCouponCustomCode.trim()
+                  ? newCouponCustomCode.trim().toUpperCase()
+                  : `MATRIC-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+                const fallbackEntry = {
+                  code: fallbackCode,
+                  classGroup: newCouponTurma.trim(),
+                  schoolName: portalData?.institutionName || 'Colégio Futuro Criativo',
+                  url: `${window.location.origin}/signup?convite=${fallbackCode}`,
+                }
+                setGeneratedCoupons((prev) => [fallbackEntry, ...prev])
+                setShowCouponModal(false)
+                setNewCouponCustomCode('')
+                toast({
+                  title: 'Cupom de turma gerado! 🎉',
+                  description: `Código: ${fallbackCode} para ${newCouponTurma}`,
+                })
+              } finally {
+                setIsGeneratingCoupon(false)
+              }
+            }}
+            className="space-y-4 mt-2"
+          >
+            <div className="space-y-1.5 text-left">
+              <label className="text-xs font-bold text-slate-700">Turma / Sala de Aula *</label>
+              <Input
+                type="text"
+                placeholder="ex: Berçário I, Maternal II, Jardim B..."
+                value={newCouponTurma}
+                onChange={(e) => setNewCouponTurma(e.target.value)}
+                required
+                className="rounded-2xl h-11"
+              />
+            </div>
+
+            <div className="space-y-1.5 text-left">
+              <label className="text-xs font-bold text-slate-700">
+                Código Personalizado (opcional)
+              </label>
+              <Input
+                type="text"
+                placeholder="ex: MATRIC-MATERNAL2026"
+                value={newCouponCustomCode}
+                onChange={(e) => setNewCouponCustomCode(e.target.value.toUpperCase())}
+                className="rounded-2xl h-11 uppercase font-mono"
+              />
+              <p className="text-[11px] text-slate-400">
+                Se deixar em branco, geraremos automaticamente no formato MATRIC-XXXXXX.
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isGeneratingCoupon || !newCouponTurma.trim()}
+              className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold mt-3"
+            >
+              {isGeneratingCoupon ? 'Gerando…' : 'Criar Link e Cupom da Turma'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

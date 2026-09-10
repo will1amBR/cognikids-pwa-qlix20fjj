@@ -58,6 +58,10 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
   const [name, setName] = useState('')
   const [ageMonths, setAgeMonths] = useState<number>(36)
   const [favoriteColor, setFavoriteColor] = useState('#FF7A45')
+  const [classGroup, setClassGroup] = useState<string>(() => {
+    return localStorage.getItem('cognikids_pending_class_group') || ''
+  })
+  const pendingSchoolName = localStorage.getItem('cognikids_pending_school_name') || ''
   const [selectedLanguages, setSelectedLanguages] = useState<AppLanguage[]>([uiLang || 'pt-BR'])
   const [isSaving, setIsSaving] = useState(false)
   const [createdChildId, setCreatedChildId] = useState<string | null>(null)
@@ -204,11 +208,17 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
         name: name.trim(),
         birth_date,
         favorite_color: favoriteColor,
+        class_group: classGroup.trim() || undefined,
         daily_minutes: rec.routineMin,
         daily_activity_count: rec.activitiesCount,
         learning_languages: selectedLanguages,
         primary_language: selectedLanguages[0] || 'pt-BR',
       })
+
+      // Clean up redeemed pending invite from storage
+      localStorage.removeItem('cognikids_pending_invite_code')
+      localStorage.removeItem('cognikids_pending_class_group')
+      localStorage.removeItem('cognikids_pending_school_name')
 
       playVictory()
       setCreatedChildId(newChild.id)
@@ -361,6 +371,27 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
                 autoFocus
               />
             </div>
+
+            {/* Pending School Invite Banner if active */}
+            {classGroup && (
+              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase text-indigo-700 flex items-center gap-1.5">
+                    <span>🏫</span>
+                    <span>Turma Escolar Vinculada</span>
+                  </span>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-900">
+                    {classGroup}
+                  </span>
+                </div>
+                {pendingSchoolName && (
+                  <p className="text-xs font-semibold text-slate-700">{pendingSchoolName}</p>
+                )}
+                <p className="text-[10px] text-indigo-900/70">
+                  A criança já aparecerá no portal pedagógico da escola com esta turma.
+                </p>
+              </div>
+            )}
 
             {/* Age Slider in Months (0 to 60) */}
             <div className="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">

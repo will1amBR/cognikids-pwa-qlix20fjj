@@ -1,22 +1,41 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/context/AuthContext'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import {
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight,
+  Loader2,
+  School,
+  Ticket,
+  Sparkles,
+} from 'lucide-react'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { lookupInviteCode } from '@/services/children'
+import type { InviteRecord } from '@/types/cognikids'
 
 export const SignupPage: React.FC = () => {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const initialCode =
+    searchParams.get('convite') || searchParams.get('codigo') || searchParams.get('code') || ''
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [inviteCodeInput, setInviteCodeInput] = useState(initialCode.toUpperCase())
+  const [resolvedInvite, setResolvedInvite] = useState<InviteRecord | null>(null)
+  const [isValidatingCode, setIsValidatingCode] = useState(false)
+  const [codeFeedback, setCodeFeedback] = useState<string | null>(null)
+
   const [fieldErrors, setFieldErrors] = useState<{
     name?: string
     email?: string
@@ -26,6 +45,39 @@ export const SignupPage: React.FC = () => {
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+
+  // Validate invite code if provided in query param or typing
+  useEffect(() => {
+    if (initialCode) {
+      validateCode(initialCode)
+    }
+  }, [initialCode])
+
+  const validateCode = async (codeToTest: string) => {
+    if (!codeToTest.trim()) {
+      setResolvedInvite(null)
+      setCodeFeedback(null)
+      return
+    }
+    setIsValidatingCode(true)
+    setCodeFeedback(null)
+    const inv = await lookupInviteCode(codeToTest)
+    if (inv) {
+      setResolvedInvite(inv)
+      localStorage.setItem('cognikids_pending_invite_code', inv.invite_code)
+      if (inv.class_group) {
+        localStorage.setItem('cognikids_pending_class_group', inv.class_group)
+      }
+      if (inv.school_name) {
+        localStorage.setItem('cognikids_pending_school_name', inv.school_name)
+      }
+      setCodeFeedback(`✓ Convite da turma "${inv.class_group || 'Turma'}" validado!`)
+    } else {
+      setResolvedInvite(null)
+      setCodeFeedback('Código não encontrado. Você ainda pode se cadastrar normalmente.')
+    }
+    setIsValidatingCode(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +163,68 @@ export const SignupPage: React.FC = () => {
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{generalError}</span>
+          </div>
+        )}
+
+        {/* Invite Code / School Classroom Banner */}
+        {resolvedInvite ? (
+          <div className="p-3.5 bg-indigo-50 border-2 border-indigo-200 rounded-2xl text-left space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black uppercase text-indigo-700 flex items-center gap-1.5">
+                <School className="w-4 h-4" />
+                <span>Convite da Escola Validado</span>
+              </span>
+              <span className="text-[10px] font-black bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-full">
+                {resolvedInvite.class_group || 'Turma Vinculada'}
+              </span>
+            </div>
+            <p className="text-xs font-bold text-slate-800">
+              {resolvedInvite.school_name || 'Instituição Escolar'}
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Ao criar o perfil do seu filho, ele será automaticamente vinculado à turma{' '}
+              <strong>{resolvedInvite.class_group}</strong>.
+            </p>
+          </div>
+        ) : (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-left space-y-1.5">
+            <div className="flex justify-between items-center">
+              <Label
+                htmlFor="inviteCode"
+                className="text-xs font-bold text-slate-700 flex items-center gap-1"
+              >
+                <Ticket className="w-3.5 h-3.5 text-orange-500" />
+                <span>Tenho código da escola ou convite (opcional)</span>
+              </Label>
+              {inviteCodeInput && (
+                <button
+                  type="button"
+                  onClick={() => validateCode(inviteCodeInput)}
+                  className="text-[11px] font-black text-orange-600 hover:underline"
+                >
+                  {isValidatingCode ? 'Verificando…' : 'Validar'}
+                </button>
+              )}
+            </div>
+            <Input
+              id="inviteCode"
+              type="text"
+              placeholder="ex: MATRIC-BERCARIO ou TICO-XXXXX"
+              value={inviteCodeInput}
+              onChange={(e) => {
+                const val = e.target.value.toUpperCase()
+                setInviteCodeInput(val)
+              }}
+              onBlur={() => validateCode(inviteCodeInput)}
+              className="rounded-xl h-9 uppercase font-mono text-xs font-bold"
+            />
+            {codeFeedback && (
+              <p
+                className={`text-[11px] font-semibold ${resolvedInvite ? 'text-emerald-700' : 'text-slate-500'}`}
+              >
+                {codeFeedback}
+              </p>
+            )}
           </div>
         )}
 

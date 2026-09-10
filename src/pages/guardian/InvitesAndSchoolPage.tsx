@@ -127,6 +127,12 @@ export const InvitesAndSchoolPage: React.FC = () => {
 
     if (result.success) {
       playVictory()
+      if (result.invite?.class_group) {
+        localStorage.setItem('cognikids_pending_class_group', result.invite.class_group)
+      }
+      if (result.invite?.school_name) {
+        localStorage.setItem('cognikids_pending_school_name', result.invite.school_name)
+      }
       toast({
         title: 'Convite Resgatado! 🎉',
         description: result.message,

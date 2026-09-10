@@ -321,12 +321,52 @@ export async function createInviteCode(
   return record
 }
 
+export async function lookupInviteCode(code: string): Promise<InviteRecord | null> {
+  if (!code || !code.trim()) return null
+  try {
+    const formatted = code.trim().toUpperCase()
+    const found = await pb.collection('invites').getList<InviteRecord>(1, 1, {
+      filter: `invite_code = '${formatted}'`,
+    })
+    if (found.items.length > 0) {
+      return found.items[0]
+    }
+    return null
+  } catch (_) {
+    return null
+  }
+}
+
+export async function createClassroomInviteCode(data: {
+  schoolName: string
+  classGroup: string
+  senderName?: string
+  customCode?: string
+}): Promise<InviteRecord> {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+  let code = data.customCode
+    ? data.customCode.trim().toUpperCase()
+    : 'MATRIC-' +
+      Array.from({ length: 6 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(
+        '',
+      )
+
+  const record = await pb.collection('invites').create<InviteRecord>({
+    user_id: pb.authStore.record?.id,
+    invite_code: code,
+    sender_child_name: data.senderName || `Coordenação (${data.classGroup})`,
+    school_name: data.schoolName,
+    class_group: data.classGroup,
+    invite_type: 'school_classroom',
+    status: 'active',
+  })
+  return record
+}
+
 export async function redeemInviteCode(
   code: string,
   newChildName?: string,
-): Promise<{ success: boolean; message: string }> {
-  if (!pb.authStore.isValid)
-    return { success: false, message: 'Faça login para resgatar o convite.' }
+): Promise<{ success: boolean; message: string; invite?: InviteRecord }> {
   try {
     const formatted = code.trim().toUpperCase()
     const found = await pb.collection('invites').getList<InviteRecord>(1, 1, {
@@ -334,25 +374,32 @@ export async function redeemInviteCode(
     })
 
     if (found.items.length === 0) {
-      return { success: false, message: 'Código de convite não encontrado.' }
+      return { success: false, message: 'Código de convite ou matrícula não encontrado.' }
     }
 
     const invite = found.items[0]
-    if (invite.status === 'used') {
+    const isSchoolCoupon = invite.invite_type === 'school_classroom'
+
+    // Peer invites are single-use; classroom coupons can be redeemed by multiple parents
+    if (!isSchoolCoupon && invite.status === 'used') {
       return { success: false, message: 'Este código de convite já foi utilizado.' }
     }
 
-    // Update invite as used
-    await pb.collection('invites').update(invite.id, {
-      status: 'used',
-      accepted_by_user_id: pb.authStore.record?.id,
-      accepted_child_name: newChildName || 'Colega de turma',
-      accepted_at: new Date().toISOString(),
-    })
+    if (pb.authStore.isValid && !isSchoolCoupon) {
+      await pb.collection('invites').update(invite.id, {
+        status: 'used',
+        accepted_by_user_id: pb.authStore.record?.id,
+        accepted_child_name: newChildName || 'Colega de turma',
+        accepted_at: new Date().toISOString(),
+      })
+    }
 
     return {
       success: true,
-      message: `Parabéns! Convite de ${invite.sender_child_name || 'um colega'} aceito com sucesso! Vocês ganharam a medalha de Amigo do Tico! 🎉`,
+      message: isSchoolCoupon
+        ? `Convite da escola "${invite.school_name || 'Instituição'}" validado para a turma "${invite.class_group}"! 🏫`
+        : `Parabéns! Convite de ${invite.sender_child_name || 'um colega'} aceito com sucesso! Vocês ganharam a medalha de Amigo do Tico! 🎉`,
+      invite,
     }
   } catch (err: any) {
     return { success: false, message: err?.message || 'Erro ao resgatar convite.' }
