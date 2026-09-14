@@ -204,6 +204,8 @@ export const JuniorDictationGame: React.FC<JuniorGameProps> = ({ child: initialC
       currentRound={currentRound + 1}
       totalRounds={totalRounds}
       onBack={() => navigate('/junior')}
+      onNextRound={handleNext}
+      nextLabel="Avançar"
     >
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Language selector */}

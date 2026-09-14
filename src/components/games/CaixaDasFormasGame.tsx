@@ -102,6 +102,15 @@ export const CaixaDasFormasGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    if (roundIdx + 1 < 4) {
+      setRoundIdx((prev) => prev + 1)
+      setSelectedShape(null)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Caixa das Formas"
@@ -111,6 +120,8 @@ export const CaixaDasFormasGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction={`Onde está o ${currentShape.name}?`}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-6">
         <div className="text-center">

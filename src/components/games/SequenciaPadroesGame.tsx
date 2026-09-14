@@ -161,6 +161,15 @@ export const SequenciaPadroesGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    if (roundIdx + 1 < SEQUENCE_ROUNDS.length) {
+      setRoundIdx((prev) => prev + 1)
+      setSelectedOption(null)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Sequência & Padrões Lógicos"
@@ -170,6 +179,8 @@ export const SequenciaPadroesGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction="Qual figura completa a sequência certa?"
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-lg flex flex-col items-center gap-6">
         {/* Sequence Belt Display */}

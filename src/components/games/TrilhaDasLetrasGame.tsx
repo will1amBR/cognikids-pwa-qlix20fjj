@@ -150,6 +150,15 @@ export const TrilhaDasLetrasGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    if (roundIdx + 1 < TRACE_ROUNDS.length) {
+      setRoundIdx((prev) => prev + 1)
+      setVisitedSteps([])
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Trilha das Letras & Formas"
@@ -159,6 +168,8 @@ export const TrilhaDasLetrasGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction={`Conecte os pontos da ${currentChallenge.title}!`}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-5">
         {/* Letter Card Header */}

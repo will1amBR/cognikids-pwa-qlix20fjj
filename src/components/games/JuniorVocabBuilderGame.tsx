@@ -244,6 +244,8 @@ export const JuniorVocabBuilderGame: React.FC<JuniorGameProps> = ({ child: initi
       currentRound={currentRound + 1}
       totalRounds={totalRounds}
       onBack={() => navigate('/junior')}
+      onNextRound={handleNextRound}
+      nextLabel="Avançar"
     >
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Language selector for multilingual practice */}

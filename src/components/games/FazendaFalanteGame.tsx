@@ -361,6 +361,8 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
       exitPath={`/app/child/${child.id}`}
       ticoMood={ticoMood}
       ticoInstruction={ticoMessage}
+      onNextRound={handleNextRound}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-lg flex flex-col items-center justify-between gap-4">
         {/* Top bar: First Words Toggle + Category Selector Pills & Language Switcher */}

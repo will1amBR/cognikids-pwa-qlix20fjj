@@ -143,6 +143,16 @@ export const ContaDinosGame: React.FC<ContaDinosGameProps> = ({ child }) => {
 
   if (!currentRound) return null
 
+  const handleAdvanceManually = () => {
+    if (currentRoundIdx + 1 < totalRounds) {
+      setCurrentRoundIdx((prev) => prev + 1)
+      setSelectedNum(null)
+      setIsCorrect(false)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Contar Bichinhos e Dinos"
@@ -152,6 +162,8 @@ export const ContaDinosGame: React.FC<ContaDinosGameProps> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood={isCorrect ? 'celebrating' : 'talking'}
       ticoInstruction={`Quantos ${currentRound.item.name}s tem aqui?`}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-6">
         {/* Visual Item Display Area */}

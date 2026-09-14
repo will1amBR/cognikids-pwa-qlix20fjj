@@ -142,6 +142,8 @@ export const JuniorLogicMatrixGame: React.FC<JuniorGameProps> = ({ child: initia
       currentRound={currentRound + 1}
       totalRounds={totalRounds}
       onBack={() => navigate('/junior')}
+      onNextRound={handleNext}
+      nextLabel="Avançar"
     >
       <div className="max-w-2xl mx-auto space-y-6">
         <Card className="p-6 sm:p-8 rounded-3xl border-2 border-amber-200 bg-gradient-to-b from-white via-amber-50/20 to-orange-50/20 shadow-md space-y-6">

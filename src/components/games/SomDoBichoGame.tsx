@@ -133,6 +133,16 @@ export const SomDoBichoGame: React.FC<SomDoBichoGameProps> = ({ child }) => {
 
   if (!targetItem) return null
 
+  const handleAdvanceManually = () => {
+    if (currentRoundIdx + 1 < totalRounds) {
+      setCurrentRoundIdx((prev) => prev + 1)
+      setSelectedId(null)
+      setIsCorrect(false)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Qual é o Som?"
@@ -142,6 +152,8 @@ export const SomDoBichoGame: React.FC<SomDoBichoGameProps> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood={isCorrect ? 'celebrating' : 'listening'}
       ticoInstruction="Ouça o som e toque no bicho ou dinossauro certo!"
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-6">
         {/* Sound button */}

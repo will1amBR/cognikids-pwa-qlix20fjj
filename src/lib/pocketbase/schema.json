@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T03:46:26.412Z",
+  "generatedAt": "2026-09-14T04:03:36.380Z",
   "collections": [
     {
       "name": "users",
@@ -625,6 +625,104 @@
         "CREATE UNIQUE INDEX idx_school_access_code ON school_access_tokens (access_code)",
         "CREATE INDEX idx_school_access_user_child ON school_access_tokens (user_id, child_id)"
       ]
+    },
+    {
+      "name": "coupon_redemptions",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "invite_code",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "institution_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "classroom_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "classroom_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "guardian_user_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "guardian_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "guardian_email",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "child_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "child_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "child_age",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "welcome_sent",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "welcome_sent_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "metadata",
+          "type": "json",
+          "required": false,
+          "system": false
+        }
+      ],
+      "indexes": []
     }
   ]
 }

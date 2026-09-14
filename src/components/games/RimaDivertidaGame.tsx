@@ -142,6 +142,15 @@ export const RimaDivertidaGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    if (roundIdx + 1 < RHYME_ROUNDS.length) {
+      setRoundIdx((prev) => prev + 1)
+      setSelectedName(null)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Rimas do Tico"
@@ -151,6 +160,8 @@ export const RimaDivertidaGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction={currentRound.leadAudioText}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-6">
         {/* Main Lead Card */}

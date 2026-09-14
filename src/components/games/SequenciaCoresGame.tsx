@@ -136,6 +136,16 @@ export const SequenciaCoresGame: React.FC<{ child: Child }> = ({ child }) => {
 
   if (!currentRound) return null
 
+  const handleAdvanceManually = () => {
+    if (currentRoundIdx + 1 < totalRounds) {
+      setCurrentRoundIdx((prev) => prev + 1)
+      setSelectedId(null)
+      setIsCorrect(false)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Sequência das Cores & Mágica"
@@ -145,6 +155,8 @@ export const SequenciaCoresGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood={isCorrect ? 'celebrating' : 'talking'}
       ticoInstruction="Descubra qual a próxima cor no ponto de interrogação!"
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-6">
         {/* Sequence Display Row */}

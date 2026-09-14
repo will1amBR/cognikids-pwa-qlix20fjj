@@ -33,19 +33,18 @@ export const ConnectivityPill: React.FC = () => {
 
   if (status.isSyncing) {
     return (
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-xs font-semibold shadow-sm border border-sky-200 animate-pulse">
-        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-        <span>Sincronizando… ({status.queueLength})</span>
+      <div className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-sky-100 text-sky-800 rounded-full text-[10px] sm:text-xs font-semibold shadow-xs border border-sky-200 animate-pulse shrink-0">
+        <RefreshCw className="w-3 h-3 animate-spin" />
+        <span className="hidden sm:inline">Sincronizando… ({status.queueLength})</span>
       </div>
     )
   }
 
   if (!status.isOnline) {
     return (
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 rounded-full text-xs font-semibold shadow-sm border border-amber-300">
-        <WifiOff className="w-3.5 h-3.5 text-amber-700" />
-        <span className="hidden sm:inline">Modo offline — jogadas serão salvas</span>
-        <span className="sm:hidden">Offline</span>
+      <div className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-amber-100 text-amber-900 rounded-full text-[10px] sm:text-xs font-semibold shadow-xs border border-amber-300 shrink-0">
+        <WifiOff className="w-3 h-3 text-amber-700" />
+        <span className="hidden md:inline">Modo offline</span>
       </div>
     )
   }
@@ -54,11 +53,11 @@ export const ConnectivityPill: React.FC = () => {
     return (
       <button
         onClick={() => offlineSyncService.syncQueue()}
-        className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-full text-xs font-semibold shadow-sm border border-orange-200 transition-colors"
+        className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-full text-[10px] sm:text-xs font-semibold shadow-xs border border-orange-200 transition-colors shrink-0"
         title="Clique para sincronizar jogadas pendentes"
       >
-        <RefreshCw className="w-3.5 h-3.5" />
-        <span>{status.queueLength} jogada(s) a sincronizar</span>
+        <RefreshCw className="w-3 h-3" />
+        <span className="hidden sm:inline">{status.queueLength} pendente(s)</span>
       </button>
     )
   }

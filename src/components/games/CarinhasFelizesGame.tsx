@@ -126,6 +126,15 @@ export const CarinhasFelizesGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    if (roundIdx + 1 < 3) {
+      setRoundIdx((prev) => prev + 1)
+      setSelectedOption(null)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Como Eu Me Sinto?"
@@ -135,6 +144,8 @@ export const CarinhasFelizesGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction={currentRound.story}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-6">
         <div className="bg-white/90 p-5 rounded-3xl border border-rose-100 shadow-md text-center">

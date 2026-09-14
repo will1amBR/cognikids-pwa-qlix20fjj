@@ -254,6 +254,16 @@ export const ClimaERoupaGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    if (roundIdx + 1 < WEATHER_SCENARIOS.length) {
+      setRoundIdx((prev) => prev + 1)
+      setSelectedIds([])
+      setLastFeedback(null)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Clima & Roupa Adequada"
@@ -263,6 +273,8 @@ export const ClimaERoupaGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction={currentScenario.question}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-lg flex flex-col items-center gap-5">
         {/* Weather Banner */}

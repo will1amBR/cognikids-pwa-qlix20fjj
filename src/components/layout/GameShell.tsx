@@ -2,7 +2,8 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSound } from '@/context/SoundContext'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
-import { X, Volume2, VolumeX, Sparkles } from 'lucide-react'
+import { X, Volume2, VolumeX, Sparkles, ArrowRight, SkipForward } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,9 @@ interface GameShellProps {
   children: React.ReactNode
   ticoMood?: 'happy' | 'talking' | 'celebrating' | 'listening' | 'waving'
   ticoInstruction?: string
+  onNextRound?: () => void
+  nextLabel?: string
+  canSkip?: boolean
 }
 
 export const GameShell: React.FC<GameShellProps> = ({
@@ -42,6 +46,9 @@ export const GameShell: React.FC<GameShellProps> = ({
   children,
   ticoMood = 'talking',
   ticoInstruction,
+  onNextRound,
+  nextLabel = 'Avançar',
+  canSkip = true,
 }) => {
   const navigate = useNavigate()
   const { isMuted, toggleMute, playPop } = useSound()
@@ -111,18 +118,35 @@ export const GameShell: React.FC<GameShellProps> = ({
           </div>
         </div>
 
-        {/* Right Audio Controls */}
-        <button
-          onClick={toggleMute}
-          className="w-11 h-11 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-all active:scale-95"
-          aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
-        >
-          {isMuted ? (
-            <VolumeX className="w-5 h-5 text-slate-400" />
-          ) : (
-            <Volume2 className="w-5 h-5 text-orange-500" />
+        {/* Right: Audio Controls and optional Top Advance/Skip Button */}
+        <div className="flex items-center gap-2">
+          {onNextRound && (
+            <button
+              onClick={() => {
+                playPop()
+                onNextRound()
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/90 hover:bg-orange-50 text-orange-600 font-extrabold text-xs border border-orange-200/80 shadow-sm transition-all active:scale-95"
+              title="Avançar para a próxima rodada"
+              aria-label="Avançar rodada"
+            >
+              <span>{nextLabel}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           )}
-        </button>
+
+          <button
+            onClick={toggleMute}
+            className="w-11 h-11 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-100 transition-all active:scale-95 shrink-0"
+            aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-5 h-5 text-slate-400" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-orange-500" />
+            )}
+          </button>
+        </div>
       </header>
 
       {/* Main Game Stage */}
@@ -145,6 +169,31 @@ export const GameShell: React.FC<GameShellProps> = ({
 
           {/* Central Stage */}
           <div className="flex-1 w-full flex items-center justify-center">{children}</div>
+
+          {/* Persistent Floating Bottom Action Bar if onNextRound is provided */}
+          {onNextRound && (
+            <div className="w-full max-w-lg mt-3 flex items-center justify-between gap-3 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+              <button
+                type="button"
+                onClick={handleExitClick}
+                className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors"
+              >
+                Voltar / Sair
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playPop()
+                  onNextRound()
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all"
+              >
+                <span>{currentRound >= totalRounds ? 'Concluir Jogo' : 'Próxima Rodada'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </main>
 

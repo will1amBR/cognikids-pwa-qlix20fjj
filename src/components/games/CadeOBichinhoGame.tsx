@@ -153,6 +153,14 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
 
   if (!targetAnimal) return null
 
+  const handleAdvanceManually = () => {
+    if (currentRoundIdx + 1 < totalRounds) {
+      setCurrentRoundIdx((prev) => prev + 1)
+    } else {
+      finishGame()
+    }
+  }
+
   return (
     <GameShell
       title="Cadê o Bichinho / Objeto?"
@@ -162,6 +170,8 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
       exitPath={`/app/child/${child.id}`}
       ticoMood={isCorrect ? 'celebrating' : 'talking'}
       ticoInstruction={`Toque no ${targetAnimal.name}!`}
+      onNextRound={handleAdvanceManually}
+      nextLabel="Avançar"
     >
       <div className="w-full max-w-md flex flex-col items-center gap-4">
         {/* Category Pills */}

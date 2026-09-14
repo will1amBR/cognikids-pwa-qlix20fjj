@@ -115,6 +115,10 @@ export const EstouraBolhasGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    finishGame()
+  }
+
   return (
     <GameShell
       title="Estoura Bolhas"
@@ -124,6 +128,8 @@ export const EstouraBolhasGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction="Toque com o dedinho nas bolhas para estourar!"
+      onNextRound={handleAdvanceManually}
+      nextLabel="Concluir"
     >
       <div className="relative w-full max-w-lg h-[420px] bg-sky-50/50 rounded-3xl border-2 border-dashed border-emerald-200 overflow-hidden select-none">
         {bubbles.map((b) => (

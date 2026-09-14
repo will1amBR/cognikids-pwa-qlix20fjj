@@ -144,6 +144,10 @@ export const MemoriaDinosGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    finishGame()
+  }
+
   return (
     <GameShell
       title="Memória Jurássica dos Dinos"
@@ -153,6 +157,8 @@ export const MemoriaDinosGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction="Vire as cartas e encontre os pares de dinossauros!"
+      onNextRound={handleAdvanceManually}
+      nextLabel="Concluir"
     >
       <div className="w-full max-w-md grid grid-cols-4 gap-3 sm:gap-4">
         {cards.map((c) => (

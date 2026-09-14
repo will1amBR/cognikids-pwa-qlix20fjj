@@ -146,6 +146,10 @@ export const ParDosAnimaisGame: React.FC<{ child: Child }> = ({ child }) => {
     )
   }
 
+  const handleAdvanceManually = () => {
+    finishGame()
+  }
+
   return (
     <GameShell
       title="Par dos Bichinhos"
@@ -155,6 +159,8 @@ export const ParDosAnimaisGame: React.FC<{ child: Child }> = ({ child }) => {
       exitPath={`/app/child/${child.id}`}
       ticoMood="talking"
       ticoInstruction="Toque em duas cartas para encontrar o par igual!"
+      onNextRound={handleAdvanceManually}
+      nextLabel="Concluir"
     >
       <div className="w-full max-w-md grid grid-cols-4 gap-3 sm:gap-4">
         {cards.map((c) => (
