@@ -40,6 +40,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getSchoolAccessUrl, getCommunityUrl } from '@/lib/appUrl'
 
 export const InvitesAndSchoolPage: React.FC = () => {
   const { toast } = useToast()
@@ -345,7 +346,7 @@ export const InvitesAndSchoolPage: React.FC = () => {
                     </div>
                   ) : (
                     invites.map((inv) => {
-                      const shareMessage = `Olá! Meu filho(a) ${inv.sender_child_name || ''} está brincando no CogniKids e te convidou! Use o código ${inv.invite_code} no aplicativo para jogarem juntos e ganharem a medalha do Tico: ${window.location.origin}/app/community`
+                      const shareMessage = `Olá! Meu filho(a) ${inv.sender_child_name || ''} está brincando no CogniKids e te convidou! Use o código ${inv.invite_code} no aplicativo para jogarem juntos e ganharem a medalha do Tico: ${getCommunityUrl()}`
                       const isUsed = inv.status === 'used'
 
                       return (
@@ -462,7 +463,7 @@ export const InvitesAndSchoolPage: React.FC = () => {
               ) : (
                 schoolTokens.map((st) => {
                   const targetKid = childrenList.find((c) => c.id === st.child_id)
-                  const schoolUrl = `${window.location.origin}/escola?code=${st.access_code}`
+                  const schoolUrl = getSchoolAccessUrl(st.access_code)
 
                   return (
                     <div

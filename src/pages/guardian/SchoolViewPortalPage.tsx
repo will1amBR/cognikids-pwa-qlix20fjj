@@ -45,6 +45,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { getSignupInviteUrl } from '@/lib/appUrl'
 
 export const SchoolViewPortalPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -84,19 +85,19 @@ export const SchoolViewPortalPage: React.FC = () => {
       code: 'MATRIC-BERCARIO',
       classGroup: 'Berçário II',
       schoolName: 'Colégio Futuro Criativo (Demo Oficial)',
-      url: `${window.location.origin}/signup?convite=MATRIC-BERCARIO`,
+      url: getSignupInviteUrl('MATRIC-BERCARIO'),
     },
     {
       code: 'MATRIC-MATERNAL',
       classGroup: 'Maternal II',
       schoolName: 'Colégio Futuro Criativo (Demo Oficial)',
-      url: `${window.location.origin}/signup?convite=MATRIC-MATERNAL`,
+      url: getSignupInviteUrl('MATRIC-MATERNAL'),
     },
     {
       code: 'MATRIC-JUNIOR',
       classGroup: 'Jardim / 3º Ano',
       schoolName: 'Colégio Futuro Criativo (Demo Oficial)',
-      url: `${window.location.origin}/signup?convite=MATRIC-JUNIOR`,
+      url: getSignupInviteUrl('MATRIC-JUNIOR'),
     },
   ])
 
@@ -882,7 +883,7 @@ export const SchoolViewPortalPage: React.FC = () => {
                               <p className="text-[11px] text-slate-400 mt-0.5">
                                 Link direto:{' '}
                                 <span className="font-mono text-slate-600">
-                                  {window.location.origin}/signup?convite={stat.couponCode}
+                                  {getSignupInviteUrl(stat.couponCode)}
                                 </span>
                               </p>
                             </div>
@@ -1352,7 +1353,7 @@ export const SchoolViewPortalPage: React.FC = () => {
                   code: created.invite_code,
                   classGroup: created.class_group || newCouponTurma.trim(),
                   schoolName: school,
-                  url: `${window.location.origin}/signup?convite=${created.invite_code}`,
+                  url: getSignupInviteUrl(created.invite_code),
                 }
 
                 setGeneratedCoupons((prev) => [newEntry, ...prev])
@@ -1371,7 +1372,7 @@ export const SchoolViewPortalPage: React.FC = () => {
                   code: fallbackCode,
                   classGroup: newCouponTurma.trim(),
                   schoolName: portalData?.institutionName || 'Colégio Futuro Criativo',
-                  url: `${window.location.origin}/signup?convite=${fallbackCode}`,
+                  url: getSignupInviteUrl(fallbackCode),
                 }
                 setGeneratedCoupons((prev) => [fallbackEntry, ...prev])
                 setShowCouponModal(false)
