@@ -30,6 +30,7 @@ import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCar
 import { Button } from '@/components/ui/button'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { PwaInstallBanner } from '@/components/pwa/PwaInstallBanner'
+import { TicoWelcomeInviteModal } from '@/components/pwa/TicoWelcomeInviteModal'
 
 export const GuardianHome: React.FC = () => {
   const { user } = useAuth()
@@ -92,6 +93,9 @@ export const GuardianHome: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* First-login welcome modal for parents registered via invite coupon */}
+      <TicoWelcomeInviteModal guardianName={guardianName} />
+
       {/* PWA Install Banner with Native Prompt & Offline Benefits */}
       <PwaInstallBanner />
 

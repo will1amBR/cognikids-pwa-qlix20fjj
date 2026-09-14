@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { fetchChildById, createChild, updateChild, getChildAvatarUrl } from '@/services/children'
+import {
+  fetchChildById,
+  createChild,
+  updateChild,
+  getChildAvatarUrl,
+  recordCouponRedemption,
+} from '@/services/children'
+import pb from '@/lib/pocketbase/client'
 import {
   COGNIKIDS_MODULES,
   calculateAgeMonths,
@@ -128,17 +135,50 @@ export const ChildFormPage: React.FC = () => {
         })
         toast({ title: 'Perfil atualizado com sucesso! 🎉' })
       } else {
+        const pendingCode = localStorage.getItem('cognikids_pending_invite_code')
+        const pendingClass =
+          classGroup.trim() || localStorage.getItem('cognikids_pending_class_group') || ''
+        const pendingSchool =
+          pendingSchoolName || localStorage.getItem('cognikids_pending_school_name') || ''
+
         const created = await createChild({
           name: name.trim(),
           birth_date: new Date(birthDate).toISOString(),
           favorite_color: favoriteColor,
-          class_group: classGroup.trim(),
+          class_group: pendingClass,
           daily_minutes: dailyMinutes,
           daily_activity_count: dailyActivityCount,
           learning_languages: learningLanguages,
           primary_language: primaryLanguage,
           avatarFile,
         })
+
+        // Record coupon redemption if code was present
+        if (pendingCode) {
+          try {
+            await recordCouponRedemption({
+              inviteCode: pendingCode,
+              institutionId: pendingSchool.includes('DEMO')
+                ? 'ESCOLA-DEMO01'
+                : pendingSchool || 'ESCOLA-DEMO01',
+              classroomName: pendingClass,
+              childId: created.id,
+              childName: created.name,
+              childAge: calculatedMonths,
+              guardianUserId: pb.authStore.record?.id,
+              guardianName: pb.authStore.record?.name,
+              guardianEmail: pb.authStore.record?.email,
+              source: 'child_form',
+              metadata: {
+                learning_languages: learningLanguages,
+                schoolName: pendingSchool,
+              },
+            })
+          } catch (couponErr) {
+            console.warn('Coupon redemption error', couponErr)
+          }
+        }
+
         localStorage.removeItem('cognikids_pending_invite_code')
         localStorage.removeItem('cognikids_pending_class_group')
         localStorage.removeItem('cognikids_pending_school_name')

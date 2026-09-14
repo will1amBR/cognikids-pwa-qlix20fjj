@@ -15,10 +15,12 @@ import {
   GameSession,
 } from '@/types/cognikids'
 import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
+import { useAuth } from '@/context/AuthContext'
 import { fetchChildren, fetchChildSessions, getChildAvatarUrl } from '@/services/children'
 import { computeWeeklyWordsRanking, WeeklyWordRankItem } from '@/services/reminders'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { PwaInstallBanner } from '@/components/pwa/PwaInstallBanner'
+import { TicoWelcomeInviteModal } from '@/components/pwa/TicoWelcomeInviteModal'
 import {
   Sparkles,
   ArrowRight,
@@ -34,6 +36,7 @@ import {
 } from 'lucide-react'
 
 export const JuniorHome: React.FC = () => {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [children, setChildren] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
@@ -156,6 +159,9 @@ export const JuniorHome: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-16">
+      {/* First-login welcome modal for parents registered via invite coupon */}
+      <TicoWelcomeInviteModal guardianName={user?.name ? user.name.split(' ')[0] : 'Família'} />
+
       {/* PWA Install Banner */}
       <PwaInstallBanner />
 

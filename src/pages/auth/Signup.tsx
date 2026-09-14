@@ -65,6 +65,7 @@ export const SignupPage: React.FC = () => {
     if (inv) {
       setResolvedInvite(inv)
       localStorage.setItem('cognikids_pending_invite_code', inv.invite_code)
+      localStorage.setItem('cognikids_signed_up_with_invite', 'true')
       if (inv.class_group) {
         localStorage.setItem('cognikids_pending_class_group', inv.class_group)
       }
@@ -113,7 +114,22 @@ export const SignupPage: React.FC = () => {
         // Continue if verification request encounters mail server limits
       }
 
-      // 3. Auto sign-in
+      // 3. If there was an invite code, mark flag for Tico welcome PWA card
+      if (inviteCodeInput.trim() || resolvedInvite) {
+        localStorage.setItem('cognikids_signed_up_with_invite', 'true')
+        localStorage.setItem(
+          'cognikids_pending_invite_code',
+          (resolvedInvite?.invite_code || inviteCodeInput).trim().toUpperCase(),
+        )
+        if (resolvedInvite?.class_group) {
+          localStorage.setItem('cognikids_pending_class_group', resolvedInvite.class_group)
+        }
+        if (resolvedInvite?.school_name) {
+          localStorage.setItem('cognikids_pending_school_name', resolvedInvite.school_name)
+        }
+      }
+
+      // 4. Auto sign-in
       await login(email.trim(), password)
       setIsSuccess(true)
     } catch (err: any) {

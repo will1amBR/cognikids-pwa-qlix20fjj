@@ -8,6 +8,7 @@ import type {
   BadgeDefinition,
   InviteRecord,
   SchoolAccessToken,
+  CouponRedemptionRecord,
   LanguageEvolutionStat,
   BilingualStatus,
   AppLanguage,
@@ -581,6 +582,83 @@ export async function getSchoolPortalData(accessCode: string): Promise<SchoolPor
   } catch (err) {
     console.warn('Failed to load school portal data', err)
     return null
+  }
+}
+
+// ================= COUPON REDEMPTIONS & ENROLLMENT TRACKING ================= //
+
+export async function recordCouponRedemption(data: {
+  inviteCode: string
+  institutionId?: string
+  classroomName?: string
+  childId?: string
+  childName?: string
+  childAge?: number
+  guardianUserId?: string
+  guardianName?: string
+  guardianEmail?: string
+  source?: string
+  metadata?: Record<string, any>
+}): Promise<CouponRedemptionRecord | null> {
+  try {
+    const formattedCode = data.inviteCode.trim().toUpperCase()
+    const currentUser = pb.authStore.record
+    const guardianUserId = data.guardianUserId || currentUser?.id || ''
+    const guardianName = data.guardianName || currentUser?.name || 'Responsável'
+    const guardianEmail = data.guardianEmail || currentUser?.email || ''
+
+    const payload: Partial<CouponRedemptionRecord> = {
+      invite_code: formattedCode,
+      institution_id: data.institutionId || 'ESCOLA-DEMO01',
+      classroom_name: data.classroomName || '',
+      child_id: data.childId || '',
+      child_name: data.childName || '',
+      child_age: data.childAge || 0,
+      guardian_user_id: guardianUserId,
+      guardian_name: guardianName,
+      guardian_email: guardianEmail,
+      source: data.source || 'signup_invite',
+      welcome_sent: false,
+      metadata: data.metadata || {},
+    }
+
+    const created = await pb
+      .collection('coupon_redemptions')
+      .create<CouponRedemptionRecord>(payload)
+    return created
+  } catch (err) {
+    console.warn('Failed to record coupon redemption', err)
+    return null
+  }
+}
+
+export async function fetchCouponRedemptions(options?: {
+  inviteCode?: string
+  institutionId?: string
+  classroomName?: string
+}): Promise<CouponRedemptionRecord[]> {
+  try {
+    const filters: string[] = []
+    if (options?.inviteCode) {
+      filters.push(`invite_code = '${options.inviteCode.trim().toUpperCase()}'`)
+    }
+    if (options?.institutionId) {
+      filters.push(`institution_id = '${options.institutionId.trim().toUpperCase()}'`)
+    }
+    if (options?.classroomName) {
+      filters.push(`classroom_name = '${options.classroomName.trim()}'`)
+    }
+
+    const filterExpr = filters.length > 0 ? filters.join(' && ') : ''
+
+    const list = await pb.collection('coupon_redemptions').getFullList<CouponRedemptionRecord>({
+      filter: filterExpr || undefined,
+      sort: '-created',
+    })
+    return list
+  } catch (err) {
+    console.warn('Failed to fetch coupon redemptions', err)
+    return []
   }
 }
 

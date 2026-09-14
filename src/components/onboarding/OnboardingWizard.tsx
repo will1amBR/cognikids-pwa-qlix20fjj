@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useLanguage } from '@/context/LanguageContext'
 import { useSound } from '@/context/SoundContext'
-import { createChild } from '@/services/children'
+import { createChild, recordCouponRedemption } from '@/services/children'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { SUPPORTED_LANGUAGES, AppLanguage } from '@/types/cognikids'
 import { Button } from '@/components/ui/button'
@@ -204,18 +204,50 @@ export const OnboardingWizard: React.FC<OnboardingModalProps> = ({
     setIsSaving(true)
     try {
       const birth_date = computeBirthDate(ageMonths)
+      const pendingCode = localStorage.getItem('cognikids_pending_invite_code')
+      const pendingClass =
+        classGroup.trim() || localStorage.getItem('cognikids_pending_class_group') || ''
+      const pendingSchool =
+        pendingSchoolName || localStorage.getItem('cognikids_pending_school_name') || ''
+
       const newChild = await createChild({
         name: name.trim(),
         birth_date,
         favorite_color: favoriteColor,
-        class_group: classGroup.trim() || undefined,
+        class_group: pendingClass || undefined,
         daily_minutes: rec.routineMin,
         daily_activity_count: rec.activitiesCount,
         learning_languages: selectedLanguages,
         primary_language: selectedLanguages[0] || 'pt-BR',
       })
 
-      // Clean up redeemed pending invite from storage
+      // If registered with an invite / classroom coupon, record coupon redemption in DB
+      if (pendingCode) {
+        try {
+          await recordCouponRedemption({
+            inviteCode: pendingCode,
+            institutionId: pendingSchool.includes('DEMO')
+              ? 'ESCOLA-DEMO01'
+              : pendingSchool || 'ESCOLA-DEMO01',
+            classroomName: pendingClass,
+            childId: newChild.id,
+            childName: newChild.name,
+            childAge: ageMonths,
+            guardianUserId: user?.id,
+            guardianName: user?.name,
+            guardianEmail: user?.email,
+            source: 'onboarding_wizard',
+            metadata: {
+              learning_languages: selectedLanguages,
+              schoolName: pendingSchool,
+            },
+          })
+        } catch (couponErr) {
+          console.warn('Coupon redemption logging warning:', couponErr)
+        }
+      }
+
+      // Keep cognikids_signed_up_with_invite flag for Tico's first-login welcome PWA modal
       localStorage.removeItem('cognikids_pending_invite_code')
       localStorage.removeItem('cognikids_pending_class_group')
       localStorage.removeItem('cognikids_pending_school_name')

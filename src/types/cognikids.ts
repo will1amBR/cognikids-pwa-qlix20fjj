@@ -124,6 +124,26 @@ export interface SchoolAccessToken {
   updated?: string
 }
 
+export interface CouponRedemptionRecord {
+  id: string
+  invite_code: string
+  institution_id?: string
+  classroom_id?: string
+  classroom_name?: string
+  guardian_user_id?: string
+  guardian_name?: string
+  guardian_email?: string
+  child_id?: string
+  child_name?: string
+  child_age?: number
+  source?: string
+  welcome_sent?: boolean
+  welcome_sent_at?: string
+  metadata?: Record<string, any>
+  created?: string
+  updated?: string
+}
+
 export interface GuardianReminderConfig {
   reminder_enabled: boolean
   reminder_time: string // format "HH:MM" e.g. "18:30"

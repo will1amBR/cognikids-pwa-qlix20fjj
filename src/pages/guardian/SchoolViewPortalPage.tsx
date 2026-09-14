@@ -29,7 +29,14 @@ import {
   Plus,
   Ticket,
 } from 'lucide-react'
-import { createClassroomInviteCode, fetchUserInvites, lookupInviteCode } from '@/services/children'
+import {
+  createClassroomInviteCode,
+  fetchUserInvites,
+  lookupInviteCode,
+  fetchCouponRedemptions,
+} from '@/services/children'
+import type { CouponRedemptionRecord } from '@/types/cognikids'
+import { UserCheck, UserPlus2, BarChart3, Mail, CalendarCheck2, RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
@@ -50,6 +57,13 @@ export const SchoolViewPortalPage: React.FC = () => {
   const [selectedChildId, setSelectedChildId] = useState<string>('')
   const [isLoading, setIsLoading] = useState(Boolean(codeParam))
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // Active section tab: 'pedagogical' (mapa cognitivo) or 'enrollments' (painel de matrículas)
+  const [activePortalSection, setActivePortalSection] = useState<'pedagogical' | 'enrollments'>(
+    'pedagogical',
+  )
+  const [couponRedemptions, setCouponRedemptions] = useState<CouponRedemptionRecord[]>([])
+  const [isLoadingRedemptions, setIsLoadingRedemptions] = useState(false)
 
   // School coupon generator state
   const { toast } = useToast()
@@ -95,7 +109,10 @@ export const SchoolViewPortalPage: React.FC = () => {
   const loadPortalData = async (code: string) => {
     setIsLoading(true)
     setErrorMsg(null)
-    const result = await getSchoolPortalData(code)
+    const [result, redemptions] = await Promise.all([
+      getSchoolPortalData(code),
+      fetchCouponRedemptions(),
+    ])
 
     if (result) {
       setPortalData(result)
@@ -103,6 +120,7 @@ export const SchoolViewPortalPage: React.FC = () => {
       if (result.children.length > 0) {
         setSelectedChildId(result.children[0].id)
       }
+      setCouponRedemptions(redemptions)
     } else {
       setErrorMsg(
         'Código de acesso inválido ou expirado. Verifique com a coordenação ou responsável da criança.',
@@ -136,6 +154,102 @@ export const SchoolViewPortalPage: React.FC = () => {
     })
     return Array.from(turmaSet).sort()
   }, [portalData])
+
+  // Reload redemptions on demand
+  const handleRefreshRedemptions = async () => {
+    setIsLoadingRedemptions(true)
+    try {
+      const redemptions = await fetchCouponRedemptions()
+      setCouponRedemptions(redemptions)
+      toast({ title: 'Dados de matrículas atualizados! 🔄' })
+    } finally {
+      setIsLoadingRedemptions(false)
+    }
+  }
+
+  // Group redemptions by coupon code
+  const couponStats = useMemo(() => {
+    const map: Record<
+      string,
+      {
+        couponCode: string
+        classGroup: string
+        guardiansCount: number
+        childrenCount: number
+        redemptions: CouponRedemptionRecord[]
+      }
+    > = {}
+
+    // Initialize with known coupons
+    generatedCoupons.forEach((c) => {
+      map[c.code] = {
+        couponCode: c.code,
+        classGroup: c.classGroup,
+        guardiansCount: 0,
+        childrenCount: 0,
+        redemptions: [],
+      }
+    })
+
+    // Populate with real DB records
+    couponRedemptions.forEach((r) => {
+      const code = r.invite_code.trim().toUpperCase()
+      if (!map[code]) {
+        map[code] = {
+          couponCode: code,
+          classGroup: r.classroom_name || 'Geral',
+          guardiansCount: 0,
+          childrenCount: 0,
+          redemptions: [],
+        }
+      }
+      map[code].redemptions.push(r)
+    })
+
+    // Compute unique guardians & children
+    Object.values(map).forEach((stat) => {
+      const uniqueGuardians = new Set(
+        stat.redemptions.map(
+          (r) => r.guardian_email || r.guardian_user_id || r.guardian_name || r.id,
+        ),
+      )
+      stat.guardiansCount = uniqueGuardians.size
+      stat.childrenCount = stat.redemptions.length
+    })
+
+    return map
+  }, [generatedCoupons, couponRedemptions])
+
+  // Enrollment breakdown per turma for comparison chart
+  const turmasEnrollmentComparison = useMemo(() => {
+    const turmaMap: Record<
+      string,
+      { totalChildren: number; totalGuardians: number; couponCodes: string[] }
+    > = {}
+
+    Object.values(couponStats).forEach((c) => {
+      const t = c.classGroup || 'Outras'
+      if (!turmaMap[t]) {
+        turmaMap[t] = { totalChildren: 0, totalGuardians: 0, couponCodes: [] }
+      }
+      turmaMap[t].totalChildren += c.childrenCount
+      turmaMap[t].totalGuardians += c.guardiansCount
+      if (!turmaMap[t].couponCodes.includes(c.couponCode)) {
+        turmaMap[t].couponCodes.push(c.couponCode)
+      }
+    })
+
+    const totalAllKids =
+      Object.values(turmaMap).reduce((acc, curr) => acc + curr.totalChildren, 0) || 1
+
+    return Object.entries(turmaMap).map(([turmaName, stats]) => ({
+      turmaName,
+      totalChildren: stats.totalChildren,
+      totalGuardians: stats.totalGuardians,
+      couponCodes: stats.couponCodes,
+      percentage: Math.round((stats.totalChildren / totalAllKids) * 100),
+    }))
+  }, [couponStats])
 
   // Filter children by selected code and selected turma
   const filteredChildren = useMemo(() => {
@@ -358,6 +472,38 @@ export const SchoolViewPortalPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Navigation Switcher: Desenvolvimento Pedagógico vs. Painel de Matrículas */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/15">
+                <button
+                  type="button"
+                  onClick={() => setActivePortalSection('pedagogical')}
+                  className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                    activePortalSection === 'pedagogical'
+                      ? 'bg-white text-indigo-900 shadow-md shadow-black/10'
+                      : 'bg-white/15 text-white hover:bg-white/25'
+                  }`}
+                >
+                  <BrainFlower progressMap={{}} size={16} />
+                  <span>Cérebro em Flor & Alunos</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActivePortalSection('enrollments')}
+                  className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                    activePortalSection === 'enrollments'
+                      ? 'bg-amber-400 text-slate-950 shadow-md shadow-black/10'
+                      : 'bg-white/15 text-white hover:bg-white/25'
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4 text-amber-950" />
+                  <span>Painel de Matrículas & Cupons</span>
+                  <span className="bg-black/20 text-inherit px-2 py-0.5 rounded-full text-[10px] font-black">
+                    {couponRedemptions.length}
+                  </span>
+                </button>
+              </div>
+
               {/* Multi-Code & Turma Filter Bar */}
               <div className="bg-white/10 p-4 rounded-2xl border border-white/15 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
                 {/* Turma Filter Tabs */}
@@ -530,308 +676,646 @@ export const SchoolViewPortalPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Turma / Classroom Level Overview KPI */}
-            {classroomStats && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400 uppercase">
-                      Alunos na Visualização
-                    </span>
-                    <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                      <Users className="w-4 h-4" />
+            {/* CONDITIONAL SECTION 1: PAINEL DE MATRÍCULAS POR CUPOM (Task item 1) */}
+            {activePortalSection === 'enrollments' && (
+              <div className="space-y-6 animate-fade-in">
+                {/* Header & Refresh Controls */}
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-900 mb-2">
+                      <Ticket className="w-3.5 h-3.5" />
+                      <span>Painel de Conversão & Acompanhamento de Matrículas</span>
                     </div>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-slate-800">
-                      {classroomStats.totalStudents}
-                    </span>
-                    <span className="text-xs text-slate-400 font-semibold">
-                      {selectedTurma !== 'all' ? `na turma ${selectedTurma}` : 'na instituição'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400 uppercase">
-                      Assimilação Média Geral
-                    </span>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm">
-                      🎯
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-emerald-600">
-                      {classroomStats.overallAssimilation}%
-                    </span>
-                    <span className="text-xs text-slate-400 font-semibold">5 dimensões</span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400 uppercase">
-                      Atividades Realizadas
-                    </span>
-                    <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm">
-                      <Gamepad2 className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-slate-800">
-                      {classroomStats.totalSessions}
-                    </span>
-                    <span className="text-xs text-slate-400 font-semibold">sessões cognitivas</span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Filtro Ativo</span>
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm">
-                      <Filter className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-lg font-black text-slate-800 truncate">
-                      {selectedTurma === 'all' ? 'Todas as Salas' : selectedTurma}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    {activeCodeFilter === 'all'
-                      ? 'Todos os códigos'
-                      : `Código: ${activeCodeFilter}`}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Child Selector List Bar */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-indigo-600" />
-                  <h2 className="text-sm font-black text-slate-800">
-                    Selecione a Criança para Ver o Relatório Detalhado
-                  </h2>
-                </div>
-                <span className="text-xs text-slate-400 font-bold">
-                  {filteredChildren.length} {filteredChildren.length === 1 ? 'criança' : 'crianças'}
-                </span>
-              </div>
-
-              {filteredChildren.length === 0 ? (
-                <div className="py-8 text-center text-slate-400 text-xs">
-                  Nenhuma criança encontrada para o filtro selecionado (Turma: {selectedTurma}).
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2.5 pt-1">
-                  {filteredChildren.map((child) => {
-                    const isSelected = selectedChild?.id === child.id
-                    return (
-                      <button
-                        key={child.id}
-                        onClick={() => setSelectedChildId(child.id)}
-                        className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2.5 border-2 ${
-                          isSelected
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20 scale-102'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        <div
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black"
-                          style={{ backgroundColor: child.favorite_color || '#4F46E5' }}
-                        >
-                          {child.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="text-left">
-                          <span className="block leading-tight">{child.name}</span>
-                          <span
-                            className={`text-[10px] font-medium block leading-tight ${
-                              isSelected ? 'text-indigo-100' : 'text-slate-400'
-                            }`}
-                          >
-                            {child.class_group
-                              ? `Turma: ${child.class_group}`
-                              : formatChildAge(child.birth_date)}
-                          </span>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Individual Child Analysis Section */}
-            {selectedChild && (
-              <div className="space-y-6">
-                {/* Child Summary Hero */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-16 h-16 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-md shrink-0"
-                      style={{ backgroundColor: selectedChild.favorite_color || '#4F46E5' }}
-                    >
-                      {selectedChild.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-xl sm:text-2xl font-black text-slate-800">
-                          {selectedChild.name}
-                        </h2>
-                        {selectedChild.class_group && (
-                          <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-                            Turma: {selectedChild.class_group}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Idade: <strong>{formatChildAge(selectedChild.birth_date)}</strong> • Sessão
-                        sugerida: <strong>{selectedChild.daily_minutes || 15} min/dia</strong> (
-                        {selectedChild.daily_activity_count || 3} jogos)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-left sm:text-right text-xs text-slate-400 bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-2xl w-full sm:w-auto">
-                    <span className="block font-bold text-slate-700">
-                      Acesso via código oficial
-                    </span>
-                    <span>Modo somente leitura pedagógico</span>
-                  </div>
-                </div>
-
-                {/* Brain Flower + 5 Area Summary for Teachers */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Brain Flower Chart */}
-                  <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-5 h-5 text-indigo-500" />
-                      <h3 className="text-lg font-black text-slate-800">Cérebro em Flor</h3>
-                    </div>
-                    <p className="text-xs text-slate-500 mb-6 max-w-xs">
-                      Mapeamento de maturação nas 5 dimensões cognitivas e socioemocionais.
+                    <h2 className="text-2xl font-black text-slate-800">
+                      Estatísticas Reais de Matrícula por Cupom
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                      Acompanhe em tempo real quantos responsáveis se cadastraram com cada cupom de
+                      turma, quais crianças foram vinculadas, idades e status de envio da mensagem
+                      de boas-vindas.
                     </p>
-
-                    <BrainFlower progressMap={childProgressMap} size={230} />
                   </div>
 
-                  {/* 5 Area Summary for Teachers */}
-                  <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-                    <h3 className="text-lg font-black text-slate-800">
-                      Desempenho por Dimensão Pedagógica
-                    </h3>
-                    <div className="space-y-3">
-                      {COGNIKIDS_MODULES.map((mod) => {
-                        const val = childProgressMap[mod.id] || 45
-                        return (
-                          <div
-                            key={mod.id}
-                            className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{mod.icon}</span>
-                              <div>
-                                <p className="text-xs font-black text-slate-800">{mod.title}</p>
-                                <p className="text-[11px] text-slate-400">{mod.subtitle}</p>
-                              </div>
-                            </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRefreshRedemptions}
+                      disabled={isLoadingRedemptions}
+                      className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${isLoadingRedemptions ? 'animate-spin' : ''}`}
+                      />
+                      <span>{isLoadingRedemptions ? 'Atualizando…' : 'Atualizar Dados'}</span>
+                    </Button>
 
-                            <div className="flex items-center gap-2">
-                              <div className="w-24 bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{ width: `${val}%`, backgroundColor: mod.color }}
-                                />
-                              </div>
-                              <span className="text-xs font-black text-slate-700 w-8 text-right">
-                                {val}%
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })}
+                    <Button
+                      onClick={() => setShowCouponModal(true)}
+                      size="sm"
+                      className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-600/20 flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Novo Cupom</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* KPI Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Total de Matrículas
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                        <UserCheck className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-3xl font-black text-slate-800">
+                        {couponRedemptions.length}
+                      </span>
+                      <span className="text-xs text-slate-400 font-semibold">
+                        crianças vinculadas
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Pais Cadastrados
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                        <Users className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-3xl font-black text-emerald-600">
+                        {
+                          new Set(
+                            couponRedemptions.map(
+                              (r) =>
+                                r.guardian_email || r.guardian_user_id || r.guardian_name || r.id,
+                            ),
+                          ).size
+                        }
+                      </span>
+                      <span className="text-xs text-slate-400 font-semibold">
+                        responsáveis únicos
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Cupons Ativos
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">
+                        <Ticket className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-3xl font-black text-amber-600">
+                        {Object.keys(couponStats).length}
+                      </span>
+                      <span className="text-xs text-slate-400 font-semibold">códigos gerados</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-400 uppercase">
+                        Boas-vindas Enviadas
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <span className="text-3xl font-black text-purple-600">
+                        {couponRedemptions.filter((r) => r.welcome_sent).length}
+                      </span>
+                      <span className="text-xs text-slate-400 font-semibold">
+                        e-mails transacionais
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Recent Game Sessions for this Child */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                {/* Comparative Classroom Breakdown Chart / Distribution */}
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div className="flex items-center gap-2">
-                      <Gamepad2 className="w-5 h-5 text-indigo-600" />
+                      <BarChart3 className="w-5 h-5 text-indigo-600" />
                       <h3 className="text-base font-black text-slate-800">
-                        Últimas Sessões de Jogos de {selectedChild.name}
+                        Comparativo de Adesão entre Turmas da Instituição
                       </h3>
                     </div>
-                    <span className="text-xs font-bold text-slate-400">
-                      {childSessions.length} {childSessions.length === 1 ? 'partida' : 'partidas'}
+                    <span className="text-xs text-slate-400 font-bold">
+                      {turmasEnrollmentComparison.length} turmas monitoradas
                     </span>
                   </div>
 
-                  {childSessions.length === 0 ? (
-                    <p className="text-xs text-slate-400 py-4 text-center">
-                      Nenhuma sessão registrada recentemente para esta criança.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {childSessions.map((s) => (
-                        <div
-                          key={s.id}
-                          className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-800 truncate">
-                              {s.game_title}
-                            </span>
-                            <span className="text-amber-500 font-black">
-                              {'⭐'.repeat(Math.min(3, s.stars || 1))}
+                  <div className="space-y-4">
+                    {turmasEnrollmentComparison.map((turma) => (
+                      <div key={turma.turmaName} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-800 font-black">{turma.turmaName}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              ({turma.couponCodes.join(', ')})
                             </span>
                           </div>
-                          <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <div className="flex items-center gap-3 text-slate-600">
                             <span>
-                              Acerto: <strong>{s.accuracy || s.score || 80}%</strong>
+                              <b>{turma.totalGuardians}</b> pais
                             </span>
-                            <span>{new Date(s.created).toLocaleDateString('pt-BR')}</span>
+                            <span>•</span>
+                            <span>
+                              <b>{turma.totalChildren}</b> crianças ({turma.percentage}%)
+                            </span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
-                {/* Pedagogical Observations & School Tips */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-                  <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                    <BookOpen className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-lg font-black text-slate-800">
-                      Orientações Pedagógicas para Sala de Aula
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {COGNIKIDS_MODULES.map((mod) => (
-                      <div
-                        key={mod.id}
-                        className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">{mod.icon}</span>
-                          <h4 className="font-black text-slate-800">{mod.title}</h4>
-                        </div>
-                        <p className="text-slate-600">
-                          <strong>Foco trabalhado:</strong> {mod.themes[0]?.whatIsWorked}
-                        </p>
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 text-slate-700">
-                          <strong>Sugestão em sala: </strong>
-                          {mod.themes[0]?.homeTips[0]}
+                        <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-500"
+                            style={{ width: `${Math.max(5, turma.percentage)}%` }}
+                          />
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {/* DETAILED STATS PER COUPON CARDS */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                    <Ticket className="w-5 h-5 text-indigo-600" />
+                    <span>Detalhamento por Cupom de Turma</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    {Object.values(couponStats).map((stat) => (
+                      <div
+                        key={stat.couponCode}
+                        className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-4"
+                      >
+                        {/* Coupon Header */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black">
+                              <Ticket className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm font-black px-2.5 py-0.5 rounded-xl bg-indigo-100 text-indigo-900 border border-indigo-200">
+                                  {stat.couponCode}
+                                </span>
+                                <span className="text-xs font-black text-slate-800">
+                                  Turma: {stat.classGroup}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-400 mt-0.5">
+                                Link direto:{' '}
+                                <span className="font-mono text-slate-600">
+                                  {window.location.origin}/signup?convite={stat.couponCode}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200 text-xs">
+                            <div className="text-center">
+                              <span className="block text-slate-400 text-[10px] uppercase font-bold">
+                                Pais
+                              </span>
+                              <span className="font-black text-slate-800 text-sm">
+                                {stat.guardiansCount}
+                              </span>
+                            </div>
+                            <div className="w-px h-6 bg-slate-200" />
+                            <div className="text-center">
+                              <span className="block text-slate-400 text-[10px] uppercase font-bold">
+                                Crianças
+                              </span>
+                              <span className="font-black text-indigo-600 text-sm">
+                                {stat.childrenCount}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* List of Enrolled Children & Guardians */}
+                        {stat.redemptions.length === 0 ? (
+                          <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            Nenhum responsável concluiu cadastro com este cupom até o momento.
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                              <thead>
+                                <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                                  <th className="pb-2 pl-2">Criança</th>
+                                  <th className="pb-2">Idade</th>
+                                  <th className="pb-2">Responsável / E-mail</th>
+                                  <th className="pb-2">Data da Vinculação</th>
+                                  <th className="pb-2 pr-2 text-right">E-mail Boas-Vindas</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 text-slate-700">
+                                {stat.redemptions.map((r) => {
+                                  const formattedDate = r.created
+                                    ? new Date(r.created).toLocaleDateString('pt-BR', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })
+                                    : 'Recente'
+
+                                  const ageYears = r.child_age ? Math.floor(r.child_age / 12) : 0
+                                  const ageMonths = r.child_age ? r.child_age % 12 : 0
+                                  const ageLabel = r.child_age
+                                    ? `${r.child_age}m (${ageYears}a ${ageMonths}m)`
+                                    : 'Não informada'
+
+                                  return (
+                                    <tr
+                                      key={r.id}
+                                      className="hover:bg-slate-50/80 transition-colors"
+                                    >
+                                      <td className="py-2.5 pl-2 font-bold text-slate-900">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-[10px]">
+                                            {(r.child_name || 'C').charAt(0).toUpperCase()}
+                                          </div>
+                                          <span>{r.child_name || 'Criança'}</span>
+                                        </div>
+                                      </td>
+
+                                      <td className="py-2.5 font-medium text-slate-600">
+                                        {ageLabel}
+                                      </td>
+
+                                      <td className="py-2.5">
+                                        <p className="font-bold text-slate-800">
+                                          {r.guardian_name || 'Responsável'}
+                                        </p>
+                                        <p className="text-[11px] text-slate-400 font-mono">
+                                          {r.guardian_email || '—'}
+                                        </p>
+                                      </td>
+
+                                      <td className="py-2.5 text-slate-500 font-medium">
+                                        {formattedDate}
+                                      </td>
+
+                                      <td className="py-2.5 pr-2 text-right">
+                                        {r.welcome_sent ? (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                            Enviado
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                                            <Clock className="w-3 h-3 text-amber-600" />
+                                            Pendente
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CONDITIONAL SECTION 2: MAPA COGNITIVO PEDAGÓGICO */}
+            {activePortalSection === 'pedagogical' && (
+              <div className="space-y-8 animate-fade-in">
+                {/* Turma / Classroom Level Overview KPI */}
+                {classroomStats && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase">
+                          Alunos na Visualização
+                        </span>
+                        <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                          <Users className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-slate-800">
+                          {classroomStats.totalStudents}
+                        </span>
+                        <span className="text-xs text-slate-400 font-semibold">
+                          {selectedTurma !== 'all' ? `na turma ${selectedTurma}` : 'na instituição'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase">
+                          Assimilação Média Geral
+                        </span>
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                          🎯
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-emerald-600">
+                          {classroomStats.overallAssimilation}%
+                        </span>
+                        <span className="text-xs text-slate-400 font-semibold">5 dimensões</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase">
+                          Atividades Realizadas
+                        </span>
+                        <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm">
+                          <Gamepad2 className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-baseline gap-2">
+                        <span className="text-3xl font-black text-slate-800">
+                          {classroomStats.totalSessions}
+                        </span>
+                        <span className="text-xs text-slate-400 font-semibold">
+                          sessões cognitivas
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase">
+                          Filtro Ativo
+                        </span>
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm">
+                          <Filter className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-baseline gap-2">
+                        <span className="text-lg font-black text-slate-800 truncate">
+                          {selectedTurma === 'all' ? 'Todas as Salas' : selectedTurma}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        {activeCodeFilter === 'all'
+                          ? 'Todos os códigos'
+                          : `Código: ${activeCodeFilter}`}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Child Selector List Bar */}
+                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-indigo-600" />
+                      <h2 className="text-sm font-black text-slate-800">
+                        Selecione a Criança para Ver o Relatório Detalhado
+                      </h2>
+                    </div>
+                    <span className="text-xs text-slate-400 font-bold">
+                      {filteredChildren.length}{' '}
+                      {filteredChildren.length === 1 ? 'criança' : 'crianças'}
+                    </span>
+                  </div>
+
+                  {filteredChildren.length === 0 ? (
+                    <div className="py-8 text-center text-slate-400 text-xs">
+                      Nenhuma criança encontrada para o filtro selecionado (Turma: {selectedTurma}).
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2.5 pt-1">
+                      {filteredChildren.map((child) => {
+                        const isSelected = selectedChild?.id === child.id
+                        return (
+                          <button
+                            key={child.id}
+                            onClick={() => setSelectedChildId(child.id)}
+                            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2.5 border-2 ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20 scale-102'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <div
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black"
+                              style={{ backgroundColor: child.favorite_color || '#4F46E5' }}
+                            >
+                              {child.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="text-left">
+                              <span className="block leading-tight">{child.name}</span>
+                              <span
+                                className={`text-[10px] font-medium block leading-tight ${
+                                  isSelected ? 'text-indigo-100' : 'text-slate-400'
+                                }`}
+                              >
+                                {child.class_group
+                                  ? `Turma: ${child.class_group}`
+                                  : formatChildAge(child.birth_date)}
+                              </span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Individual Child Analysis Section */}
+                {selectedChild && (
+                  <div className="space-y-6">
+                    {/* Child Summary Hero */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-16 h-16 rounded-3xl flex items-center justify-center text-white font-black text-2xl shadow-md shrink-0"
+                          style={{ backgroundColor: selectedChild.favorite_color || '#4F46E5' }}
+                        >
+                          {selectedChild.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-800">
+                              {selectedChild.name}
+                            </h2>
+                            {selectedChild.class_group && (
+                              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                                Turma: {selectedChild.class_group}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Idade: <strong>{formatChildAge(selectedChild.birth_date)}</strong> •
+                            Sessão sugerida:{' '}
+                            <strong>{selectedChild.daily_minutes || 15} min/dia</strong> (
+                            {selectedChild.daily_activity_count || 3} jogos)
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-left sm:text-right text-xs text-slate-400 bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-2xl w-full sm:w-auto">
+                        <span className="block font-bold text-slate-700">
+                          Acesso via código oficial
+                        </span>
+                        <span>Modo somente leitura pedagógico</span>
+                      </div>
+                    </div>
+
+                    {/* Brain Flower + 5 Area Summary for Teachers */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                      {/* Brain Flower Chart */}
+                      <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-5 h-5 text-indigo-500" />
+                          <h3 className="text-lg font-black text-slate-800">Cérebro em Flor</h3>
+                        </div>
+                        <p className="text-xs text-slate-500 mb-6 max-w-xs">
+                          Mapeamento de maturação nas 5 dimensões cognitivas e socioemocionais.
+                        </p>
+
+                        <BrainFlower progressMap={childProgressMap} size={230} />
+                      </div>
+
+                      {/* 5 Area Summary for Teachers */}
+                      <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                        <h3 className="text-lg font-black text-slate-800">
+                          Desempenho por Dimensão Pedagógica
+                        </h3>
+                        <div className="space-y-3">
+                          {COGNIKIDS_MODULES.map((mod) => {
+                            const val = childProgressMap[mod.id] || 45
+                            return (
+                              <div
+                                key={mod.id}
+                                className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{mod.icon}</span>
+                                  <div>
+                                    <p className="text-xs font-black text-slate-800">{mod.title}</p>
+                                    <p className="text-[11px] text-slate-400">{mod.subtitle}</p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <div className="w-24 bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full"
+                                      style={{ width: `${val}%`, backgroundColor: mod.color }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-black text-slate-700 w-8 text-right">
+                                    {val}%
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Game Sessions for this Child */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="w-5 h-5 text-indigo-600" />
+                          <h3 className="text-base font-black text-slate-800">
+                            Últimas Sessões de Jogos de {selectedChild.name}
+                          </h3>
+                        </div>
+                        <span className="text-xs font-bold text-slate-400">
+                          {childSessions.length}{' '}
+                          {childSessions.length === 1 ? 'partida' : 'partidas'}
+                        </span>
+                      </div>
+
+                      {childSessions.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4 text-center">
+                          Nenhuma sessão registrada recentemente para esta criança.
+                        </p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                          {childSessions.map((s) => (
+                            <div
+                              key={s.id}
+                              className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-800 truncate">
+                                  {s.game_title}
+                                </span>
+                                <span className="text-amber-500 font-black">
+                                  {'⭐'.repeat(Math.min(3, s.stars || 1))}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                <span>
+                                  Acerto: <strong>{s.accuracy || s.score || 80}%</strong>
+                                </span>
+                                <span>{new Date(s.created).toLocaleDateString('pt-BR')}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pedagogical Observations & School Tips */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
+                      <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                        <BookOpen className="w-5 h-5 text-indigo-600" />
+                        <h3 className="text-lg font-black text-slate-800">
+                          Orientações Pedagógicas para Sala de Aula
+                        </h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {COGNIKIDS_MODULES.map((mod) => (
+                          <div
+                            key={mod.id}
+                            className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{mod.icon}</span>
+                              <h4 className="font-black text-slate-800">{mod.title}</h4>
+                            </div>
+                            <p className="text-slate-600">
+                              <strong>Foco trabalhado:</strong> {mod.themes[0]?.whatIsWorked}
+                            </p>
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200/60 text-slate-700">
+                              <strong>Sugestão em sala: </strong>
+                              {mod.themes[0]?.homeTips[0]}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
