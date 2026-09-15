@@ -37,7 +37,10 @@ import {
   Share2,
   TrendingUp,
   History,
+  Coins,
+  Shirt,
 } from 'lucide-react'
+import { ticoGamificationService } from '@/services/ticoGamification'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +71,7 @@ export const AppShell: React.FC = () => {
 
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
+  const [childCoins, setChildCoins] = useState<number>(60)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { toast } = useToast()
   const { isOpen: isTourOpen, closeTour } = useGuidedTour()
@@ -86,9 +90,27 @@ export const AppShell: React.FC = () => {
       const storedChildId = localStorage.getItem('cognikids_selected_child_id')
       const found = list.find((c) => c.id === storedChildId) || list[0] || null
       setSelectedChild(found)
+      if (found) {
+        setChildCoins(ticoGamificationService.getCoinsSync(found.id))
+      }
     }
     load()
   }, [isValid, navigate])
+
+  // Keep coins in sync with custom events
+  useEffect(() => {
+    const handleCoinsUpdate = (e: any) => {
+      if (!selectedChild || e.detail?.childId === selectedChild.id) {
+        if (e.detail?.state?.coins !== undefined) {
+          setChildCoins(e.detail.state.coins)
+        } else if (selectedChild) {
+          setChildCoins(ticoGamificationService.getCoinsSync(selectedChild.id))
+        }
+      }
+    }
+    window.addEventListener('cognikids_tico_updated', handleCoinsUpdate)
+    return () => window.removeEventListener('cognikids_tico_updated', handleCoinsUpdate)
+  }, [selectedChild])
 
   // In-app and browser reminder background check
   useEffect(() => {
@@ -160,6 +182,7 @@ export const AppShell: React.FC = () => {
   const handleSelectChild = (child: Child) => {
     setSelectedChild(child)
     localStorage.setItem('cognikids_selected_child_id', child.id)
+    setChildCoins(ticoGamificationService.getCoinsSync(child.id))
   }
 
   const isJuniorRoute = location.pathname.startsWith('/junior')
@@ -223,6 +246,11 @@ export const AppShell: React.FC = () => {
           icon: BarChart3,
         },
         {
+          label: 'Guarda-Roupa do Tico',
+          path: '/app/wardrobe',
+          icon: Shirt,
+        },
+        {
           label: 'Histórico',
           path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
           icon: History,
@@ -236,37 +264,41 @@ export const AppShell: React.FC = () => {
   const mobilePrimaryTabs = isJuniorRoute
     ? [
         { label: 'Início', path: '/junior', icon: Home },
+        { label: 'Tico Roupa', path: '/app/wardrobe', icon: Shirt },
         { label: 'Progresso', path: '/junior/progress', icon: BarChart3 },
         { label: 'Infantil', path: '/app', icon: Sparkles },
-        {
-          label: 'Histórico',
-          path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
-          icon: History,
-        },
       ]
     : [
         { label: 'Início', path: '/app', icon: Home },
-        { label: 'Junior', path: '/junior', icon: Sparkles },
+        { label: 'Tico Roupa', path: '/app/wardrobe', icon: Shirt },
         {
           label: 'Progresso',
           path: selectedChild ? `/app/child/${selectedChild.id}` : '/app/children',
           icon: BarChart3,
         },
-        {
-          label: 'Histórico',
-          path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
-          icon: History,
-        },
+        { label: 'Junior', path: '/junior', icon: Sparkles },
       ]
 
   // Remaining items accessible inside the "Menu" bottom sheet on mobile
   const mobileMenuExtraItems = isJuniorRoute
     ? [
         {
+          label: 'Loja & Guarda-Roupa do Tico',
+          path: '/app/wardrobe',
+          icon: Shirt,
+          desc: 'Compre chapéus, óculos e tênis com moedas',
+        },
+        {
           label: 'Perfis das Crianças',
           path: '/app/children',
           icon: Users,
           desc: 'Cadastre e gerencie perfis infantis',
+        },
+        {
+          label: 'Histórico de Atividades',
+          path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
+          icon: History,
+          desc: 'Partidas jogadas, estrelas e palavras treinadas',
         },
         {
           label: 'Relatórios de Evolução',
@@ -289,10 +321,22 @@ export const AppShell: React.FC = () => {
       ]
     : [
         {
+          label: 'Loja & Guarda-Roupa do Tico',
+          path: '/app/wardrobe',
+          icon: Shirt,
+          desc: 'Compre chapéus, óculos e tênis com moedas',
+        },
+        {
           label: 'Perfis das Crianças',
           path: '/app/children',
           icon: Users,
           desc: 'Cadastre e gerencie perfis infantis',
+        },
+        {
+          label: 'Histórico de Atividades',
+          path: selectedChild ? `/app/history/${selectedChild.id}` : '/app/history',
+          icon: History,
+          desc: 'Partidas jogadas, estrelas e palavras treinadas',
         },
         {
           label: 'Relatórios de Evolução',
@@ -447,8 +491,18 @@ export const AppShell: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Language selector + Connectivity Pill + Sound toggle + Guardian Menu */}
+        {/* Right: Coins Counter + Language selector + Connectivity Pill + Sound toggle + Guardian Menu */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Topbar Coins Pill */}
+          <Link
+            to="/app/wardrobe"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 text-xs font-black transition-all shadow-xs"
+            title="Loja & Guarda-Roupa do Tico"
+          >
+            <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400 text-amber-600" />
+            <span>{childCoins}</span>
+          </Link>
+
           {/* Topbar Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

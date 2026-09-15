@@ -25,6 +25,7 @@ import { InvitesAndSchoolPage } from './pages/guardian/InvitesAndSchoolPage'
 import { SchoolViewPortalPage } from './pages/guardian/SchoolViewPortalPage'
 import { SettingsPage } from './pages/guardian/SettingsPage'
 import { GuardianThemesGuidePage } from './pages/guardian/GuardianThemesGuidePage'
+import { TicoWardrobePage } from './pages/guardian/TicoWardrobePage'
 
 import { JuniorHome } from './pages/junior/JuniorHome'
 import { JuniorGameRunnerPage } from './pages/junior/JuniorGameRunner'
@@ -126,6 +127,8 @@ export function App() {
                 <Route path="reports/:childId" element={<EvolutionReportsPage />} />
                 <Route path="invites" element={<InvitesAndSchoolPage />} />
                 <Route path="themes-guide" element={<GuardianThemesGuidePage />} />
+                <Route path="wardrobe" element={<TicoWardrobePage />} />
+                <Route path="loja" element={<TicoWardrobePage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="game/:childId/:moduleId" element={<GameRunnerPage />} />
                 <Route path="game/:childId/:moduleId/:activityId" element={<GameRunnerPage />} />

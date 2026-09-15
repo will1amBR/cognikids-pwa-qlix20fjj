@@ -328,6 +328,8 @@ export const DailySessionPage: React.FC = () => {
           title="Sessão Diária Concluída! 🏆"
           subtitle={`${child.name} completou todos os ${dailyPlan.length} passos do treino diário!`}
           childName={child.name}
+          childId={child.id}
+          coinsEarned={50}
           score={98}
           accuracy={96}
           stars={3}
@@ -341,7 +343,7 @@ export const DailySessionPage: React.FC = () => {
           onExit={() => navigate(`/app/child/${child.id}`)}
           exitLabel="Ver Cérebro em Flor"
           isJunior={false}
-          customPraise={`Parabéns, ${child.name}! Você cumpriu sua meta diária de hoje com nota máxima!`}
+          customPraise={`Parabéns, ${child.name}! Você cumpriu sua meta diária de hoje e ganhou 50 moedas de bônus!`}
         />
       </div>
     )

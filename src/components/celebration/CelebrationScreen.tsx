@@ -11,7 +11,11 @@ import {
   Flame,
   CheckCircle2,
   Award,
+  Coins,
+  Shirt,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ticoGamificationService } from '@/services/ticoGamification'
 
 export interface CelebrationWordResult {
   word: string
@@ -36,6 +40,8 @@ export interface CelebrationScreenProps {
   exitLabel?: string
   isJunior?: boolean
   customPraise?: string
+  childId?: string
+  coinsEarned?: number
 }
 
 // Generate animated confetti particles
@@ -77,8 +83,19 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
   exitLabel = 'Voltar ao progresso',
   isJunior = false,
   customPraise,
+  childId: propChildId,
+  coinsEarned: propCoinsEarned,
 }) => {
   const { playVictory, playStarPop, playConfettiWhoosh, playPop } = useSound()
+
+  // Resolve child id from props or active stored child
+  const effectiveChildId = useMemo(() => {
+    if (propChildId) return propChildId
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('cognikids_selected_child_id') || ''
+    }
+    return ''
+  }, [propChildId])
 
   // Calculate actual stars (1-3)
   const targetStars = useMemo(() => {
@@ -87,6 +104,25 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
     if (accuracy >= 60) return 2
     return 1
   }, [initialStars, accuracy])
+
+  // Coins awarded: base 10 + 5 per star + bonus for high accuracy
+  const coinsReward = useMemo(() => {
+    if (propCoinsEarned !== undefined) return propCoinsEarned
+    let amt = 10 + targetStars * 5
+    if (accuracy >= 95) amt += 5
+    return amt
+  }, [propCoinsEarned, targetStars, accuracy])
+
+  // Award coins on mount once
+  useEffect(() => {
+    if (effectiveChildId && coinsReward > 0) {
+      ticoGamificationService.awardCoins(
+        effectiveChildId,
+        coinsReward,
+        `Partida concluída: ${title}`,
+      )
+    }
+  }, [effectiveChildId, coinsReward, title])
 
   // Sequentially revealed stars state (0, 1, 2, 3)
   const [revealedStars, setRevealedStars] = useState<number>(0)
@@ -194,9 +230,18 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
         {/* Mascot & Celebration Halo */}
         <div className="relative mb-3 flex flex-col items-center">
           <div className="absolute -inset-4 bg-gradient-to-r from-amber-400/30 via-orange-400/30 to-purple-400/30 rounded-full blur-xl animate-pulse" />
-          <TicoMascot size="lg" mood="celebrating" />
+          <TicoMascot size="lg" mood="celebrating" childId={effectiveChildId} />
           <div className="absolute -top-3 -right-3 text-3xl sm:text-4xl animate-bounce">
             {targetStars === 3 ? '🏆' : '🌟'}
+          </div>
+        </div>
+
+        {/* Coins Reward Badge */}
+        <div className="mb-2 inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 font-black text-sm px-4 py-1.5 rounded-full shadow-md animate-bounce">
+          <Coins className="w-4 h-4 fill-amber-300 text-amber-900" />
+          <span>+{coinsReward} Moedas do Tico!</span>
+          <div className="text-[10px] bg-amber-950/20 px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold text-amber-900">
+            Recompensa
           </div>
         </div>
 
@@ -272,6 +317,28 @@ export const CelebrationScreen: React.FC<CelebrationScreenProps> = ({
               </span>
               <p className="text-xl sm:text-2xl font-black text-emerald-950 mt-0.5">{accuracy}%</p>
             </div>
+          </div>
+
+          {/* Quick wardrobe hint */}
+          <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/90 rounded-2xl p-3 flex items-center justify-between gap-3 text-left">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-400/30 flex items-center justify-center text-amber-700">
+                <Shirt className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-amber-950">Guarda-Roupa & Loja do Tico</p>
+                <p className="text-[11px] text-amber-800">
+                  Use suas moedas para vestir bonés, óculos e tênis no Tico!
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/app/wardrobe"
+              onClick={() => playPop()}
+              className="text-xs font-black text-amber-950 bg-amber-300 hover:bg-amber-400 px-3 py-1.5 rounded-xl shadow-xs shrink-0 transition-colors"
+            >
+              Ver Loja
+            </Link>
           </div>
 
           {/* Practiced Words Pill List (if provided) */}

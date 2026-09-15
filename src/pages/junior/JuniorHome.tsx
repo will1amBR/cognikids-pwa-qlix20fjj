@@ -33,7 +33,11 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
+  Coins,
+  Shirt,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ticoGamificationService } from '@/services/ticoGamification'
 
 export const JuniorHome: React.FC = () => {
   const { user } = useAuth()
@@ -41,6 +45,7 @@ export const JuniorHome: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
   const [sessions, setSessions] = useState<GameSession[]>([])
+  const [juniorCoins, setJuniorCoins] = useState<number>(60)
   const [weeklyRanking, setWeeklyRanking] = useState<WeeklyWordRankItem[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -68,6 +73,7 @@ export const JuniorHome: React.FC = () => {
       setSelectedChild(active)
 
       if (active) {
+        setJuniorCoins(ticoGamificationService.getCoinsSync(active.id))
         loadChildSessions(active.id)
       }
     } catch (err) {
@@ -115,6 +121,7 @@ export const JuniorHome: React.FC = () => {
 
   const handleSelectChild = (child: Child) => {
     setSelectedChild(child)
+    setJuniorCoins(ticoGamificationService.getCoinsSync(child.id))
     loadChildSessions(child.id)
   }
 
@@ -193,24 +200,38 @@ export const JuniorHome: React.FC = () => {
               ditado fonético, matemática ágil e dedução lógica com o Tico!
             </p>
 
-            {/* Quick Switch back to Infant button */}
-            <div className="pt-2 flex flex-wrap gap-3">
+            {/* Quick Switch back to Infant button + Wardrobe shortcut */}
+            <div className="pt-2 flex flex-wrap gap-2.5">
+              <Link to="/app/wardrobe">
+                <Button
+                  size="sm"
+                  className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-2xl text-xs shadow-md flex items-center gap-1.5"
+                >
+                  <Shirt className="w-3.5 h-3.5" />
+                  <span>Loja do Tico ({juniorCoins} moedas)</span>
+                </Button>
+              </Link>
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => navigate('/app')}
                 className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-2xl text-xs font-bold"
               >
-                ← Ir para CogniKids Infantil (0-5 anos)
+                ← CogniKids Infantil (0-5a)
               </Button>
             </div>
           </div>
 
           <div className="flex flex-col items-center bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/15 shrink-0 self-center md:self-auto">
-            <TicoMascot emotion="happy" size="md" />
+            <TicoMascot emotion="happy" size="lg" childId={selectedChild?.id} />
             <span className="text-xs font-black uppercase text-amber-300 mt-2">
               Tico Mentor Junior
             </span>
+            <div className="mt-1 flex items-center gap-1.5 bg-amber-400/20 text-amber-200 px-3 py-1 rounded-full text-xs font-black">
+              <Coins className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>{juniorCoins} moedas</span>
+            </div>
           </div>
         </div>
       </div>

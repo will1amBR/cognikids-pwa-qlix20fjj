@@ -31,6 +31,8 @@ import { Button } from '@/components/ui/button'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { PwaInstallBanner } from '@/components/pwa/PwaInstallBanner'
 import { TicoWelcomeInviteModal } from '@/components/pwa/TicoWelcomeInviteModal'
+import { Coins, Shirt, ShoppingBag } from 'lucide-react'
+import { ticoGamificationService } from '@/services/ticoGamification'
 
 export const GuardianHome: React.FC = () => {
   const { user } = useAuth()
@@ -42,6 +44,7 @@ export const GuardianHome: React.FC = () => {
   const [childrenProgress, setChildrenProgress] = useState<Record<string, Record<string, number>>>(
     {},
   )
+  const [childrenCoins, setChildrenCoins] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -56,6 +59,7 @@ export const GuardianHome: React.FC = () => {
     }
 
     const progMap: Record<string, Record<string, number>> = {}
+    const coinsMap: Record<string, number> = {}
     for (const kid of kids) {
       const progList = await fetchChildModuleProgress(kid.id)
       const kidMods: Record<string, number> = {}
@@ -68,11 +72,12 @@ export const GuardianHome: React.FC = () => {
         }
       })
       progMap[kid.id] = kidMods
+      coinsMap[kid.id] = ticoGamificationService.getCoinsSync(kid.id)
     }
+    setChildrenCoins(coinsMap)
     setChildrenProgress(progMap)
     setIsLoading(false)
   }
-
   useEffect(() => {
     reloadData()
   }, [])
@@ -119,6 +124,16 @@ export const GuardianHome: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Link to="/app/wardrobe">
+            <Button
+              variant="outline"
+              className="rounded-2xl border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-extrabold text-xs shadow-xs flex items-center gap-1.5"
+            >
+              <Shirt className="w-4 h-4 text-amber-600" />
+              <span>Loja do Tico</span>
+            </Button>
+          </Link>
+
           <Link to="/app/themes-guide">
             <Button
               variant="outline"
@@ -226,6 +241,24 @@ export const GuardianHome: React.FC = () => {
 
                 {/* Actions */}
                 <div className="space-y-2 pt-2">
+                  {/* Coins & Wardrobe Shortcut Strip for this child */}
+                  <div className="flex items-center justify-between bg-amber-50/80 border border-amber-200/80 px-3 py-1.5 rounded-2xl text-xs">
+                    <div className="flex items-center gap-1.5 font-black text-amber-950">
+                      <Coins className="w-4 h-4 fill-amber-400 text-amber-600" />
+                      <span>{childrenCoins[child.id] ?? 60} moedas</span>
+                    </div>
+                    <Link
+                      to="/app/wardrobe"
+                      onClick={() => {
+                        localStorage.setItem('cognikids_selected_child_id', child.id)
+                      }}
+                      className="text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1 hover:underline text-[11px]"
+                    >
+                      <Shirt className="w-3.5 h-3.5" />
+                      <span>Vestir Tico</span>
+                    </Link>
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={() => handleDailySessionClick(child)}

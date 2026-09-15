@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T05:01:40.967Z",
+  "generatedAt": "2026-09-15T00:35:02.433Z",
   "collections": [
     {
       "name": "users",
@@ -737,6 +737,168 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "child_coins_balance",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "child_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "children"
+        },
+        {
+          "name": "coins",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "total_earned",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "equipped_hat",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "equipped_glasses",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "equipped_shoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "equipped_accessory",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "equipped_outfit",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_coins_child ON child_coins_balance (child_id)",
+        "CREATE INDEX idx_coins_user ON child_coins_balance (user_id)"
+      ]
+    },
+    {
+      "name": "child_tico_inventory",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "child_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "children"
+        },
+        {
+          "name": "item_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "item_category",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "item_name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "price_paid",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "purchased_at",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_inv_child_item ON child_tico_inventory (child_id, item_id)",
+        "CREATE INDEX idx_inv_user_child ON child_tico_inventory (user_id, child_id)"
+      ]
     }
   ]
 }
