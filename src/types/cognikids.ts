@@ -186,7 +186,7 @@ export interface JuniorActivityDefinition {
   id: string
   title: string
   description: string
-  pillar: 'language' | 'math' | 'logic' | 'memory' | 'reading'
+  pillar: 'language' | 'math' | 'logic' | 'memory' | 'reading' | 'arcade'
   pillarTitle: string
   icon: string
   color: string
@@ -221,6 +221,48 @@ export interface ModuleDefinition {
 }
 
 export const COGNIKIDS_JUNIOR_ACTIVITIES: JuniorActivityDefinition[] = [
+  {
+    id: 'junior_snake',
+    title: 'Snake do Tico',
+    description:
+      'Clássico jogo da cobrinha em grid comendo frutas e palavras nos idiomas! Controle touch e teclado.',
+    pillar: 'arcade',
+    pillarTitle: 'Arcade Lúdico',
+    icon: '🐍',
+    color: '#10B981',
+    lightColor: '#ECFDF5',
+    ageRange: '6 a 10 anos',
+    badge: 'Novo Arcade',
+    skillsWorked: ['Reflexo espacial', 'Vocabulário visual', 'Coordenação'],
+  },
+  {
+    id: 'junior_goal',
+    title: 'Acerte o Gol',
+    description:
+      'Mire e chute a bola no gol desviando do goleiro em movimento com dificuldade progressiva.',
+    pillar: 'arcade',
+    pillarTitle: 'Arcade Lúdico',
+    icon: '⚽',
+    color: '#059669',
+    lightColor: '#E6FBF5',
+    ageRange: '6 a 10 anos',
+    badge: 'Popular',
+    skillsWorked: ['Precisão motora', 'Antecipação visual', 'Foco'],
+  },
+  {
+    id: 'junior_runner',
+    title: 'TicoRunner',
+    description:
+      'Corra sem parar, salte obstáculos e colete moedas com velocidade crescente e controles ágeis.',
+    pillar: 'arcade',
+    pillarTitle: 'Arcade Lúdico',
+    icon: '🏃',
+    color: '#0284C7',
+    lightColor: '#E0F2FE',
+    ageRange: '6 a 10 anos',
+    badge: 'Novo',
+    skillsWorked: ['Tempo de reação', 'Agilidade motora', 'Atenção sustentada'],
+  },
   {
     id: 'junior_vocab_builder',
     title: 'Mestre do Vocabulário & Frases',
@@ -726,6 +768,51 @@ export const COGNIKIDS_MODULES: ModuleDefinition[] = [
 // ================= COGNIKIDS JUNIOR MODULES (6 a 10 ANOS / 72 a 120 MESES) ================= //
 
 export const JUNIOR_MODULES: ModuleDefinition[] = [
+  {
+    id: 'junior_arcade',
+    title: 'Arcade Lúdico Junior',
+    subtitle: 'Desafios de reflexo, mira e atenção para 6 a 10 anos',
+    color: '#10B981',
+    lightColor: '#ECFDF5',
+    icon: '🎮',
+    description:
+      'Jogos arcade estimulantes: Snake do Tico, Acerte o Gol e TicoRunner para manter o engajamento dos mais velhos.',
+    minAgeMonths: 72,
+    maxAgeMonths: 120,
+    themes: [
+      {
+        title: 'Coordenação Motora e Foco Ágil',
+        whatIsWorked: 'Agilidade de reflexo, antecipação espacial e autorregulação motora.',
+        homeTips: [
+          'Incentive pausas ativas entre estudos com desafios rápidos.',
+          'Combine jogos esportivos no quintal com os desafios de mira.',
+        ],
+      },
+    ],
+    activities: [
+      {
+        id: 'junior_snake',
+        title: 'Snake do Tico',
+        description: 'Colete frutas e palavras sem colidir!',
+        ageRange: '6–10 anos',
+        badge: 'Arcade',
+      },
+      {
+        id: 'junior_goal',
+        title: 'Acerte o Gol',
+        description: 'Chute com precisão e marque golaços!',
+        ageRange: '6–10 anos',
+        badge: 'Futebol',
+      },
+      {
+        id: 'junior_runner',
+        title: 'TicoRunner',
+        description: 'Pule troncos e pegue moedas a toda velocidade!',
+        ageRange: '6–10 anos',
+        badge: 'Corrida',
+      },
+    ],
+  },
   {
     id: 'junior_vocab',
     title: 'Vocabulário & Fala Pro',

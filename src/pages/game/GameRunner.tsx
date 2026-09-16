@@ -17,6 +17,9 @@ import { EstouraBolhasGame } from '@/components/games/EstouraBolhasGame'
 import { TrilhaDasLetrasGame } from '@/components/games/TrilhaDasLetrasGame'
 import { ClimaERoupaGame } from '@/components/games/ClimaERoupaGame'
 import { CarinhasFelizesGame } from '@/components/games/CarinhasFelizesGame'
+import { JuniorSnakeGame } from '@/components/games/JuniorSnakeGame'
+import { JuniorGoalGame } from '@/components/games/JuniorGoalGame'
+import { JuniorRunnerGame } from '@/components/games/JuniorRunnerGame'
 
 export const GameRunnerPage: React.FC = () => {
   const { childId, moduleId, activityId: subActivityId, module: routeModule } = useParams()
@@ -108,6 +111,17 @@ export const GameRunnerPage: React.FC = () => {
     case 'carinhas_felizes':
     case 'socioemotional':
       return <CarinhasFelizesGame child={child} />
+    case 'junior_snake':
+    case 'snake':
+      return <JuniorSnakeGame child={child} />
+    case 'junior_goal':
+    case 'goal':
+    case 'acerte_o_gol':
+      return <JuniorGoalGame child={child} />
+    case 'junior_runner':
+    case 'runner':
+    case 'ticorunner':
+      return <JuniorRunnerGame child={child} />
     default:
       return <FazendaFalanteGame child={child} />
   }

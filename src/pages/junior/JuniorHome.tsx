@@ -133,6 +133,15 @@ export const JuniorHome: React.FC = () => {
 
     // Direct game routing based on activity ID
     switch (activity.id) {
+      case 'junior_snake':
+        navigate(`/junior/game/${selectedChild.id}/snake`)
+        break
+      case 'junior_goal':
+        navigate(`/junior/game/${selectedChild.id}/goal`)
+        break
+      case 'junior_runner':
+        navigate(`/junior/game/${selectedChild.id}/runner`)
+        break
       case 'junior_vocab_builder':
         navigate(`/junior/game/${selectedChild.id}/vocab`)
         break
@@ -147,7 +156,7 @@ export const JuniorHome: React.FC = () => {
         break
       case 'junior_memory_master':
       default:
-        navigate(`/junior/game/${selectedChild.id}/logic`)
+        navigate(`/junior/game/${selectedChild.id}/snake`)
         break
     }
   }

@@ -6,6 +6,9 @@ import { JuniorVocabBuilderGame } from '@/components/games/JuniorVocabBuilderGam
 import { JuniorMathQuestGame } from '@/components/games/JuniorMathQuestGame'
 import { JuniorLogicMatrixGame } from '@/components/games/JuniorLogicMatrixGame'
 import { JuniorDictationGame } from '@/components/games/JuniorDictationGame'
+import { JuniorSnakeGame } from '@/components/games/JuniorSnakeGame'
+import { JuniorGoalGame } from '@/components/games/JuniorGoalGame'
+import { JuniorRunnerGame } from '@/components/games/JuniorRunnerGame'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
@@ -106,6 +109,23 @@ export const JuniorGameRunnerPage: React.FC = () => {
     case 'junior_dictation_game':
     case 'junior_dictation_voice':
       return <JuniorDictationGame child={child} />
+
+    case 'snake':
+    case 'junior_snake':
+    case 'junior_snake_game':
+      return <JuniorSnakeGame child={child} />
+
+    case 'goal':
+    case 'junior_goal':
+    case 'junior_goal_game':
+    case 'acerte_o_gol':
+      return <JuniorGoalGame child={child} />
+
+    case 'runner':
+    case 'junior_runner':
+    case 'junior_runner_game':
+    case 'ticorunner':
+      return <JuniorRunnerGame child={child} />
 
     default:
       return (

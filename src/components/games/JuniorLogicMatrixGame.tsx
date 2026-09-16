@@ -80,26 +80,33 @@ export const JuniorLogicMatrixGame: React.FC<JuniorGameProps> = ({ child: initia
     const accuracy = Math.round((correctCount / totalRounds) * 100)
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
-    if (childId && child) {
-      offlineSyncService.saveSession({
-        user_id: child.user_id,
-        child_id: child.id,
-        module_id: 'junior_logic',
-        game_id: 'junior_logic_matrix',
-        game_title: 'Matriz Lógica 2x2',
-        stars,
-        score,
-        accuracy,
-        rounds_completed: totalRounds,
-        total_rounds: totalRounds,
-        language: 'pt-BR',
-        details: {
-          correctCount,
-          totalPatterns: totalRounds,
-          isJunior: true,
-        },
-      })
+    const sessionChild = child || {
+      id: childId || 'arthur_demo_id',
+      user_id: 'demo_user',
+      name: 'Arthur (Junior)',
+      birth_date: new Date().toISOString(),
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
     }
+
+    offlineSyncService.saveSession({
+      user_id: sessionChild.user_id || 'demo_user',
+      child_id: sessionChild.id,
+      module_id: 'junior_logic',
+      game_id: 'junior_logic_matrix',
+      game_title: 'Matriz Lógica 2x2',
+      stars,
+      score,
+      accuracy,
+      rounds_completed: totalRounds,
+      total_rounds: totalRounds,
+      language: 'pt-BR',
+      details: {
+        correctCount,
+        totalPatterns: totalRounds,
+        isJunior: true,
+      },
+    })
   }
 
   if (isCompleted) {
@@ -111,7 +118,8 @@ export const JuniorLogicMatrixGame: React.FC<JuniorGameProps> = ({ child: initia
         <CelebrationScreen
           title="Enigmas Decifrados! 🧩"
           subtitle="Módulo CogniKids Junior: Dedução, Padrões e Raciocínio Espacial"
-          childName="Junior"
+          childName={child?.name || 'Arthur'}
+          childId={child?.id}
           score={score}
           accuracy={accuracy}
           stars={stars}

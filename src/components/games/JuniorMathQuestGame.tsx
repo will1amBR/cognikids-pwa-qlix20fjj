@@ -102,26 +102,33 @@ export const JuniorMathQuestGame: React.FC<JuniorGameProps> = ({ child: initialC
     const accuracy = Math.round((correctAnswersCount / totalRounds) * 100)
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
-    if (childId && child) {
-      offlineSyncService.saveSession({
-        user_id: child.user_id,
-        child_id: child.id,
-        module_id: 'junior_math',
-        game_id: 'junior_math_quest',
-        game_title: 'Missão Matemática do Tico',
-        stars,
-        score,
-        accuracy,
-        rounds_completed: totalRounds,
-        total_rounds: totalRounds,
-        language: currentLang,
-        details: {
-          correctAnswersCount,
-          totalQuestions: totalRounds,
-          isJunior: true,
-        },
-      })
+    const sessionChild = child || {
+      id: childId || 'arthur_demo_id',
+      user_id: 'demo_user',
+      name: 'Arthur (Junior)',
+      birth_date: new Date().toISOString(),
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
     }
+
+    offlineSyncService.saveSession({
+      user_id: sessionChild.user_id || 'demo_user',
+      child_id: sessionChild.id,
+      module_id: 'junior_math',
+      game_id: 'junior_math_quest',
+      game_title: 'Missão Matemática do Tico',
+      stars,
+      score,
+      accuracy,
+      rounds_completed: totalRounds,
+      total_rounds: totalRounds,
+      language: currentLang,
+      details: {
+        correctAnswersCount,
+        totalQuestions: totalRounds,
+        isJunior: true,
+      },
+    })
   }
 
   const langInfo = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[0]
@@ -135,7 +142,8 @@ export const JuniorMathQuestGame: React.FC<JuniorGameProps> = ({ child: initialC
         <CelebrationScreen
           title="Missão Concluída! 🚀"
           subtitle="Módulo CogniKids Junior: Raciocínio Lógico & Desafios Numéricos"
-          childName="Junior"
+          childName={child?.name || 'Arthur'}
+          childId={child?.id}
           score={score}
           accuracy={accuracy}
           stars={stars}

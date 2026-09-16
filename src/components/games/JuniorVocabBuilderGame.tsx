@@ -180,26 +180,33 @@ export const JuniorVocabBuilderGame: React.FC<JuniorGameProps> = ({ child: initi
     const calculatedStars = score > 100 ? 3 : score > 50 ? 2 : 1
     setStars(calculatedStars)
 
-    if (child) {
-      offlineSyncService.saveSession({
-        user_id: child.user_id || 'demo_user',
-        child_id: child.id,
-        module_id: 'junior_vocab',
-        game_id: 'junior_vocab_builder',
-        game_title: 'Construtor de Vocabulário & Frases',
-        stars: calculatedStars,
-        score: score,
-        accuracy: Math.min(100, Math.round((score / (totalRounds * 30)) * 100)),
-        rounds_completed: totalRounds,
-        total_rounds: totalRounds,
-        language: currentLang,
-        details: {
-          wordResults,
-          items: words.map((w) => getLangData(w, currentLang).word),
-          isJunior: true,
-        },
-      })
+    const sessionChild = child || {
+      id: childId || 'arthur_demo_id',
+      user_id: 'demo_user',
+      name: 'Arthur (Junior)',
+      birth_date: new Date().toISOString(),
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
     }
+
+    offlineSyncService.saveSession({
+      user_id: sessionChild.user_id || 'demo_user',
+      child_id: sessionChild.id,
+      module_id: 'junior_vocab',
+      game_id: 'junior_vocab_builder',
+      game_title: 'Construtor de Vocabulário & Frases',
+      stars: calculatedStars,
+      score: score,
+      accuracy: Math.min(100, Math.round((score / (totalRounds * 30)) * 100)),
+      rounds_completed: totalRounds,
+      total_rounds: totalRounds,
+      language: currentLang,
+      details: {
+        wordResults,
+        items: words.map((w) => getLangData(w, currentLang).word),
+        isJunior: true,
+      },
+    })
   }
 
   const langInfo = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[0]

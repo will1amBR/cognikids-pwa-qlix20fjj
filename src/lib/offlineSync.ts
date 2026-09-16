@@ -128,8 +128,10 @@ export class OfflineSyncService {
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
 
     // Demo children sessions should not attempt remote DB sync because their ID may not exist in live tables
-    const isDemoChild = pendingItem.child_id.includes('demo')
-
+    const isDemoChild =
+      pendingItem.child_id.includes('demo') ||
+      pendingItem.child_id === 'arthur_demo_id' ||
+      pendingItem.child_id === 'clara_demo_id'
     // If online and auth is active, try immediate sync (unless it's a demo child)
     if (!isDemoChild && isOnline && pb.authStore.isValid && pb.authStore.record?.id) {
       try {
@@ -277,7 +279,11 @@ export class OfflineSyncService {
 
     for (const item of queue) {
       // Discard demo child items from remote sync attempt
-      if (item.child_id.includes('demo')) {
+      if (
+        item.child_id.includes('demo') ||
+        item.child_id === 'arthur_demo_id' ||
+        item.child_id === 'clara_demo_id'
+      ) {
         syncedCount++
         continue
       }

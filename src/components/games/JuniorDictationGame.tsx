@@ -140,26 +140,33 @@ export const JuniorDictationGame: React.FC<JuniorGameProps> = ({ child: initialC
     const accuracy = Math.round((correctCount / totalRounds) * 100)
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
-    if (child) {
-      offlineSyncService.saveSession({
-        user_id: child.user_id || 'demo_user',
-        child_id: child.id,
-        module_id: 'junior_dictation',
-        game_id: 'junior_dictation_game',
-        game_title: 'Ditado & Soletração Inteligente',
-        stars,
-        score,
-        accuracy,
-        rounds_completed: totalRounds,
-        total_rounds: totalRounds,
-        language: currentLang,
-        details: {
-          correctCount,
-          totalWords: totalRounds,
-          isJunior: true,
-        },
-      })
+    const sessionChild = child || {
+      id: childId || 'arthur_demo_id',
+      user_id: 'demo_user',
+      name: 'Arthur (Junior)',
+      birth_date: new Date().toISOString(),
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
     }
+
+    offlineSyncService.saveSession({
+      user_id: sessionChild.user_id || 'demo_user',
+      child_id: sessionChild.id,
+      module_id: 'junior_dictation',
+      game_id: 'junior_dictation_game',
+      game_title: 'Ditado & Soletração Inteligente',
+      stars,
+      score,
+      accuracy,
+      rounds_completed: totalRounds,
+      total_rounds: totalRounds,
+      language: currentLang,
+      details: {
+        correctCount,
+        totalWords: totalRounds,
+        isJunior: true,
+      },
+    })
   }
 
   const langInfo = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[0]
