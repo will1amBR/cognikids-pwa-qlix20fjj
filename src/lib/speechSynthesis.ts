@@ -75,46 +75,70 @@ class SpeechService {
         return
       }
 
-      this.stop()
-
-      const utterance = new SpeechSynthesisUtterance(text)
-      const targetLang = options.lang || 'pt-BR'
-      utterance.lang = targetLang.includes('-')
-        ? targetLang
-        : `${targetLang}-${targetLang.toUpperCase()}`
-
-      this.initVoices()
-      const chosenVoice =
-        this.voicesByLang[targetLang] ||
-        this.voicesByLang[targetLang.split('-')[0]] ||
-        this.voicesByLang['pt-BR']
-
-      if (chosenVoice) {
-        utterance.voice = chosenVoice
+      let settled = false
+      const safeResolve = () => {
+        if (!settled) {
+          settled = true
+          clearTimeout(safetyTimeout)
+          options.onEnd?.()
+          resolve()
+        }
       }
 
-      utterance.rate = options.rate ?? 0.92 // slightly slower for young kids
-      utterance.pitch = options.pitch ?? 1.15 // slightly cheerful / warm pitch
-      utterance.volume = options.volume ?? 1
+      // Safety timeout: If browser synthesis engine hangs or doesn't fire onend/onerror,
+      // resolve after a generous window based on text length so the game never freezes.
+      const maxDuration = Math.max(2500, Math.min(8000, text.length * 150))
+      const safetyTimeout = setTimeout(() => {
+        safeResolve()
+      }, maxDuration)
 
-      utterance.onstart = () => {
-        options.onStart?.()
-      }
+      try {
+        this.stop()
 
-      utterance.onend = () => {
-        options.onEnd?.()
-        resolve()
-      }
+        // Resume audio context/speech queue if paused (common mobile browser bug)
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume()
+        }
 
-      utterance.onerror = (err) => {
-        // Canceled or interrupted utterances shouldn't block the game flow
+        const utterance = new SpeechSynthesisUtterance(text)
+        const targetLang = options.lang || 'pt-BR'
+        utterance.lang = targetLang.includes('-')
+          ? targetLang
+          : `${targetLang}-${targetLang.toUpperCase()}`
+
+        this.initVoices()
+        const chosenVoice =
+          this.voicesByLang[targetLang] ||
+          this.voicesByLang[targetLang.split('-')[0]] ||
+          this.voicesByLang['pt-BR']
+
+        if (chosenVoice) {
+          utterance.voice = chosenVoice
+        }
+
+        utterance.rate = options.rate ?? 0.92 // slightly slower for young kids
+        utterance.pitch = options.pitch ?? 1.15 // slightly cheerful / warm pitch
+        utterance.volume = options.volume ?? 1
+
+        utterance.onstart = () => {
+          options.onStart?.()
+        }
+
+        utterance.onend = () => {
+          safeResolve()
+        }
+
+        utterance.onerror = (err) => {
+          // Canceled or interrupted utterances shouldn't block the game flow
+          options.onError?.(err)
+          safeResolve()
+        }
+
+        window.speechSynthesis.speak(utterance)
+      } catch (err) {
         options.onError?.(err)
-        options.onEnd?.()
-        resolve()
+        safeResolve()
       }
-
-      // In some mobile browsers synthesis gets stuck if too long, short timeout safeguard
-      window.speechSynthesis.speak(utterance)
     })
   }
 

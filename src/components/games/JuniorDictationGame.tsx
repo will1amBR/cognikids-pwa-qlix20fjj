@@ -140,9 +140,9 @@ export const JuniorDictationGame: React.FC<JuniorGameProps> = ({ child: initialC
     const accuracy = Math.round((correctCount / totalRounds) * 100)
     const stars = accuracy >= 80 ? 3 : accuracy >= 50 ? 2 : 1
 
-    if (childId && child) {
+    if (child) {
       offlineSyncService.saveSession({
-        user_id: child.user_id,
+        user_id: child.user_id || 'demo_user',
         child_id: child.id,
         module_id: 'junior_dictation',
         game_id: 'junior_dictation_game',
@@ -173,7 +173,8 @@ export const JuniorDictationGame: React.FC<JuniorGameProps> = ({ child: initialC
         <CelebrationScreen
           title="Ditado Concluído! ✍️"
           subtitle="Módulo CogniKids Junior: Escrita e Ortografia Multilíngue"
-          childName="Junior"
+          childName={child?.name || 'Arthur'}
+          childId={child?.id}
           score={score}
           accuracy={accuracy}
           stars={stars}

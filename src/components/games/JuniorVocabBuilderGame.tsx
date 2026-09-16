@@ -180,9 +180,9 @@ export const JuniorVocabBuilderGame: React.FC<JuniorGameProps> = ({ child: initi
     const calculatedStars = score > 100 ? 3 : score > 50 ? 2 : 1
     setStars(calculatedStars)
 
-    if (childId && child) {
+    if (child) {
       offlineSyncService.saveSession({
-        user_id: child.user_id,
+        user_id: child.user_id || 'demo_user',
         child_id: child.id,
         module_id: 'junior_vocab',
         game_id: 'junior_vocab_builder',
@@ -211,7 +211,8 @@ export const JuniorVocabBuilderGame: React.FC<JuniorGameProps> = ({ child: initi
         <CelebrationScreen
           title="Vocabulário Dominado! 🗣️"
           subtitle="Módulo CogniKids Junior: Expressão Oral e Fluência Multilíngue"
-          childName="Junior"
+          childName={child?.name || 'Arthur'}
+          childId={child?.id}
           score={score}
           accuracy={accuracyVal}
           stars={stars}

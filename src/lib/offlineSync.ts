@@ -133,18 +133,25 @@ export class OfflineSyncService {
     // If online and auth is active, try immediate sync (unless it's a demo child)
     if (!isDemoChild && isOnline && pb.authStore.isValid && pb.authStore.record?.id) {
       try {
-        await this.syncSessionItem(pendingItem)
-        await this.updateModuleProgress(
-          pendingItem.child_id,
-          pendingItem.module_id,
-          pendingItem.score,
-        )
-        // Also trigger async achievement check in background
-        this.evaluateAchievementsSilently(
-          pendingItem.child_id,
-          pendingItem.module_id,
-          pendingItem.user_id,
-        )
+        await Promise.race([
+          (async () => {
+            await this.syncSessionItem(pendingItem)
+            await this.updateModuleProgress(
+              pendingItem.child_id,
+              pendingItem.module_id,
+              pendingItem.score,
+            )
+            // Also trigger async achievement check in background
+            this.evaluateAchievementsSilently(
+              pendingItem.child_id,
+              pendingItem.module_id,
+              pendingItem.user_id,
+            )
+          })(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Network sync timeout')), 4000),
+          ),
+        ])
         return
       } catch (err) {
         console.warn('Direct game session save failed, adding to offline queue', err)
