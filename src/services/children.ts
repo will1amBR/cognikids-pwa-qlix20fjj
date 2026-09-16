@@ -26,6 +26,56 @@ export async function fetchChildren(): Promise<Child[]> {
 }
 
 export async function fetchChildById(id: string): Promise<Child | null> {
+  // Demo children fallback support so games run smoothly in demo/unauthenticated sandbox
+  if (id === 'clara_demo_id') {
+    return {
+      id: 'clara_demo_id',
+      user_id: pb.authStore.record?.id || 'demo_user',
+      name: 'Clara (4 anos)',
+      birth_date: new Date(Date.now() - 48 * 30.5 * 24 * 3600 * 1000).toISOString(),
+      class_group: 'Maternal II',
+      favorite_color: '#FF7A45',
+      daily_minutes: 15,
+      daily_activity_count: 3,
+      primary_language: 'pt-BR',
+      learning_languages: ['pt-BR', 'en'],
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    }
+  }
+  if (id === 'arthur_demo_id') {
+    return {
+      id: 'arthur_demo_id',
+      user_id: pb.authStore.record?.id || 'demo_user',
+      name: 'Arthur (8 anos)',
+      birth_date: new Date(Date.now() - 96 * 30.5 * 24 * 3600 * 1000).toISOString(),
+      class_group: 'Jardim / 3º Ano',
+      favorite_color: '#6366F1',
+      daily_minutes: 25,
+      daily_activity_count: 4,
+      primary_language: 'pt-BR',
+      learning_languages: ['pt-BR', 'en', 'es'],
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    }
+  }
+  if (id === 'theo_demo_id') {
+    return {
+      id: 'theo_demo_id',
+      user_id: pb.authStore.record?.id || 'demo_user',
+      name: 'Theo (18 meses)',
+      birth_date: new Date(Date.now() - 18 * 30.5 * 24 * 3600 * 1000).toISOString(),
+      class_group: 'Berçário II',
+      favorite_color: '#34D399',
+      daily_minutes: 10,
+      daily_activity_count: 2,
+      primary_language: 'pt-BR',
+      learning_languages: ['pt-BR'],
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+    }
+  }
+
   if (!pb.authStore.isValid) return null
   try {
     const res = await pb.collection('children').getOne<Child>(id)

@@ -511,17 +511,24 @@ export class TicoGamificationService {
   }
 
   /**
-   * Synchronously get currently equipped items for quick mascot rendering
+   * Synchronously get currently equipped items for quick mascot rendering.
+   * If there is no authenticated user or no child specified/active, returns {} (clean Tico, no accessories).
    */
   public getEquippedSync(childId?: string): ChildTicoEquipped {
+    // When no child is explicitly passed, check if there is an active logged-in user and selected child
     if (!childId) {
       if (typeof window !== 'undefined') {
+        // If PocketBase auth is not valid, the user is unauthenticated / on public pages
+        if (!pb.authStore.isValid) {
+          return {}
+        }
         const activeId = localStorage.getItem('cognikids_selected_child_id')
         if (activeId) {
           return getLocalState(activeId).equipped
         }
       }
-      return { hat: 'hat_cap_orange', glasses: 'glasses_star', shoes: 'shoes_sneakers_blue' }
+      // Unauthenticated or no child: Tico is clean with zero accessories
+      return {}
     }
     return getLocalState(childId).equipped
   }

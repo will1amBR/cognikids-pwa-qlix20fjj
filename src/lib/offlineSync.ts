@@ -127,8 +127,11 @@ export class OfflineSyncService {
 
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
 
-    // If online and auth is active, try immediate sync
-    if (isOnline && pb.authStore.isValid && pb.authStore.record?.id) {
+    // Demo children sessions should not attempt remote DB sync because their ID may not exist in live tables
+    const isDemoChild = pendingItem.child_id.includes('demo')
+
+    // If online and auth is active, try immediate sync (unless it's a demo child)
+    if (!isDemoChild && isOnline && pb.authStore.isValid && pb.authStore.record?.id) {
       try {
         await this.syncSessionItem(pendingItem)
         await this.updateModuleProgress(
@@ -266,6 +269,11 @@ export class OfflineSyncService {
     const remaining: PendingGameSession[] = []
 
     for (const item of queue) {
+      // Discard demo child items from remote sync attempt
+      if (item.child_id.includes('demo')) {
+        syncedCount++
+        continue
+      }
       try {
         await this.syncSessionItem(item)
         await this.updateModuleProgress(item.child_id, item.module_id, item.score)

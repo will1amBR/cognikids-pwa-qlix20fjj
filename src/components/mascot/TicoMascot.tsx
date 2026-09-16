@@ -37,7 +37,7 @@ export const TicoMascot: React.FC<MascotProps> = ({
     return ticoGamificationService.getEquippedSync(childId)
   })
 
-  // Listen to wardrobe changes in realtime
+  // Listen to wardrobe and auth changes in realtime
   useEffect(() => {
     if (propEquipped) {
       setEquipped(propEquipped)
@@ -60,8 +60,11 @@ export const TicoMascot: React.FC<MascotProps> = ({
     }
 
     window.addEventListener('cognikids_tico_updated', handleCustomEvent)
+    window.addEventListener('storage', updateEquipped)
+
     return () => {
       window.removeEventListener('cognikids_tico_updated', handleCustomEvent)
+      window.removeEventListener('storage', updateEquipped)
     }
   }, [propEquipped, childId, showEquipped])
 

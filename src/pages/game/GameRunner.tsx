@@ -30,13 +30,38 @@ export const GameRunnerPage: React.FC = () => {
     if (!childId) return
     const load = async () => {
       setIsLoading(true)
-      const kid = await fetchChildById(childId)
-      if (!kid) {
+      try {
+        const kid = await fetchChildById(childId)
+        if (!kid) {
+          // If demo child or unauthenticated fallback
+          if (childId.includes('demo') || !childId) {
+            setChild({
+              id: 'clara_demo_id',
+              user_id: 'demo_user',
+              name: 'Clara (Demo)',
+              birth_date: new Date(Date.now() - 48 * 30.5 * 24 * 3600 * 1000).toISOString(),
+              class_group: 'Maternal II',
+              favorite_color: '#FF7A45',
+              daily_minutes: 15,
+              daily_activity_count: 3,
+              primary_language: 'pt-BR',
+              learning_languages: ['pt-BR', 'en'],
+              created: new Date().toISOString(),
+              updated: new Date().toISOString(),
+            })
+            setIsLoading(false)
+            return
+          }
+          navigate('/app')
+          return
+        }
+        setChild(kid)
+      } catch (err) {
+        console.warn('GameRunner load child error', err)
         navigate('/app')
-        return
+      } finally {
+        setIsLoading(false)
       }
-      setChild(kid)
-      setIsLoading(false)
     }
     load()
   }, [childId, navigate])

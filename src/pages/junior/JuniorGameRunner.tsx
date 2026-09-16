@@ -27,6 +27,23 @@ export const JuniorGameRunnerPage: React.FC = () => {
     fetchChildById(childId)
       .then((data) => {
         if (!data) {
+          if (childId.includes('demo') || childId === 'arthur_demo_id') {
+            setChild({
+              id: 'arthur_demo_id',
+              user_id: 'demo_user',
+              name: 'Arthur (Demo Junior)',
+              birth_date: new Date(Date.now() - 96 * 30.5 * 24 * 3600 * 1000).toISOString(),
+              class_group: 'Jardim / 3º Ano',
+              favorite_color: '#6366F1',
+              daily_minutes: 25,
+              daily_activity_count: 4,
+              primary_language: 'pt-BR',
+              learning_languages: ['pt-BR', 'en', 'es'],
+              created: new Date().toISOString(),
+              updated: new Date().toISOString(),
+            })
+            return
+          }
           setError('Perfil da criança não encontrado.')
         } else {
           setChild(data)
