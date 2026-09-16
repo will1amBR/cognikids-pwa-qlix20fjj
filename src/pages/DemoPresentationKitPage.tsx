@@ -24,21 +24,32 @@ import {
 } from 'lucide-react'
 
 export const DemoPresentationKitPage: React.FC = () => {
-  const { login } = useAuth()
+  const { user, login } = useAuth()
   const navigate = useNavigate()
   const [isLoggingInDemo, setIsLoggingInDemo] = React.useState(false)
 
-  const handle1ClickLogin = async () => {
+  // Ensure demo account is authenticated before navigating to guarded routes
+  const ensureDemoAuthAndNavigate = async (targetPath: string) => {
+    // If already logged in, navigate straight
+    if (user) {
+      navigate(targetPath)
+      return
+    }
+
     setIsLoggingInDemo(true)
     try {
       await login('demo@cognikids.app', 'demo1234')
-      navigate('/app')
+      navigate(targetPath)
     } catch (err) {
       console.error(err)
       navigate('/login')
     } finally {
       setIsLoggingInDemo(false)
     }
+  }
+
+  const handle1ClickLogin = async () => {
+    await ensureDemoAuthAndNavigate('/app')
   }
 
   const presentationSteps = [
@@ -69,7 +80,7 @@ export const DemoPresentationKitPage: React.FC = () => {
       badge: 'Gestão Escolar',
       desc: 'Veja os cupons gerados (MATRIC-BERCARIO, MATRIC-MATERNAL, MATRIC-JUNIOR) e a lista de famílias que já resgataram convites automáticos da escola.',
       actionLabel: 'Ver Cupons & Matrículas',
-      link: '/escola?code=ESCOLA-DEMO01#turmas',
+      link: '/escola?code=ESCOLA-DEMO01&section=enrollments',
       icon: Users,
     },
     {
@@ -78,7 +89,8 @@ export const DemoPresentationKitPage: React.FC = () => {
       badge: 'Neurociência',
       desc: 'Mostre como a inteligência pedagógica seleciona de 2 a 4 atividades rápidas (10-20 min) que evitam fadiga de tela e estimulam a neuroplasticidade.',
       actionLabel: 'Ver Sessão Diária',
-      link: '/app',
+      action: () => ensureDemoAuthAndNavigate('/app/daily/clara_demo_id'),
+      isButton: true,
       icon: Play,
     },
     {
@@ -87,7 +99,8 @@ export const DemoPresentationKitPage: React.FC = () => {
       badge: 'Fala & Multilíngue',
       desc: 'Demonstre a gravação de voz: a criança fala palavras em até 5 idiomas e o algoritmo fonético dá estrelas e moedas.',
       actionLabel: 'Ver Módulo de Fala',
-      link: '/app',
+      action: () => ensureDemoAuthAndNavigate('/app/game/clara_demo_id/fazenda_falante'),
+      isButton: true,
       icon: Mic,
     },
     {
@@ -96,7 +109,8 @@ export const DemoPresentationKitPage: React.FC = () => {
       badge: 'Economia Lúdica',
       desc: 'Ao treinar e acertar, a criança ganha moedas de ouro para vestir o Tico com bonés, óculos e tênis! Estimula autonomia e hábito positivo diário.',
       actionLabel: 'Ver Guarda-Roupa do Tico',
-      link: '/app/wardrobe',
+      action: () => ensureDemoAuthAndNavigate('/app/wardrobe'),
+      isButton: true,
       icon: Shirt,
     },
     {
@@ -105,7 +119,8 @@ export const DemoPresentationKitPage: React.FC = () => {
       badge: 'Avaliação BNCC',
       desc: 'O diagnóstico pedagógico das 5 áreas (Fala, Memória, Lógica, Motricidade, Socioemocional) com gerador oficial de PDF para reuniões de pais.',
       actionLabel: 'Ver Relatório Evolutivo',
-      link: '/app/reports',
+      action: () => ensureDemoAuthAndNavigate('/app/reports'),
+      isButton: true,
       icon: FileText,
     },
     {
@@ -114,7 +129,8 @@ export const DemoPresentationKitPage: React.FC = () => {
       badge: 'Ensino Fundamental',
       desc: 'Ditado de voz, ortografia, missões de matemática, matriz lógica e vocabulário avançado para crianças em fase de alfabetização escolar.',
       actionLabel: 'Ver Área Junior',
-      link: '/junior',
+      action: () => ensureDemoAuthAndNavigate('/junior'),
+      isButton: true,
       icon: Rocket,
     },
   ]
@@ -184,7 +200,7 @@ export const DemoPresentationKitPage: React.FC = () => {
           </Link>
 
           {/* Button 3: Painel de Matrículas */}
-          <Link to="/escola?code=ESCOLA-DEMO01" className="block">
+          <Link to="/escola?code=ESCOLA-DEMO01&section=enrollments" className="block">
             <Button
               variant="outline"
               className="w-full h-20 rounded-3xl bg-indigo-900/60 hover:bg-indigo-800/80 text-white border-2 border-indigo-400/40 font-black text-sm sm:text-base shadow-lg flex flex-col items-center justify-center p-3 text-center active:scale-98 transition-transform"

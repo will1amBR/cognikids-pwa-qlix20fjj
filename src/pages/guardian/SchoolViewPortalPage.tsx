@@ -60,9 +60,18 @@ export const SchoolViewPortalPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Active section tab: 'pedagogical' (mapa cognitivo) or 'enrollments' (painel de matrículas)
+  const sectionParam = searchParams.get('section')
   const [activePortalSection, setActivePortalSection] = useState<'pedagogical' | 'enrollments'>(
-    'pedagogical',
+    sectionParam === 'enrollments' ? 'enrollments' : 'pedagogical',
   )
+
+  useEffect(() => {
+    if (sectionParam === 'enrollments') {
+      setActivePortalSection('enrollments')
+    } else if (sectionParam === 'pedagogical') {
+      setActivePortalSection('pedagogical')
+    }
+  }, [sectionParam])
   const [couponRedemptions, setCouponRedemptions] = useState<CouponRedemptionRecord[]>([])
   const [isLoadingRedemptions, setIsLoadingRedemptions] = useState(false)
 
@@ -100,6 +109,18 @@ export const SchoolViewPortalPage: React.FC = () => {
       url: getSignupInviteUrl('MATRIC-JUNIOR'),
     },
   ])
+
+  // Update generated coupons URLs when portal data loads with official school name
+  useEffect(() => {
+    if (portalData?.institutionName) {
+      setGeneratedCoupons((prev) =>
+        prev.map((c) => ({
+          ...c,
+          schoolName: portalData.institutionName,
+        })),
+      )
+    }
+  }, [portalData])
 
   useEffect(() => {
     if (codeParam) {
@@ -477,7 +498,12 @@ export const SchoolViewPortalPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/15">
                 <button
                   type="button"
-                  onClick={() => setActivePortalSection('pedagogical')}
+                  onClick={() => {
+                    setActivePortalSection('pedagogical')
+                    const params = new URLSearchParams(searchParams)
+                    params.set('section', 'pedagogical')
+                    setSearchParams(params, { replace: true })
+                  }}
                   className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
                     activePortalSection === 'pedagogical'
                       ? 'bg-white text-indigo-900 shadow-md shadow-black/10'
@@ -490,7 +516,12 @@ export const SchoolViewPortalPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => setActivePortalSection('enrollments')}
+                  onClick={() => {
+                    setActivePortalSection('enrollments')
+                    const params = new URLSearchParams(searchParams)
+                    params.set('section', 'enrollments')
+                    setSearchParams(params, { replace: true })
+                  }}
                   className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
                     activePortalSection === 'enrollments'
                       ? 'bg-amber-400 text-slate-950 shadow-md shadow-black/10'

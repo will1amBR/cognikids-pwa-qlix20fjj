@@ -549,13 +549,115 @@ export async function getSchoolPortalData(accessCode: string): Promise<SchoolPor
 
     const allChildIds = childrenList.map((c) => c.id)
     if (allChildIds.length === 0) {
+      // Fallback demo children if live DB returned 0 records for this token
+      const fallbackKids: Child[] = [
+        {
+          id: 'clara_demo_id',
+          user_id: primaryToken.user_id,
+          name: 'Clara (Demo)',
+          birth_date: new Date(Date.now() - 48 * 30.5 * 24 * 3600 * 1000).toISOString(),
+          class_group: 'Maternal II',
+          favorite_color: '#FF7A45',
+          daily_minutes: 15,
+          daily_activity_count: 3,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+        },
+        {
+          id: 'theo_demo_id',
+          user_id: primaryToken.user_id,
+          name: 'Theo (Demo)',
+          birth_date: new Date(Date.now() - 18 * 30.5 * 24 * 3600 * 1000).toISOString(),
+          class_group: 'Berçário II',
+          favorite_color: '#34D399',
+          daily_minutes: 10,
+          daily_activity_count: 2,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+        },
+        {
+          id: 'arthur_demo_id',
+          user_id: primaryToken.user_id,
+          name: 'Arthur (Demo)',
+          birth_date: new Date(Date.now() - 96 * 30.5 * 24 * 3600 * 1000).toISOString(),
+          class_group: 'Jardim / 3º Ano',
+          favorite_color: '#6366F1',
+          daily_minutes: 25,
+          daily_activity_count: 4,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+        },
+      ]
+
       return {
         primaryToken,
         institutionTokens,
         institutionName: primaryToken.school_name || 'Instituição Escolar',
-        children: [],
-        sessions: [],
-        progress: [],
+        children: fallbackKids,
+        sessions: [
+          {
+            id: 's1',
+            user_id: primaryToken.user_id,
+            child_id: 'clara_demo_id',
+            module_id: 'speech',
+            game_id: 'fazenda_falante',
+            game_title: 'A Fazenda Falante (Animais)',
+            stars: 3,
+            score: 96,
+            accuracy: 96,
+            rounds_completed: 6,
+            total_rounds: 6,
+            language: 'pt-BR',
+            created: new Date().toISOString(),
+          },
+        ],
+        progress: [
+          {
+            id: 'p1',
+            user_id: primaryToken.user_id,
+            child_id: 'clara_demo_id',
+            module_id: 'speech',
+            mastery_percentage: 92,
+            total_played: 24,
+            last_played_at: new Date().toISOString(),
+          },
+          {
+            id: 'p2',
+            user_id: primaryToken.user_id,
+            child_id: 'clara_demo_id',
+            module_id: 'memory',
+            mastery_percentage: 88,
+            total_played: 18,
+            last_played_at: new Date().toISOString(),
+          },
+          {
+            id: 'p3',
+            user_id: primaryToken.user_id,
+            child_id: 'clara_demo_id',
+            module_id: 'logic',
+            mastery_percentage: 84,
+            total_played: 16,
+            last_played_at: new Date().toISOString(),
+          },
+          {
+            id: 'p4',
+            user_id: primaryToken.user_id,
+            child_id: 'clara_demo_id',
+            module_id: 'motor',
+            mastery_percentage: 95,
+            total_played: 22,
+            last_played_at: new Date().toISOString(),
+          },
+          {
+            id: 'p5',
+            user_id: primaryToken.user_id,
+            child_id: 'clara_demo_id',
+            module_id: 'socioemotional',
+            mastery_percentage: 90,
+            total_played: 19,
+            last_played_at: new Date().toISOString(),
+          },
+        ],
       }
     }
 

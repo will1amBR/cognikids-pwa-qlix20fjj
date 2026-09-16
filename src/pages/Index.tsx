@@ -154,7 +154,7 @@ export const IndexPage: React.FC = () => {
               to="/demo"
               className="text-indigo-600 hover:text-indigo-800 font-bold underline decoration-indigo-300 underline-offset-2 flex items-center gap-1"
             >
-              <span>Ver apresentação / Kit demo</span>
+              <span>Ver demonstração escolar</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
             <span className="text-slate-300">•</span>
@@ -176,7 +176,10 @@ export const IndexPage: React.FC = () => {
         </div>
         <div className="flex items-center gap-4 text-slate-400">
           <Link to="/demo" className="hover:text-slate-700">
-            Apresentação Escolar
+            Ver demonstração escolar
+          </Link>
+          <Link to="/escola?code=ESCOLA-DEMO01" className="hover:text-slate-700">
+            Representa uma escola?
           </Link>
           <Link to="/login" className="hover:text-slate-700">
             Login
