@@ -39,7 +39,15 @@ import { offlineSyncService } from '@/lib/offlineSync'
 import { fetchChildSessions } from '@/services/children'
 import { teacherNotesService } from '@/services/teacherNotes'
 import type { TeacherNote } from '@/types/cognikids'
-import { BookOpen, Calendar, Tag, MessageSquare, School as SchoolIcon } from 'lucide-react'
+import {
+  BookOpen,
+  Calendar,
+  Tag,
+  MessageSquare,
+  School as SchoolIcon,
+  FileText,
+} from 'lucide-react'
+import { TeacherWeeklySummaryCard } from '@/components/reports/TeacherWeeklySummaryCard'
 import {
   Dialog,
   DialogContent,
@@ -56,6 +64,18 @@ export const ChildDashboardPage: React.FC = () => {
   const navigate = useNavigate()
   const { playPop } = useSound()
   const { language, t } = useLanguage()
+
+  // Auto-scroll to teacher-notes if hash is present
+  useEffect(() => {
+    if (window.location.hash === '#teacher-notes') {
+      setTimeout(() => {
+        const el = document.getElementById('teacher-notes')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 300)
+    }
+  }, [activeChildId])
 
   const [child, setChild] = useState<Child | null>(null)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
@@ -374,7 +394,10 @@ export const ChildDashboardPage: React.FC = () => {
 
       {/* Seção Diário da Escola & Anotações do Professor */}
       {teacherNotes.length > 0 && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4">
+        <div
+          id="teacher-notes"
+          className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4 scroll-mt-20"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
@@ -396,16 +419,31 @@ export const ChildDashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <Link to="/escola">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
-              >
-                Ver Portal da Escola
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to={`/app/reports/${child.id}`}>
+                <Button
+                  size="sm"
+                  className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Ver Resumo Semanal Completo</span>
+                </Button>
+              </Link>
+
+              <Link to="/escola">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  Portal da Escola
+                </Button>
+              </Link>
+            </div>
           </div>
+
+          {/* Cartão de Resumo Semanal Compacto no Diário */}
+          <TeacherWeeklySummaryCard child={child} teacherNotes={teacherNotes} period="week" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
             {teacherNotes.slice(0, 4).map((note) => {

@@ -33,6 +33,11 @@ import { PwaInstallBanner } from '@/components/pwa/PwaInstallBanner'
 import { TicoWelcomeInviteModal } from '@/components/pwa/TicoWelcomeInviteModal'
 import { Coins, Shirt, ShoppingBag } from 'lucide-react'
 import { ticoGamificationService } from '@/services/ticoGamification'
+import { TeacherNoteBanner } from '@/components/notifications/TeacherNoteBanner'
+import {
+  teacherNotificationService,
+  TeacherNoteNotification,
+} from '@/services/teacherNotificationService'
 
 export const GuardianHome: React.FC = () => {
   const { user } = useAuth()
@@ -47,6 +52,7 @@ export const GuardianHome: React.FC = () => {
   const [childrenCoins, setChildrenCoins] = useState<Record<string, number>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [unreadNotes, setUnreadNotes] = useState<TeacherNoteNotification[]>([])
 
   const reloadData = async () => {
     setIsLoading(true)
@@ -77,9 +83,18 @@ export const GuardianHome: React.FC = () => {
     setChildrenCoins(coinsMap)
     setChildrenProgress(progMap)
     setIsLoading(false)
+
+    // Atualiza lista de anotações não lidas
+    const notifs = await teacherNotificationService.refreshNotifications()
+    setUnreadNotes(notifs.filter((n) => !n.isRead))
   }
   useEffect(() => {
     reloadData()
+
+    const unsub = teacherNotificationService.subscribe((list) => {
+      setUnreadNotes(list.filter((n) => !n.isRead))
+    })
+    return () => unsub()
   }, [])
 
   const handlePlayClick = (child: Child) => {
@@ -103,6 +118,17 @@ export const GuardianHome: React.FC = () => {
 
       {/* PWA Install Banner with Native Prompt & Offline Benefits */}
       <PwaInstallBanner />
+
+      {/* Teacher Note Banner para os Pais (Destaque da anotação não lida mais recente) */}
+      {unreadNotes.length > 0 && (
+        <TeacherNoteBanner
+          notification={unreadNotes[0]}
+          userId={user?.id}
+          onDismiss={() => {
+            setUnreadNotes((prev) => prev.slice(1))
+          }}
+        />
+      )}
 
       {/* Guided Onboarding Wizard modal */}
       <OnboardingWizard

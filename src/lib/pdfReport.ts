@@ -7,11 +7,14 @@
 import type { Child, EvolutionSummary, ChildAchievement } from '@/types/cognikids'
 import { formatChildAge, COGNIKIDS_MODULES } from '@/types/cognikids'
 
+import { compileTeacherNotesSummary } from '@/lib/teacherNotesSummary'
+
 export function generateEvolutionPdf(
   child: Child,
   summary: EvolutionSummary,
   achievements: ChildAchievement[] = [],
   lang: string = 'pt-BR',
+  teacherNotes: any[] = [],
 ) {
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
@@ -21,6 +24,7 @@ export function generateEvolutionPdf(
 
   const periodLabel =
     summary.period === 'week' ? 'Semanal (Últimos 7 dias)' : 'Mensal (Últimos 30 dias)'
+  const teacherSummary = compileTeacherNotesSummary(teacherNotes, summary.period)
   const formattedDate = new Date().toLocaleDateString(
     lang === 'en'
       ? 'en-US'
@@ -423,6 +427,75 @@ export function generateEvolutionPdf(
       )
       .join('')}
   </div>
+
+  <!-- Resumo Semanal do Professor (Compilado das Anotações da Escola) -->
+  ${
+    teacherSummary.notes.length > 0
+      ? `
+  <div class="section-title" style="border-left: 4px solid #4f46e5; padding-left: 8px;">
+    <span>🏫 Resumo Semanal do Professor & Diário Escolar</span>
+  </div>
+
+  <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+    <div style="font-weight: 800; color: #3730a3; font-size: 10pt; margin-bottom: 4px;">
+      Compilado da Equipe Pedagógica Escolar • ${teacherSummary.teachersInvolved.join(', ') || 'Professores'}
+    </div>
+    <div style="font-size: 9pt; color: #4338ca; line-height: 1.4;">
+      ${teacherSummary.highlightText}
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+    ${teacherSummary.notes
+      .map((note) => {
+        const noteDateStr = note.note_date
+          ? new Date(note.note_date).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })
+          : 'Data recente'
+
+        return `
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 9pt;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-weight: 800; color: #312e81;">
+            ${note.author_name || 'Professor(a)'} ${note.class_group ? `(${note.class_group})` : ''}
+          </span>
+          <span style="font-size: 8pt; color: #64748b; font-weight: 600;">
+            📅 ${noteDateStr}
+          </span>
+        </div>
+        <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">
+          Aula / Atividade: <span style="color: #047857;">${note.lesson_activity}</span>
+        </div>
+        ${
+          note.observation
+            ? `<div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 6px; padding: 6px 10px; color: #334155; font-size: 8.5pt; line-height: 1.4; margin-top: 4px;">
+            "${note.observation}"
+          </div>`
+            : ''
+        }
+        ${
+          note.tags && note.tags.length > 0
+            ? `<div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">
+            ${note.tags
+              .map(
+                (t: string) =>
+                  `<span style="background: #f1f5f9; color: #475569; font-size: 7.5pt; font-weight: 700; padding: 2px 6px; border-radius: 4px;">#${t}</span>`,
+              )
+              .join('')}
+          </div>`
+            : ''
+        }
+      </div>
+    `
+      })
+      .join('')}
+  </div>
+  `
+      : ''
+  }
 
   <!-- Footer Notice -->
   <div class="footer-note">

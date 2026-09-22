@@ -43,6 +43,7 @@ import {
 } from 'lucide-react'
 import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
+import { TeacherWeeklySummaryCard } from '@/components/reports/TeacherWeeklySummaryCard'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export const EvolutionReportsPage: React.FC = () => {
@@ -89,7 +90,7 @@ export const EvolutionReportsPage: React.FC = () => {
     if (!selectedChild || !summary) return
     playStarReward(2)
     setIsExporting(true)
-    generateEvolutionPdf(selectedChild, summary, achievements, language)
+    generateEvolutionPdf(selectedChild, summary, achievements, language, teacherNotes)
     setTimeout(() => setIsExporting(false), 1000)
   }
 
@@ -339,8 +340,8 @@ export const EvolutionReportsPage: React.FC = () => {
                   Levar este relatório ao Pediatra ou à Escola?
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Gere um documento executivo formatado com o Cérebro em Flor, taxas de acerto e
-                  dicas pedagógicas.
+                  Gere um documento executivo formatado com o Cérebro em Flor, taxas de acerto,
+                  dicas pedagógicas e o Resumo Semanal do Professor.
                 </p>
               </div>
             </div>
@@ -351,95 +352,17 @@ export const EvolutionReportsPage: React.FC = () => {
               className="h-10 px-5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 shrink-0"
             >
               <Printer className="w-3.5 h-3.5 mr-1.5" />
-              <span>{isExporting ? 'Processando…' : 'Gerar PDF para Impressão'}</span>
+              <span>{isExporting ? 'Processando…' : 'Gerar PDF com Resumo Escolar'}</span>
             </Button>
           </div>
 
-          {/* Seção Diário da Escola & Anotações do Professor no Relatório */}
-          {teacherNotes.length > 0 && (
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                    <SchoolIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-800">
-                      Diário da Escola & Anotações do Professor
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      Registros pedagógicos, atividades em sala de aula e observações da equipe
-                      escolar
-                    </p>
-                  </div>
-                </div>
-
-                <span className="text-[11px] font-bold px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200 self-start sm:self-auto">
-                  {teacherNotes.length} {teacherNotes.length === 1 ? 'registro' : 'registros'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-                {teacherNotes.slice(0, 4).map((note) => {
-                  const formattedDate = note.note_date
-                    ? new Date(note.note_date).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                      })
-                    : 'Recente'
-
-                  return (
-                    <div
-                      key={note.id}
-                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs flex flex-col justify-between"
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px] text-slate-400">
-                          <span className="font-bold flex items-center gap-1 text-indigo-700">
-                            <strong>{note.author_name || 'Professor(a)'}</strong>
-                            {note.class_group && ` (${note.class_group})`}
-                          </span>
-                          <span className="flex items-center gap-1 font-medium">
-                            <Calendar className="w-3 h-3" />
-                            {formattedDate}
-                          </span>
-                        </div>
-
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-md">
-                            Atividade em Sala
-                          </span>
-                          <h4 className="font-black text-slate-800 text-sm mt-0.5">
-                            {note.lesson_activity}
-                          </h4>
-                        </div>
-
-                        {note.observation && (
-                          <p className="text-slate-600 leading-relaxed bg-white p-2.5 rounded-xl border border-slate-200/60 text-[11px]">
-                            {note.observation}
-                          </p>
-                        )}
-                      </div>
-
-                      {note.tags && note.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-200/60">
-                          {note.tags.map((t) => (
-                            <span
-                              key={t}
-                              className="text-[9px] font-bold bg-white text-slate-600 px-1.5 py-0.5 rounded-md border border-slate-200"
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+          {/* Resumo Semanal do Professor (Compilado das anotações da turma/escola para a criança) */}
+          <TeacherWeeklySummaryCard
+            child={selectedChild}
+            teacherNotes={teacherNotes}
+            period={period}
+            onExportPdf={handleExportPdf}
+          />
 
           {/* Fila de Palavras a Revisar Conectada no Relatório */}
           <VocabReviewQueueCard

@@ -9,6 +9,12 @@ import { SUPPORTED_LANGUAGES } from '@/types/cognikids'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { ConnectivityPill } from './ConnectivityPill'
 import { GuidedTourOverlay, useGuidedTour } from '@/components/tour/GuidedTourOverlay'
+import { TeacherNotificationsPopover } from '@/components/notifications/TeacherNotificationsPopover'
+import {
+  teacherNotificationService,
+  TeacherNoteNotification,
+} from '@/services/teacherNotificationService'
+import { useRealtime } from '@/hooks/use-realtime'
 import {
   getReminderConfig,
   checkShouldTriggerReminder,
@@ -73,6 +79,7 @@ export const AppShell: React.FC = () => {
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
   const [childCoins, setChildCoins] = useState<number>(60)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [teacherNotifications, setTeacherNotifications] = useState<TeacherNoteNotification[]>([])
   const { toast } = useToast()
   const { isOpen: isTourOpen, closeTour } = useGuidedTour()
 
@@ -93,9 +100,62 @@ export const AppShell: React.FC = () => {
       if (found) {
         setChildCoins(ticoGamificationService.getCoinsSync(found.id))
       }
+
+      // Inicializa notificações das crianças da família
+      await teacherNotificationService.initForChildren(list, user?.id)
     }
     load()
-  }, [isValid, navigate])
+  }, [isValid, navigate, user?.id])
+
+  // Escuta atualizações de notificações do serviço
+  useEffect(() => {
+    const unsubscribe = teacherNotificationService.subscribe((list) => {
+      setTeacherNotifications(list)
+
+      // Exibe toast para a notificação não lida mais recente se ainda não foi exibida
+      const unreadList = list.filter((n) => !n.isRead)
+      if (unreadList.length > 0) {
+        const newest = unreadList[0]
+        if (!teacherNotificationService.hasShownToast(newest.noteId, user?.id)) {
+          teacherNotificationService.markToastShown(newest.noteId, user?.id)
+
+          toast({
+            title: `📝 Nova anotação da escola para ${newest.childName}!`,
+            description: `${newest.authorName}: "${newest.lessonActivity}"`,
+            action: (
+              <Button
+                size="sm"
+                onClick={() => {
+                  teacherNotificationService.markAsRead(newest.noteId, user?.id)
+                  navigate(`/app/child/${newest.childId}#teacher-notes`)
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl"
+              >
+                Ver Diário
+              </Button>
+            ),
+          })
+
+          sendLocalNotification(
+            `📝 Nova anotação da escola para ${newest.childName}!`,
+            `${newest.authorName}: ${newest.lessonActivity}`,
+          )
+        }
+      }
+    })
+    return () => unsubscribe()
+  }, [user?.id, navigate, toast])
+
+  // Inscrição em tempo real na coleção teacher_notes para pais conectados
+  useRealtime(
+    'teacher_notes',
+    (e: any) => {
+      if (e.record) {
+        teacherNotificationService.handleRealtimeRecord(e.record, e.action as any)
+      }
+    },
+    isValid,
+  )
 
   // Keep coins in sync with custom events
   useEffect(() => {
@@ -536,6 +596,13 @@ export const AppShell: React.FC = () => {
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Notificações da Escola para os Pais */}
+          <TeacherNotificationsPopover
+            notifications={teacherNotifications}
+            unreadCount={teacherNotifications.filter((n) => !n.isRead).length}
+            userId={user?.id}
+          />
 
           <ConnectivityPill />
 
