@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T04:29:52.964Z",
+  "generatedAt": "2026-09-22T16:05:18.472Z",
   "collections": [
     {
       "name": "users",
@@ -979,12 +979,87 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "author_role",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_family",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_teacher_notes_school ON teacher_notes (school_code)",
         "CREATE INDEX idx_teacher_notes_child ON teacher_notes (child_id)",
         "CREATE INDEX idx_teacher_notes_date ON teacher_notes (note_date DESC)"
+      ]
+    },
+    {
+      "name": "note_replies",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.body.note_id != '' && @request.body.message != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "note_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "teacher_notes"
+        },
+        {
+          "name": "author_role",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["parent", "teacher"]
+        },
+        {
+          "name": "author_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "message",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "synced",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_note_replies_note ON note_replies (note_id)",
+        "CREATE INDEX idx_note_replies_created ON note_replies (created ASC)"
       ]
     }
   ]

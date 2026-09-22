@@ -9,6 +9,8 @@ export interface CreateTeacherNoteInput {
   class_group?: string
   lesson_activity: string
   author_name?: string
+  author_role?: 'teacher' | 'parent'
+  is_family?: boolean
   note_date?: string
   observation?: string
   tags?: string[]
@@ -72,13 +74,23 @@ class TeacherNotesService {
     const noteDate = input.note_date || new Date().toISOString()
     const nowIso = new Date().toISOString()
 
+    const isFamily = Boolean(input.is_family || input.author_role === 'parent')
+    const authorRole = isFamily ? 'parent' : 'teacher'
+    const defaultAuthor = isFamily ? 'Família' : 'Professor(a)'
+
     const localItem: TeacherNote = {
       id: `local_note_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      school_code: input.school_code.trim().toUpperCase(),
+      school_code: input.school_code
+        ? input.school_code.trim().toUpperCase()
+        : isFamily
+          ? 'FAMILIA'
+          : 'ESCOLA',
       child_id: input.child_id,
       class_group: input.class_group?.trim() || '',
       lesson_activity: input.lesson_activity.trim(),
-      author_name: input.author_name?.trim() || 'Professor(a)',
+      author_name: input.author_name?.trim() || defaultAuthor,
+      author_role: authorRole,
+      is_family: isFamily,
       note_date: noteDate,
       observation: input.observation?.trim() || '',
       tags: input.tags || [],
@@ -89,17 +101,20 @@ class TeacherNotesService {
 
     if (isOnline) {
       try {
-        const created = await pb.collection('teacher_notes').create<TeacherNote>({
+        const payload: Record<string, any> = {
           school_code: localItem.school_code,
           child_id: localItem.child_id,
           class_group: localItem.class_group,
           lesson_activity: localItem.lesson_activity,
           author_name: localItem.author_name,
+          author_role: localItem.author_role,
+          is_family: localItem.is_family,
           note_date: localItem.note_date,
           observation: localItem.observation,
           tags: localItem.tags,
           synced: true,
-        })
+        }
+        const created = await pb.collection('teacher_notes').create<TeacherNote>(payload)
         return {
           ...created,
           synced: true,
@@ -135,6 +150,8 @@ class TeacherNotesService {
           class_group: item.class_group,
           lesson_activity: item.lesson_activity,
           author_name: item.author_name,
+          author_role: item.author_role || (item.is_family ? 'parent' : 'teacher'),
+          is_family: Boolean(item.is_family),
           note_date: item.note_date,
           observation: item.observation,
           tags: item.tags,

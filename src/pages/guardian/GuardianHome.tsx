@@ -34,10 +34,18 @@ import { TicoWelcomeInviteModal } from '@/components/pwa/TicoWelcomeInviteModal'
 import { Coins, Shirt, ShoppingBag } from 'lucide-react'
 import { ticoGamificationService } from '@/services/ticoGamification'
 import { TeacherNoteBanner } from '@/components/notifications/TeacherNoteBanner'
+import { WeeklyBulletinBanner } from '@/components/notifications/WeeklyBulletinBanner'
 import {
   teacherNotificationService,
   TeacherNoteNotification,
 } from '@/services/teacherNotificationService'
+import {
+  getReminderConfig,
+  isWeeklyBulletinTimeReached,
+  hasSeenCurrentWeeklyBulletin,
+  sendLocalNotification,
+} from '@/services/reminders'
+import { teacherNotesService } from '@/services/teacherNotes'
 
 export const GuardianHome: React.FC = () => {
   const { user } = useAuth()
@@ -53,6 +61,8 @@ export const GuardianHome: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [unreadNotes, setUnreadNotes] = useState<TeacherNoteNotification[]>([])
+  const [showWeeklyBulletin, setShowWeeklyBulletin] = useState(false)
+  const [allFamilyNotes, setAllFamilyNotes] = useState<any[]>([])
 
   const reloadData = async () => {
     setIsLoading(true)
@@ -87,6 +97,28 @@ export const GuardianHome: React.FC = () => {
     // Atualiza lista de anotações não lidas
     const notifs = await teacherNotificationService.refreshNotifications()
     setUnreadNotes(notifs.filter((n) => !n.isRead))
+
+    // Carrega anotações de todas as crianças para o Boletim Semanal
+    const notesPromises = kids.map((k) => teacherNotesService.fetchNotesByChild(k.id))
+    const notesArrays = await Promise.all(notesPromises)
+    const combinedNotes = notesArrays.flat()
+    setAllFamilyNotes(combinedNotes)
+
+    // Avalia regra do Boletim Semanal com horário fixo
+    const remConfig = await getReminderConfig()
+    const isTime = isWeeklyBulletinTimeReached(remConfig)
+    const alreadySeen = hasSeenCurrentWeeklyBulletin(user?.id)
+
+    if (isTime && !alreadySeen && combinedNotes.length > 0) {
+      setShowWeeklyBulletin(true)
+      // Dispara notificação nativa do navegador se ainda não disparada
+      sendLocalNotification(
+        '📋 Boletim Semanal do Professor Disponível!',
+        'O resumo pedagógico das atividades escolares já está em destaque na tela inicial do CogniKids.',
+      )
+    } else {
+      setShowWeeklyBulletin(false)
+    }
   }
   useEffect(() => {
     reloadData()
@@ -119,8 +151,18 @@ export const GuardianHome: React.FC = () => {
       {/* PWA Install Banner with Native Prompt & Offline Benefits */}
       <PwaInstallBanner />
 
+      {/* Boletim Semanal em Horário Fixo (Destaque Especial de Fim de Semana) */}
+      {showWeeklyBulletin && (
+        <WeeklyBulletinBanner
+          childrenList={childrenList}
+          allNotes={allFamilyNotes}
+          userId={user?.id}
+          onDismiss={() => setShowWeeklyBulletin(false)}
+        />
+      )}
+
       {/* Teacher Note Banner para os Pais (Destaque da anotação não lida mais recente) */}
-      {unreadNotes.length > 0 && (
+      {!showWeeklyBulletin && unreadNotes.length > 0 && (
         <TeacherNoteBanner
           notification={unreadNotes[0]}
           userId={user?.id}

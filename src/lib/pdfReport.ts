@@ -428,17 +428,17 @@ export function generateEvolutionPdf(
       .join('')}
   </div>
 
-  <!-- Resumo Semanal do Professor (Compilado das Anotações da Escola) -->
+  <!-- Resumo do Diário (Registros da Escola e da Família) -->
   ${
     teacherSummary.notes.length > 0
       ? `
   <div class="section-title" style="border-left: 4px solid #4f46e5; padding-left: 8px;">
-    <span>🏫 Resumo Semanal do Professor & Diário Escolar</span>
+    <span>🏫 Resumo do Diário de Desenvolvimento (Escola & Família)</span>
   </div>
 
   <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
     <div style="font-weight: 800; color: #3730a3; font-size: 10pt; margin-bottom: 4px;">
-      Compilado da Equipe Pedagógica Escolar • ${teacherSummary.teachersInvolved.join(', ') || 'Professores'}
+      Compilado de Registros • ${teacherSummary.teachersInvolved.join(', ') || 'Professores e Família'}
     </div>
     <div style="font-size: 9pt; color: #4338ca; line-height: 1.4;">
       ${teacherSummary.highlightText}
@@ -456,18 +456,26 @@ export function generateEvolutionPdf(
             })
           : 'Data recente'
 
+        const isFamily = Boolean(
+          note.is_family || note.author_role === 'parent' || note.school_code === 'FAMILIA',
+        )
+        const authorPrefix = isFamily ? '🏡 Família' : '🏫 Escola'
+        const badgeBg = isFamily ? '#fef3c7' : '#e0e7ff'
+        const badgeColor = isFamily ? '#92400e' : '#3730a3'
+
         return `
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 9pt;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
           <span style="font-weight: 800; color: #312e81;">
-            ${note.author_name || 'Professor(a)'} ${note.class_group ? `(${note.class_group})` : ''}
+            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 6px; border-radius: 4px; font-size: 7.5pt; margin-right: 4px;">${authorPrefix}</span>
+            ${note.author_name || (isFamily ? 'Família' : 'Professor(a)')} ${note.class_group ? `(${note.class_group})` : ''}
           </span>
           <span style="font-size: 8pt; color: #64748b; font-weight: 600;">
             📅 ${noteDateStr}
           </span>
         </div>
         <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">
-          Aula / Atividade: <span style="color: #047857;">${note.lesson_activity}</span>
+          ${isFamily ? 'Avanço / Observação:' : 'Aula / Atividade:'} <span style="color: #047857;">${note.lesson_activity}</span>
         </div>
         ${
           note.observation

@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { getSchoolPortalData, type SchoolPortalResult } from '@/services/children'
 import type { Child, GameSession, ModuleProgress, SchoolAccessToken } from '@/types/cognikids'
 import { COGNIKIDS_MODULES, formatChildAge } from '@/types/cognikids'
+import { NoteRepliesThread } from '@/components/diary/NoteRepliesThread'
 import { BrainFlower } from '@/components/progress/BrainFlower'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -1568,9 +1569,16 @@ export const SchoolViewPortalPage: React.FC = () => {
                                     ))}
                                   </div>
                                 )}
+
+                                {/* Thread de Conversa com os Pais (Professor pode responder comentários) */}
+                                <NoteRepliesThread
+                                  note={note}
+                                  currentRole="teacher"
+                                  currentUserName={noteFormTeacherName || 'Professor(a)'}
+                                />
                               </div>
                             )
-                          })}
+                          })}{' '}
                         </div>
                       )
                     })()}

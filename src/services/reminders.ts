@@ -305,40 +305,55 @@ export function getRandomVocabTip(lang: AppLanguage = 'en'): VocabPracticeTip {
 }
 
 export async function getReminderConfig(): Promise<GuardianReminderConfig> {
-  // 1. Try from authenticated user record
-  if (pb.authStore.isValid && pb.authStore.record) {
-    const rec = pb.authStore.record as any
-    if (
-      rec.reminder_time !== undefined ||
-      rec.reminder_enabled !== undefined ||
-      rec.vocab_reminder_enabled !== undefined
-    ) {
-      return {
-        reminder_enabled: Boolean(rec.reminder_enabled),
-        reminder_time: rec.reminder_time || '18:00',
-        vocab_reminder_enabled: Boolean(rec.vocab_reminder_enabled),
-        vocab_reminder_time: rec.vocab_reminder_time || '10:00',
-        vocab_reminder_language: rec.vocab_reminder_language || 'en',
-      }
-    }
-  }
-
-  // 2. Fallback to LocalStorage
+  let storedLocal: Partial<GuardianReminderConfig> = {}
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY)
     if (raw) {
-      return JSON.parse(raw)
+      storedLocal = JSON.parse(raw)
     }
   } catch {
     /* intentionally ignored */
   }
 
+  // 1. Try from authenticated user record
+  if (pb.authStore.isValid && pb.authStore.record) {
+    const rec = pb.authStore.record as any
+    return {
+      reminder_enabled:
+        rec.reminder_enabled !== undefined
+          ? Boolean(rec.reminder_enabled)
+          : Boolean(storedLocal.reminder_enabled),
+      reminder_time: rec.reminder_time || storedLocal.reminder_time || '18:00',
+      vocab_reminder_enabled:
+        rec.vocab_reminder_enabled !== undefined
+          ? Boolean(rec.vocab_reminder_enabled)
+          : Boolean(storedLocal.vocab_reminder_enabled),
+      vocab_reminder_time: rec.vocab_reminder_time || storedLocal.vocab_reminder_time || '10:00',
+      vocab_reminder_language:
+        rec.vocab_reminder_language || storedLocal.vocab_reminder_language || 'en',
+      bulletin_reminder_enabled:
+        storedLocal.bulletin_reminder_enabled !== undefined
+          ? storedLocal.bulletin_reminder_enabled
+          : true,
+      bulletin_day_of_week:
+        storedLocal.bulletin_day_of_week !== undefined ? storedLocal.bulletin_day_of_week : 5, // Sexta-feira
+      bulletin_time: storedLocal.bulletin_time || '18:00',
+    }
+  }
+
   return {
-    reminder_enabled: false,
-    reminder_time: '18:00',
-    vocab_reminder_enabled: false,
-    vocab_reminder_time: '10:00',
-    vocab_reminder_language: 'en',
+    reminder_enabled: storedLocal.reminder_enabled || false,
+    reminder_time: storedLocal.reminder_time || '18:00',
+    vocab_reminder_enabled: storedLocal.vocab_reminder_enabled || false,
+    vocab_reminder_time: storedLocal.vocab_reminder_time || '10:00',
+    vocab_reminder_language: storedLocal.vocab_reminder_language || 'en',
+    bulletin_reminder_enabled:
+      storedLocal.bulletin_reminder_enabled !== undefined
+        ? storedLocal.bulletin_reminder_enabled
+        : true,
+    bulletin_day_of_week:
+      storedLocal.bulletin_day_of_week !== undefined ? storedLocal.bulletin_day_of_week : 5,
+    bulletin_time: storedLocal.bulletin_time || '18:00',
   }
 }
 
@@ -440,6 +455,84 @@ export function checkShouldTriggerReminder(config: GuardianReminderConfig): bool
   // Trigger if current time has reached or passed the target hour:minute
   if (currentH > targetH || (currentH === targetH && currentM >= targetM)) {
     return true
+  }
+
+  return false
+}
+
+const LAST_BULLETIN_KEY_PREFIX = 'cognikids_last_seen_bulletin_week_'
+
+export function getBulletinStorageKey(userId?: string): string {
+  const uid = userId || pb.authStore.model?.id || 'anonymous'
+  return `${LAST_BULLETIN_KEY_PREFIX}${uid}`
+}
+
+/**
+ * Retorna o identificador da semana atual (ex: 2026-W37)
+ */
+export function getCurrentWeekIdentifier(): string {
+  const d = new Date()
+  const year = d.getFullYear()
+  // Calcula semana do ano
+  const firstDayOfYear = new Date(year, 0, 1)
+  const pastDaysOfYear = (d.getTime() - firstDayOfYear.getTime()) / 86400000
+  const weekNum = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)
+  return `${year}-W${String(weekNum).padStart(2, '0')}`
+}
+
+/**
+ * Verifica se o responsável já visualizou/dispensou o boletim da semana atual
+ */
+export function hasSeenCurrentWeeklyBulletin(userId?: string): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    const weekId = getCurrentWeekIdentifier()
+    const stored = localStorage.getItem(getBulletinStorageKey(userId))
+    return stored === weekId
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Marca o boletim da semana atual como visto para não reaparecer
+ */
+export function markCurrentWeeklyBulletinSeen(userId?: string) {
+  if (typeof window === 'undefined') return
+  try {
+    const weekId = getCurrentWeekIdentifier()
+    localStorage.setItem(getBulletinStorageKey(userId), weekId)
+  } catch (err) {
+    console.warn('Failed to mark weekly bulletin seen', err)
+  }
+}
+
+/**
+ * Verifica se já atingiu o horário configurado do boletim semanal na semana atual
+ * (Padrão: Sexta-feira a partir das 18:00, ou após)
+ */
+export function isWeeklyBulletinTimeReached(config: GuardianReminderConfig): boolean {
+  if (config.bulletin_reminder_enabled === false) return false
+
+  const targetDay = config.bulletin_day_of_week !== undefined ? config.bulletin_day_of_week : 5 // 5 = Sexta
+  const [targetH, targetM] = (config.bulletin_time || '18:00').split(':').map(Number)
+  if (isNaN(targetH) || isNaN(targetM)) return false
+
+  const now = new Date()
+  const currentDay = now.getDay()
+  const currentH = now.getHours()
+  const currentM = now.getMinutes()
+
+  // Se o dia da semana atual já passou do dia configurado
+  if (currentDay > targetDay) {
+    return true
+  }
+
+  // Se for o mesmo dia da semana, verificar horário
+  if (currentDay === targetDay) {
+    if (currentH > targetH || (currentH === targetH && currentM >= targetM)) {
+      return true
+    }
   }
 
   return false

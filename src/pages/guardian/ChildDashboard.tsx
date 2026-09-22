@@ -13,7 +13,10 @@ import { BrainFlower } from '@/components/progress/BrainFlower'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { computeChildDevelopmentDiagnostic } from '@/lib/developmentDiagnostic'
 import { useLanguage } from '@/context/LanguageContext'
+import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Gamepad2,
   Sparkles,
@@ -30,6 +33,13 @@ import {
   School,
   Clock,
   History,
+  Plus,
+  BookOpen,
+  Calendar,
+  Tag,
+  MessageSquare,
+  School as SchoolIcon,
+  FileText,
 } from 'lucide-react'
 import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
@@ -39,15 +49,8 @@ import { offlineSyncService } from '@/lib/offlineSync'
 import { fetchChildSessions } from '@/services/children'
 import { teacherNotesService } from '@/services/teacherNotes'
 import type { TeacherNote } from '@/types/cognikids'
-import {
-  BookOpen,
-  Calendar,
-  Tag,
-  MessageSquare,
-  School as SchoolIcon,
-  FileText,
-} from 'lucide-react'
 import { TeacherWeeklySummaryCard } from '@/components/reports/TeacherWeeklySummaryCard'
+import { NoteRepliesThread } from '@/components/diary/NoteRepliesThread'
 import {
   Dialog,
   DialogContent,
@@ -64,18 +67,8 @@ export const ChildDashboardPage: React.FC = () => {
   const navigate = useNavigate()
   const { playPop } = useSound()
   const { language, t } = useLanguage()
-
-  // Auto-scroll to teacher-notes if hash is present
-  useEffect(() => {
-    if (window.location.hash === '#teacher-notes') {
-      setTimeout(() => {
-        const el = document.getElementById('teacher-notes')
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      }, 300)
-    }
-  }, [activeChildId])
+  const { user } = useAuth()
+  const { toast } = useToast()
 
   const [child, setChild] = useState<Child | null>(null)
   const [progressMap, setProgressMap] = useState<Record<string, number>>({})
@@ -87,7 +80,62 @@ export const ChildDashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'flower' | 'badges'>('flower')
   const [teacherNotes, setTeacherNotes] = useState<TeacherNote[]>([])
+  const [showAddFamilyNote, setShowAddFamilyNote] = useState(false)
+  const [familyNoteActivity, setFamilyNoteActivity] = useState('')
+  const [familyNoteObservation, setFamilyNoteObservation] = useState('')
+  const [isSavingFamilyNote, setIsSavingFamilyNote] = useState(false)
   const [isLoadingNotes, setIsLoadingNotes] = useState(false)
+
+  // Auto-scroll to teacher-notes if hash is present
+  useEffect(() => {
+    if (window.location.hash === '#teacher-notes') {
+      setTimeout(() => {
+        const el = document.getElementById('teacher-notes')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 300)
+    }
+  }, [activeChildId, teacherNotes.length])
+
+  const handleSaveFamilyNote = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!child || !familyNoteActivity.trim()) return
+
+    setIsSavingFamilyNote(true)
+    playPop()
+    try {
+      const created = await teacherNotesService.saveNote({
+        school_code: 'FAMILIA',
+        child_id: child.id,
+        lesson_activity: familyNoteActivity.trim(),
+        author_name: user?.name ? `Família (${user.name})` : 'Família',
+        author_role: 'parent',
+        is_family: true,
+        note_date: new Date().toISOString(),
+        observation: familyNoteObservation.trim(),
+        tags: ['Família em Casa', 'Avanço Observado'],
+      })
+
+      setTeacherNotes((prev) => [created, ...prev])
+      setFamilyNoteActivity('')
+      setFamilyNoteObservation('')
+      setShowAddFamilyNote(false)
+
+      toast({
+        title: 'Anotação da família registrada! 🌟',
+        description: 'Seu relato agora faz parte do diário e dos relatórios de evolução.',
+      })
+    } catch (err) {
+      console.error('Failed to save family note', err)
+      toast({
+        title: 'Erro ao registrar anotação',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSavingFamilyNote(false)
+    }
+  }
 
   useEffect(() => {
     if (!activeChildId) return
@@ -392,61 +440,159 @@ export const ChildDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Seção Diário da Escola & Anotações do Professor */}
-      {teacherNotes.length > 0 && (
-        <div
-          id="teacher-notes"
-          className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4 scroll-mt-20"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-                <SchoolIcon className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-black text-slate-800">
-                    Diário da Escola & Anotações do Professor
-                  </h2>
-                  <span className="text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
-                    {teacherNotes.length} {teacherNotes.length === 1 ? 'registro' : 'registros'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Acompanhe em primeira mão o que a escola e os professores registraram sobre as
-                  atividades e o desenvolvimento de {child.name}.
-                </p>
-              </div>
+      {/* Seção Diário da Escola & Anotações de Progresso da Criança */}
+      <div
+        id="teacher-notes"
+        className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4 scroll-mt-20"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+              <SchoolIcon className="w-6 h-6" />
             </div>
-
-            <div className="flex items-center gap-2">
-              <Link to={`/app/reports/${child.id}`}>
-                <Button
-                  size="sm"
-                  className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Ver Resumo Semanal Completo</span>
-                </Button>
-              </Link>
-
-              <Link to="/escola">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                >
-                  Portal da Escola
-                </Button>
-              </Link>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-slate-800">
+                  Diário de Desenvolvimento & Anotações
+                </h2>
+                <span className="text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                  {teacherNotes.length} {teacherNotes.length === 1 ? 'registro' : 'registros'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Acompanhe o que os professores e a família registraram sobre conquistas, falas e
+                atividades de {child.name}.
+              </p>
             </div>
           </div>
 
-          {/* Cartão de Resumo Semanal Compacto no Diário */}
-          <TeacherWeeklySummaryCard child={child} teacherNotes={teacherNotes} period="week" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                playPop()
+                setShowAddFamilyNote(!showAddFamilyNote)
+              }}
+              className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Registrar Avanço em Casa</span>
+            </Button>
 
+            <Link to={`/app/reports/${child.id}`}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-2xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-bold flex items-center gap-1.5"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Resumo Semanal</span>
+              </Button>
+            </Link>
+
+            <Link to="/escola">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Portal da Escola
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Formulário Colapsável: Anotação da Família (Para pais com ou sem vínculo escolar) */}
+        {showAddFamilyNote && (
+          <form
+            onSubmit={handleSaveFamilyNote}
+            className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3 animate-fade-in"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-900">
+                  Nova Anotação da Família para {child.name}
+                </h4>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-emerald-800 border border-emerald-200">
+                Autoria: Família
+              </span>
+            </div>
+
+            <p className="text-[11px] text-emerald-700">
+              Registre conquistas que você observou em casa (ex: novas palavras que falou sozinho,
+              contagem, autonomia ou momentos especiais).
+            </p>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">
+                Título do Avanço ou Atividade *
+              </label>
+              <Input
+                type="text"
+                placeholder="ex: Falou 'abacaxi' e 'obrigado' sozinho no jantar..."
+                value={familyNoteActivity}
+                onChange={(e) => setFamilyNoteActivity(e.target.value)}
+                required
+                className="h-10 text-xs rounded-xl bg-white"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">Detalhes / Observação</label>
+              <textarea
+                rows={3}
+                placeholder="Descreva o contexto, como a criança reagiu, novas frases ou entusiasmo..."
+                value={familyNoteObservation}
+                onChange={(e) => setFamilyNoteObservation(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddFamilyNote(false)}
+                className="text-xs rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSavingFamilyNote || !familyNoteActivity.trim()}
+                size="sm"
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+              >
+                {isSavingFamilyNote ? 'Salvando…' : 'Salvar no Diário'}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* Cartão de Resumo Semanal Compacto no Diário */}
+        {teacherNotes.length > 0 && (
+          <TeacherWeeklySummaryCard child={child} teacherNotes={teacherNotes} period="week" />
+        )}
+
+        {teacherNotes.length === 0 ? (
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+            <p className="text-xs font-bold text-slate-700">
+              Nenhuma anotação registrada ainda para {child.name}.
+            </p>
+            <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+              Mesmo sem escola cadastrada, você pode registrar avanços em casa clicando no botão
+              "Registrar Avanço em Casa" acima!
+            </p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-            {teacherNotes.slice(0, 4).map((note) => {
+            {teacherNotes.map((note) => {
+              const isFamilyNote = Boolean(
+                note.is_family || note.author_role === 'parent' || note.school_code === 'FAMILIA',
+              )
               const formattedDate = note.note_date
                 ? new Date(note.note_date).toLocaleDateString('pt-BR', {
                     day: '2-digit',
@@ -458,13 +604,25 @@ export const ChildDashboardPage: React.FC = () => {
               return (
                 <div
                   key={note.id}
-                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs flex flex-col justify-between"
+                  className={`p-4 rounded-2xl border space-y-2 text-xs flex flex-col justify-between ${
+                    isFamilyNote
+                      ? 'bg-amber-50/40 border-amber-200/90'
+                      : 'bg-slate-50 border-slate-200/80'
+                  }`}
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="font-semibold flex items-center gap-1 text-indigo-700">
-                        <SchoolIcon className="w-3.5 h-3.5" />
-                        <strong>{note.author_name || 'Professor(a)'}</strong>
+                      <span
+                        className={`font-semibold flex items-center gap-1 ${isFamilyNote ? 'text-amber-800' : 'text-indigo-700'}`}
+                      >
+                        {isFamilyNote ? (
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        ) : (
+                          <SchoolIcon className="w-3.5 h-3.5" />
+                        )}
+                        <strong>
+                          {note.author_name || (isFamilyNote ? 'Família' : 'Professor(a)')}
+                        </strong>
                         {note.class_group && ` (${note.class_group})`}
                       </span>
                       <span className="flex items-center gap-1 font-medium">
@@ -474,8 +632,14 @@ export const ChildDashboardPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-md">
-                        Aula / Atividade
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-md ${
+                          isFamilyNote
+                            ? 'text-amber-800 bg-amber-100'
+                            : 'text-emerald-700 bg-emerald-50'
+                        }`}
+                      >
+                        {isFamilyNote ? 'Registro da Família' : 'Aula / Atividade Escolar'}
                       </span>
                       <h4 className="font-black text-slate-800 text-sm mt-0.5">
                         {note.lesson_activity}
@@ -501,12 +665,19 @@ export const ChildDashboardPage: React.FC = () => {
                       ))}
                     </div>
                   )}
+
+                  {/* Thread de Conversa / Resposta para os Pais */}
+                  <NoteRepliesThread
+                    note={note}
+                    currentRole="parent"
+                    currentUserName={user?.name || 'Família'}
+                  />
                 </div>
               )
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Main Tabs: Cérebro em Flor & Módulos vs Medalhas & Conquistas */}
       <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)}>

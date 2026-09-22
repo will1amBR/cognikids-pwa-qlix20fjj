@@ -66,7 +66,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Menu } from 'lucide-react'
+import { Menu, HeartPulse } from 'lucide-react'
 
 export const AppShell: React.FC = () => {
   const { user, logout, isValid } = useAuth()
@@ -316,6 +316,7 @@ export const AppShell: React.FC = () => {
           icon: History,
         },
         { label: 'Guia Temático', path: '/app/themes-guide', icon: BookOpen },
+        { label: 'Dicas & Bem-estar', path: '/app/health-guide', icon: HeartPulse },
         { label: t('nav.community'), path: '/app/community', icon: Share2 },
         { label: t('nav.settings'), path: '/app/settings', icon: Settings },
       ]
@@ -367,6 +368,12 @@ export const AppShell: React.FC = () => {
           desc: 'PDFs e gráficos diagnósticos clínicos/pedagógicos',
         },
         {
+          label: 'Dicas & Bem-estar',
+          path: '/app/health-guide',
+          icon: HeartPulse,
+          desc: 'Febre, engasgo, quedas e cuidados com a saúde infantil',
+        },
+        {
           label: 'Portal da Escola & Convites',
           path: '/app/community',
           icon: Share2,
@@ -403,6 +410,12 @@ export const AppShell: React.FC = () => {
           path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
           icon: TrendingUp,
           desc: 'PDFs e gráficos diagnósticos clínicos/pedagógicos',
+        },
+        {
+          label: 'Dicas & Bem-estar',
+          path: '/app/health-guide',
+          icon: HeartPulse,
+          desc: 'Febre, engasgo, quedas e cuidados com a saúde infantil',
         },
         {
           label: 'Guia Temático',

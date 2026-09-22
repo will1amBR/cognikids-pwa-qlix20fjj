@@ -25,6 +25,7 @@ import { InvitesAndSchoolPage } from './pages/guardian/InvitesAndSchoolPage'
 import { SchoolViewPortalPage } from './pages/guardian/SchoolViewPortalPage'
 import { SettingsPage } from './pages/guardian/SettingsPage'
 import { GuardianThemesGuidePage } from './pages/guardian/GuardianThemesGuidePage'
+import { GuardianHealthGuidePage } from './pages/guardian/GuardianHealthGuidePage'
 import { TicoWardrobePage } from './pages/guardian/TicoWardrobePage'
 
 import { JuniorHome } from './pages/junior/JuniorHome'
@@ -157,6 +158,8 @@ export function App() {
                 <Route path="invites" element={<InvitesAndSchoolPage />} />
                 <Route path="community" element={<InvitesAndSchoolPage />} />
                 <Route path="themes-guide" element={<GuardianThemesGuidePage />} />
+                <Route path="health-guide" element={<GuardianHealthGuidePage />} />
+                <Route path="dicas-saude" element={<GuardianHealthGuidePage />} />
                 <Route path="wardrobe" element={<TicoWardrobePage />} />
                 <Route path="loja" element={<TicoWardrobePage />} />
                 <Route path="settings" element={<SettingsPage />} />

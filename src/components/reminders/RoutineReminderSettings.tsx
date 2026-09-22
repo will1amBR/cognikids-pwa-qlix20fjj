@@ -45,6 +45,9 @@ export const RoutineReminderSettings: React.FC<RoutineReminderSettingsProps> = (
     vocab_reminder_enabled: false,
     vocab_reminder_time: '10:00',
     vocab_reminder_language: 'en',
+    bulletin_reminder_enabled: true,
+    bulletin_day_of_week: 5,
+    bulletin_time: '18:00',
   })
   const [permissionState, setPermissionState] = useState<NotificationPermission>('default')
   const [isSaving, setIsSaving] = useState(false)
@@ -156,6 +159,29 @@ export const RoutineReminderSettings: React.FC<RoutineReminderSettingsProps> = (
     })
   }
 
+  const handleTestBulletinReminder = () => {
+    playPop()
+    sendLocalNotification(
+      '📋 Boletim Semanal do Professor Disponível!',
+      'O resumo pedagógico das atividades e do desenvolvimento da criança já está disponível na Home e no Diário!',
+    )
+    toast({
+      title: '📋 Boletim Semanal do Professor',
+      description:
+        'O Resumo Semanal da equipe pedagógica e do diário foi destacado na Home do responsável.',
+    })
+  }
+
+  const DAYS_OF_WEEK = [
+    { value: 0, label: 'Domingo' },
+    { value: 1, label: 'Segunda-feira' },
+    { value: 2, label: 'Terça-feira' },
+    { value: 3, label: 'Quarta-feira' },
+    { value: 4, label: 'Quinta-feira' },
+    { value: 5, label: 'Sexta-feira (Padrão sugerido)' },
+    { value: 6, label: 'Sábado' },
+  ]
+
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -243,6 +269,94 @@ export const RoutineReminderSettings: React.FC<RoutineReminderSettingsProps> = (
                 Solicitar permissão de notificação
               </Button>
             )}
+          </div>
+        </div>
+
+        {/* Weekly Teacher Bulletin Reminder Section */}
+        <div className="pt-6 border-t border-slate-200/80 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-slate-800">
+                    Boletim da Semana com Horário Fixo
+                  </h3>
+                  <span className="text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                    Resumo Escolar
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Destaque automático do Resumo Semanal do Professor na Home e envio de notificação
+                </p>
+              </div>
+            </div>
+
+            <Switch
+              checked={config.bulletin_reminder_enabled !== false}
+              onCheckedChange={async (enabled) => {
+                playPop()
+                const updated = { ...config, bulletin_reminder_enabled: enabled }
+                if (enabled && 'Notification' in window && Notification.permission !== 'granted') {
+                  const perm = await requestBrowserNotificationPermission()
+                  setPermissionState(perm)
+                }
+                setConfig(updated)
+                await saveReminderConfig(updated)
+              }}
+              aria-label="Ativar boletim da semana com horário fixo"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Dia da semana do boletim */}
+            <div className="space-y-1.5 text-left bg-indigo-50/50 p-4 rounded-2xl border border-indigo-200/70">
+              <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Dia de Liberação do Boletim</span>
+              </Label>
+              <select
+                value={config.bulletin_day_of_week !== undefined ? config.bulletin_day_of_week : 5}
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, bulletin_day_of_week: Number(e.target.value) }))
+                }
+                disabled={config.bulletin_reminder_enabled === false}
+                className="w-full rounded-xl h-11 px-3 bg-white font-bold text-sm border border-slate-200 text-slate-800 outline-none"
+              >
+                {DAYS_OF_WEEK.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400">
+                Padrão recomendado: Sexta-feira para acompanhar o fechamento da semana escolar.
+              </p>
+            </div>
+
+            {/* Horário do boletim */}
+            <div className="space-y-1.5 text-left bg-indigo-50/50 p-4 rounded-2xl border border-indigo-200/70">
+              <Label
+                htmlFor="bulletinTime"
+                className="text-xs font-bold text-slate-700 flex items-center gap-1.5"
+              >
+                <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Horário Fixo</span>
+              </Label>
+              <Input
+                id="bulletinTime"
+                type="time"
+                value={config.bulletin_time || '18:00'}
+                onChange={(e) => setConfig((prev) => ({ ...prev, bulletin_time: e.target.value }))}
+                disabled={config.bulletin_reminder_enabled === false}
+                className="rounded-xl h-11 bg-white font-mono font-bold text-base"
+              />
+              <p className="text-[11px] text-slate-400">
+                No horário estipulado, o resumo da semana ganha destaque especial na Home.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -351,11 +465,11 @@ export const RoutineReminderSettings: React.FC<RoutineReminderSettingsProps> = (
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleTestVocabReminder}
-              className="text-xs font-bold text-sky-700 border-sky-200 hover:bg-sky-50 rounded-xl flex-1 sm:flex-initial"
+              onClick={handleTestBulletinReminder}
+              className="text-xs font-bold text-indigo-700 border-indigo-200 hover:bg-indigo-50 rounded-xl flex-1 sm:flex-initial"
             >
-              <Languages className="w-3.5 h-3.5 mr-1 text-sky-600" />
-              Testar Dica de Vocabulário
+              <BookOpen className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+              Testar Notificação de Boletim
             </Button>
           </div>
 

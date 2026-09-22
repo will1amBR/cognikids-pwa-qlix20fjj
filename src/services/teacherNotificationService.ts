@@ -16,6 +16,7 @@ export interface TeacherNoteNotification {
   created: string
   isRead: boolean
   isOfflineSync?: boolean
+  type?: 'note' | 'reply'
 }
 
 const READ_NOTES_STORAGE_PREFIX = 'cognikids_read_teacher_notes_'
@@ -48,6 +49,27 @@ class TeacherNotificationService {
       teacherNotesService.onSyncChange(() => {
         this.syncAndCheckNotifications()
       })
+
+      // Escuta criação em tempo real do PocketBase para teacher_notes e note_replies
+      try {
+        pb.collection('teacher_notes')
+          .subscribe('*', (e) => {
+            if (e.record) {
+              this.handleRealtimeRecord(e.record as any, e.action as any)
+            }
+          })
+          .catch(() => {})
+
+        pb.collection('note_replies')
+          .subscribe('*', (e) => {
+            if (e.record && e.action === 'create') {
+              this.handleRealtimeReply(e.record as any)
+            }
+          })
+          .catch(() => {})
+      } catch (err) {
+        console.warn('Realtime subscription to teacher notes/replies not active', err)
+      }
     }
   }
 
@@ -226,9 +248,58 @@ class TeacherNotificationService {
       })
       .sort((a, b) => new Date(b.noteDate).getTime() - new Date(a.noteDate).getTime())
 
+    // 4. Busca respostas recentes de professores nas anotações das crianças para notificar os pais
+    if (serverNotes.length > 0) {
+      try {
+        const noteIds = serverNotes.map((n) => n.id)
+        const filterExpr = noteIds.map((id) => `note_id = '${id}'`).join(' || ')
+        const replies = await pb.collection('note_replies').getFullList<any>({
+          filter: `(${filterExpr}) && author_role = 'teacher'`,
+          sort: '-created',
+        })
+
+        replies.forEach((rep) => {
+          const parentNote = serverNotes.find((n) => n.id === rep.note_id)
+          if (parentNote) {
+            const kid = childMap.get(parentNote.child_id)
+            const replyNotifId = `reply_${rep.id}`
+            const isRead = readSet.has(replyNotifId)
+
+            notifications.push({
+              id: replyNotifId,
+              noteId: parentNote.id,
+              childId: parentNote.child_id,
+              childName: kid?.name || 'Criança',
+              schoolCode: parentNote.school_code || 'ESCOLA',
+              authorName: rep.author_name || 'Professor(a)',
+              lessonActivity: `Resposta do Professor em: "${parentNote.lesson_activity}"`,
+              observation: rep.message,
+              tags: ['Resposta da Escola', 'Diálogo'],
+              noteDate: rep.created,
+              created: rep.created,
+              isRead,
+              isOfflineSync: false,
+              type: 'reply',
+            })
+          }
+        })
+      } catch (err) {
+        console.warn('Could not fetch teacher replies for notifications', err)
+      }
+    }
+
+    // Ordena tudo cronologicamente
+    notifications.sort((a, b) => new Date(b.noteDate).getTime() - new Date(a.noteDate).getTime())
+
     this.cachedNotifications = notifications
     this.notifyListeners()
     return notifications
+  }
+
+  public handleRealtimeReply(replyRecord: any) {
+    if (replyRecord.author_role !== 'teacher') return
+    // Dispara refresh completo para associar com a criança correta
+    this.refreshNotifications()
   }
 
   /**

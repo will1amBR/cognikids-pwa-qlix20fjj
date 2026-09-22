@@ -146,12 +146,14 @@ export interface CouponRedemptionRecord {
 
 export interface GuardianReminderConfig {
   reminder_enabled: boolean
-  reminder_time: string // format "HH:MM" e.g. "18:30"
+  reminder_time: string // HH:mm
   vocab_reminder_enabled?: boolean
-  vocab_reminder_time?: string
-  vocab_reminder_language?: AppLanguage | string
+  vocab_reminder_time?: string // HH:mm
+  vocab_reminder_language?: string
+  bulletin_reminder_enabled?: boolean
+  bulletin_day_of_week?: number // 0=Domingo, 1=Segunda, ..., 5=Sexta (padrão), 6=Sábado
+  bulletin_time?: string // HH:mm (padrão: 18:00)
 }
-
 export interface LanguageEvolutionStat {
   code: AppLanguage
   label: string
@@ -1042,6 +1044,17 @@ export function formatChildAge(birthDateStr: string, lang: AppLanguage = 'pt-BR'
   return `${years} ${years === 1 ? 'ano' : 'anos'} e ${remMonths} ${remMonths === 1 ? 'mês' : 'meses'}`
 }
 
+export interface NoteReply {
+  id: string
+  note_id: string
+  author_role: 'parent' | 'teacher'
+  author_name?: string
+  message: string
+  synced?: boolean
+  created: string
+  updated: string
+}
+
 export interface TeacherNote {
   id: string
   school_code: string
@@ -1049,14 +1062,17 @@ export interface TeacherNote {
   class_group?: string
   lesson_activity: string
   author_name?: string
+  author_role?: 'teacher' | 'parent'
+  is_family?: boolean
   note_date: string
   observation?: string
   tags?: string[]
   synced?: boolean
   created: string
   updated: string
-  // Optional expanded child
+  // Optional expanded child or replies
   expand?: {
     child_id?: Child
+    replies?: NoteReply[]
   }
 }
