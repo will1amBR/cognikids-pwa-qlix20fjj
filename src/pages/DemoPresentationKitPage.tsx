@@ -30,16 +30,17 @@ export const DemoPresentationKitPage: React.FC = () => {
 
   // Ensure demo account is authenticated before navigating to guarded routes
   const ensureDemoAuthAndNavigate = async (targetPath: string) => {
+    const resolvedPath = targetPath.replace('clara_demo_id', '3daks4amyhs7o3j')
     // If already logged in, navigate straight
     if (user) {
-      navigate(targetPath)
+      navigate(resolvedPath)
       return
     }
 
     setIsLoggingInDemo(true)
     try {
       await login('demo@cognikids.app', 'demo1234')
-      navigate(targetPath)
+      navigate(resolvedPath)
     } catch (err) {
       console.error(err)
       navigate('/login')

@@ -127,13 +127,21 @@ export class OfflineSyncService {
 
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
 
-    // Demo children sessions should not attempt remote DB sync because their ID may not exist in live tables
-    const isDemoChild =
-      pendingItem.child_id.includes('demo') ||
-      pendingItem.child_id === 'arthur_demo_id' ||
-      pendingItem.child_id === 'clara_demo_id'
-    // If online and auth is active, try immediate sync (unless it's a demo child)
-    if (!isDemoChild && isOnline && pb.authStore.isValid && pb.authStore.record?.id) {
+    // Resolve static legacy demo IDs if needed
+    if (pendingItem.child_id === 'clara_demo_id') {
+      pendingItem.child_id = '3daks4amyhs7o3j'
+    } else if (pendingItem.child_id === 'arthur_demo_id') {
+      pendingItem.child_id = 'h7cix80bm9zncbd'
+    } else if (pendingItem.child_id === 'theo_demo_id') {
+      pendingItem.child_id = 'nvlgft7tfx69648'
+    }
+
+    // Unmapped artificial strings without valid PB id length (15 alphanumeric)
+    const isInvalidChildId =
+      pendingItem.child_id.includes('demo') || pendingItem.child_id.length !== 15
+
+    // If online and auth is active and child_id is valid, try immediate sync
+    if (!isInvalidChildId && isOnline && pb.authStore.isValid && pb.authStore.record?.id) {
       try {
         await Promise.race([
           (async () => {
@@ -278,12 +286,17 @@ export class OfflineSyncService {
     const remaining: PendingGameSession[] = []
 
     for (const item of queue) {
-      // Discard demo child items from remote sync attempt
-      if (
-        item.child_id.includes('demo') ||
-        item.child_id === 'arthur_demo_id' ||
-        item.child_id === 'clara_demo_id'
-      ) {
+      // Resolve legacy demo IDs if any in queue
+      if (item.child_id === 'clara_demo_id') {
+        item.child_id = '3daks4amyhs7o3j'
+      } else if (item.child_id === 'arthur_demo_id') {
+        item.child_id = 'h7cix80bm9zncbd'
+      } else if (item.child_id === 'theo_demo_id') {
+        item.child_id = 'nvlgft7tfx69648'
+      }
+
+      if (item.child_id.includes('demo') || item.child_id.length !== 15) {
+        // Discard invalid relation IDs to prevent blocking the queue
         syncedCount++
         continue
       }

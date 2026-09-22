@@ -36,19 +36,19 @@ export const GameRunnerPage: React.FC = () => {
       try {
         const kid = await fetchChildById(childId)
         if (!kid) {
-          // If demo child or unauthenticated fallback
+          // If demo child or unauthenticated fallback, resolve real Clara id
           if (childId.includes('demo') || !childId) {
             setChild({
-              id: 'clara_demo_id',
-              user_id: 'demo_user',
-              name: 'Clara (Demo)',
+              id: '3daks4amyhs7o3j',
+              user_id: 'hxvsetb7o76qs18',
+              name: 'Clara (4 anos)',
               birth_date: new Date(Date.now() - 48 * 30.5 * 24 * 3600 * 1000).toISOString(),
               class_group: 'Maternal II',
               favorite_color: '#FF7A45',
               daily_minutes: 15,
               daily_activity_count: 3,
               primary_language: 'pt-BR',
-              learning_languages: ['pt-BR', 'en'],
+              learning_languages: ['pt-BR', 'en', 'es'],
               created: new Date().toISOString(),
               updated: new Date().toISOString(),
             })
@@ -57,6 +57,14 @@ export const GameRunnerPage: React.FC = () => {
           }
           navigate('/app')
           return
+        }
+        // If kid ID is a legacy alias, enforce real ID
+        if (kid.id === 'clara_demo_id') {
+          kid.id = '3daks4amyhs7o3j'
+        } else if (kid.id === 'arthur_demo_id') {
+          kid.id = 'h7cix80bm9zncbd'
+        } else if (kid.id === 'theo_demo_id') {
+          kid.id = 'nvlgft7tfx69648'
         }
         setChild(kid)
       } catch (err) {

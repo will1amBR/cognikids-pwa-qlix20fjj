@@ -25,54 +25,96 @@ export async function fetchChildren(): Promise<Child[]> {
   return res
 }
 
+/**
+ * Look up real demo child records from the connected backend.
+ * Falls back to finding by name ('Clara', 'Arthur', 'Theo') or user children list.
+ */
+export async function resolveRealDemoChild(
+  target: 'clara' | 'arthur' | 'theo' = 'clara',
+): Promise<Child | null> {
+  const targetName = target === 'clara' ? 'Clara' : target === 'arthur' ? 'Arthur' : 'Theo'
+  try {
+    if (pb.authStore.isValid && pb.authStore.record?.id) {
+      // First try to find among current authenticated user's children
+      const userKids = await pb.collection('children').getList<Child>(1, 10, {
+        filter: `user_id = '${pb.authStore.record.id}' && name ~ '${targetName}'`,
+        sort: '-created',
+      })
+      if (userKids.items.length > 0) {
+        return userKids.items[0]
+      }
+    }
+
+    // Try global lookup by name
+    const globalKids = await pb.collection('children').getList<Child>(1, 5, {
+      filter: `name ~ '${targetName}'`,
+      sort: '-created',
+    })
+    if (globalKids.items.length > 0) {
+      return globalKids.items[0]
+    }
+  } catch (err) {
+    console.warn('Error resolving real demo child record', err)
+  }
+  return null
+}
+
 export async function fetchChildById(id: string): Promise<Child | null> {
-  // Demo children fallback support so games run smoothly in demo/unauthenticated sandbox
-  if (id === 'clara_demo_id') {
-    return {
-      id: 'clara_demo_id',
-      user_id: pb.authStore.record?.id || 'demo_user',
-      name: 'Clara (4 anos)',
-      birth_date: new Date(Date.now() - 48 * 30.5 * 24 * 3600 * 1000).toISOString(),
-      class_group: 'Maternal II',
-      favorite_color: '#FF7A45',
-      daily_minutes: 15,
-      daily_activity_count: 3,
-      primary_language: 'pt-BR',
-      learning_languages: ['pt-BR', 'en'],
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
+  // If demo ID alias is used, try to resolve the real live child in PocketBase first
+  if (id === 'clara_demo_id' || id === 'arthur_demo_id' || id === 'theo_demo_id') {
+    const targetKey = id.startsWith('clara') ? 'clara' : id.startsWith('arthur') ? 'arthur' : 'theo'
+    const liveDemoChild = await resolveRealDemoChild(targetKey)
+    if (liveDemoChild) {
+      return liveDemoChild
     }
-  }
-  if (id === 'arthur_demo_id') {
-    return {
-      id: 'arthur_demo_id',
-      user_id: pb.authStore.record?.id || 'demo_user',
-      name: 'Arthur (8 anos)',
-      birth_date: new Date(Date.now() - 96 * 30.5 * 24 * 3600 * 1000).toISOString(),
-      class_group: 'Jardim / 3º Ano',
-      favorite_color: '#6366F1',
-      daily_minutes: 25,
-      daily_activity_count: 4,
-      primary_language: 'pt-BR',
-      learning_languages: ['pt-BR', 'en', 'es'],
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
+
+    if (id === 'clara_demo_id') {
+      return {
+        id: 'clara_demo_id',
+        user_id: pb.authStore.record?.id || 'demo_user',
+        name: 'Clara (4 anos)',
+        birth_date: new Date(Date.now() - 48 * 30.5 * 24 * 3600 * 1000).toISOString(),
+        class_group: 'Maternal II',
+        favorite_color: '#FF7A45',
+        daily_minutes: 15,
+        daily_activity_count: 3,
+        primary_language: 'pt-BR',
+        learning_languages: ['pt-BR', 'en'],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      }
     }
-  }
-  if (id === 'theo_demo_id') {
-    return {
-      id: 'theo_demo_id',
-      user_id: pb.authStore.record?.id || 'demo_user',
-      name: 'Theo (18 meses)',
-      birth_date: new Date(Date.now() - 18 * 30.5 * 24 * 3600 * 1000).toISOString(),
-      class_group: 'Berçário II',
-      favorite_color: '#34D399',
-      daily_minutes: 10,
-      daily_activity_count: 2,
-      primary_language: 'pt-BR',
-      learning_languages: ['pt-BR'],
-      created: new Date().toISOString(),
-      updated: new Date().toISOString(),
+    if (id === 'arthur_demo_id') {
+      return {
+        id: 'arthur_demo_id',
+        user_id: pb.authStore.record?.id || 'demo_user',
+        name: 'Arthur (8 anos)',
+        birth_date: new Date(Date.now() - 96 * 30.5 * 24 * 3600 * 1000).toISOString(),
+        class_group: 'Jardim / 3º Ano',
+        favorite_color: '#6366F1',
+        daily_minutes: 25,
+        daily_activity_count: 4,
+        primary_language: 'pt-BR',
+        learning_languages: ['pt-BR', 'en', 'es'],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      }
+    }
+    if (id === 'theo_demo_id') {
+      return {
+        id: 'theo_demo_id',
+        user_id: pb.authStore.record?.id || 'demo_user',
+        name: 'Theo (18 meses)',
+        birth_date: new Date(Date.now() - 18 * 30.5 * 24 * 3600 * 1000).toISOString(),
+        class_group: 'Berçário II',
+        favorite_color: '#34D399',
+        daily_minutes: 10,
+        daily_activity_count: 2,
+        primary_language: 'pt-BR',
+        learning_languages: ['pt-BR'],
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      }
     }
   }
 

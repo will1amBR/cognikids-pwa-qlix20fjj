@@ -28,10 +28,15 @@ import {
   Check,
   Trophy,
   Globe,
+  Loader2,
+  AlertCircle,
+  Play,
+  SkipForward,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
+import { ItemIllustration } from './ItemIllustration'
 
 interface FazendaFalanteGameProps {
   child: Child
@@ -73,7 +78,12 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   const [roundsList, setRoundsList] = useState<AnimalItem[]>([])
   const [currentRoundIdx, setCurrentRoundIdx] = useState(0)
   const [step, setStep] = useState<StepState>('intro')
+  const [hasInteractedAudio, setHasInteractedAudio] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [micStatus, setMicStatus] = useState<
+    'idle' | 'requesting' | 'recording' | 'denied' | 'unsupported'
+  >('idle')
+  const [micAudioLevel, setMicAudioLevel] = useState(0)
   const [transcript, setTranscript] = useState('')
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null)
   const [sessionResults, setSessionResults] = useState<EvaluationResult[]>([])
@@ -114,7 +124,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     }
   }, [])
 
-  // When round changes, play intro sound and spoken explanation
+  // When round changes, only play sound/speech if user has already unlocked audio via interaction
   useEffect(() => {
     if (step === 'completed' || !currentAnimal) return
 
@@ -122,10 +132,16 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     setTranscript('')
     setEvaluation(null)
     setTicoMood('talking')
+    setTicoMessage(`${currentAnimal.name}! 🎙️`)
+
+    // Don't auto-trigger audio on mount without previous user gesture
+    if (!hasInteractedAudio) {
+      setTicoMessage(`Toque em "Ouvir Som" para começar a brincadeira! 🔊`)
+      return
+    }
 
     const introText = `${currentAnimal.name}! ${currentAnimal.actionDescription}`
     const promptText = currentAnimal.promptText || `Agora fale: ${currentAnimal.name}!`
-    setTicoMessage(`${currentAnimal.name}! 🎙️`)
 
     // 1. Play animal sound effect
     playAnimalSound(currentAnimal.soundKey)
@@ -154,39 +170,96 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
           },
         })
       }
-    }, 600)
+    }, 500)
 
     return () => clearTimeout(timer)
-  }, [currentRoundIdx, currentAnimal, gameLanguage, isFirstWordsMode])
+  }, [currentRoundIdx, currentAnimal, gameLanguage, isFirstWordsMode, hasInteractedAudio])
 
-  // Start Voice Recording
+  // Destravar áudio via interação do usuário
+  const handleUnlockAndPlaySound = (slow = false) => {
+    setHasInteractedAudio(true)
+    playPop()
+    if (!currentAnimal) return
+    playAnimalSound(currentAnimal.soundKey)
+    const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
+    const textToSpeak = `${currentAnimal.name}! ${currentAnimal.promptText || `Agora fale: ${currentAnimal.name}!`}`
+    if (slow || isFirstWordsMode) {
+      speechService.speakSlow(textToSpeak, {
+        lang: langOption?.speechLang || 'pt-BR',
+      })
+    } else {
+      speechService.speak(textToSpeak, {
+        lang: langOption?.speechLang || 'pt-BR',
+      })
+    }
+  }
+
+  // Start Voice Recording with complete feedback states
   const handleStartRecording = async () => {
     if (!currentAnimal) return
+    setHasInteractedAudio(true)
     playPop()
     speechService.stop()
     setIsRecording(true)
+    setMicStatus('requesting')
     setTranscript('')
     setStep('listening')
     setTicoMood('listening')
-    setTicoMessage(`Estou ouvindo você... fale "${currentAnimal.name}"! 🎙️`)
+    setTicoMessage(`Aguardando microfone... 🎙️`)
+
+    if (!speechRecognitionService.isSupported()) {
+      setMicStatus('unsupported')
+      setTicoMessage(`Microfone não disponível neste navegador. Não se preocupe!`)
+      return
+    }
 
     const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
     const speechLang = langOption ? langOption.speechLang : 'pt-BR'
 
-    await speechRecognitionService.startListening({
-      lang: speechLang,
-      onAudioLevel: () => {},
-      onResult: (res) => {
-        if (!isMountedRef.current) return
-        setTranscript(res.transcript)
-        if (res.isFinal) {
-          handleStopRecording(res.transcript)
+    try {
+      await speechRecognitionService.startListening({
+        lang: speechLang,
+        onAudioLevel: (lvl) => {
+          if (isMountedRef.current) {
+            setMicAudioLevel(lvl)
+            if (lvl > 5 && micStatus !== 'recording') {
+              setMicStatus('recording')
+              setTicoMessage(`Estou ouvindo você... fale "${currentAnimal.name}"! 🎙️`)
+            }
+          }
+        },
+        onResult: (res) => {
+          if (!isMountedRef.current) return
+          setTranscript(res.transcript)
+          setMicStatus('recording')
+          setTicoMessage(`Ouvindo: "${res.transcript}"...`)
+          if (res.isFinal) {
+            handleStopRecording(res.transcript)
+          }
+        },
+        onError: (err) => {
+          console.warn('Recognition notice', err)
+          if (!isMountedRef.current) return
+          if (err === 'not-allowed' || err === 'service-not-allowed') {
+            setMicStatus('denied')
+            setTicoMessage(`Permissão do microfone negada. Toque em permitir ou pule!`)
+          } else {
+            // Other error - allow fallback
+            setMicStatus('recording')
+          }
+        },
+      })
+      // If no explicit error after 600ms, set recording state
+      setTimeout(() => {
+        if (isMountedRef.current && micStatus === 'requesting') {
+          setMicStatus('recording')
+          setTicoMessage(`Estou ouvindo você... fale "${currentAnimal.name}"! 🎙️`)
         }
-      },
-      onError: (err) => {
-        console.warn('Recognition fallback', err)
-      },
-    })
+      }, 700)
+    } catch (err) {
+      console.warn('Microphone start error', err)
+      setMicStatus('denied')
+    }
 
     // Max recording duration safeguard
     setTimeout(() => {
@@ -197,9 +270,17 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   }
 
   const handleStopRecording = (forcedTranscript?: string) => {
-    if (!isRecording && step !== 'listening') return
+    if (
+      !isRecording &&
+      step !== 'listening' &&
+      micStatus !== 'recording' &&
+      micStatus !== 'requesting'
+    )
+      return
     if (!currentAnimal) return
     setIsRecording(false)
+    setMicStatus('idle')
+    setMicAudioLevel(0)
     speechRecognitionService.stopListening()
 
     const finalSaid = forcedTranscript || transcript || currentAnimal.name
@@ -227,6 +308,31 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
     // Speak praise
     const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
     speechService.speak(result.praise, { lang: langOption?.speechLang || 'pt-BR' })
+  }
+
+  // Pular rodada com nota amigável de incentivo se microfone não estiver disponível
+  const handleSkipOrFallback = () => {
+    if (!currentAnimal) return
+    speechService.stop()
+    speechRecognitionService.stopListening()
+    setIsRecording(false)
+    setMicStatus('idle')
+
+    const fallbackResult: EvaluationResult = {
+      score: 85,
+      stars: 2,
+      isRecognized: true,
+      praise: `Muito bem! Você conheceu o ${currentAnimal.name}! 🌟`,
+      feedback: `Você ouviu com atenção!`,
+      matchType: 'partial',
+    }
+
+    setEvaluation(fallbackResult)
+    setSessionResults((prev) => [...prev, fallbackResult])
+    setStep('feedback')
+    playStarReward(2)
+    setTicoMood('celebrating')
+    setTicoMessage(fallbackResult.praise)
   }
 
   // Move to next round or finish
@@ -287,14 +393,16 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
   }
   const handleReplayPrompt = (slow = false) => {
     if (!currentAnimal) return
+    setHasInteractedAudio(true)
     playAnimalSound(currentAnimal.soundKey)
     const langOption = SUPPORTED_LANGUAGES.find((l) => l.code === gameLanguage)
+    const textToSpeak = currentAnimal.promptText || currentAnimal.name
     if (slow || isFirstWordsMode) {
-      speechService.speakSlow(currentAnimal.promptText || currentAnimal.name, {
+      speechService.speakSlow(textToSpeak, {
         lang: langOption?.speechLang || 'pt-BR',
       })
     } else {
-      speechService.speak(currentAnimal.promptText || currentAnimal.name, {
+      speechService.speak(textToSpeak, {
         lang: langOption?.speechLang || 'pt-BR',
       })
     }
@@ -453,30 +561,50 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
           )}
         </div>
 
-        {/* Animal / Item Stage Card */}
+        {/* Animal / Item Stage Card with Rich Vector Illustration */}
         <div
-          className={`w-full bg-gradient-to-br ${currentAnimal.bgGradient} rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500`}
+          className={`w-full bg-gradient-to-br ${currentAnimal.bgGradient} rounded-3xl p-5 sm:p-7 text-white shadow-xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500 border-2 border-white/20`}
         >
           {/* Sound replay button */}
           <button
-            onClick={() => handleReplayPrompt(false)}
-            className="absolute top-4 right-4 w-11 h-11 rounded-2xl bg-white/25 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all active:scale-95 shadow-sm"
+            onClick={() => handleUnlockAndPlaySound(false)}
+            className="absolute top-4 right-4 px-3 py-2 rounded-2xl bg-white/25 hover:bg-white/40 backdrop-blur-md flex items-center gap-1.5 text-white transition-all active:scale-95 shadow-sm text-xs font-bold"
             title="Ouvir som novamente"
             aria-label="Ouvir som"
           >
-            <Volume2 className="w-6 h-6" />
+            <Volume2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Ouvir</span>
           </button>
 
-          {/* Big Emoji / Visual */}
-          <div className="w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center text-7xl sm:text-8xl drop-shadow-lg animate-float">
-            {currentAnimal.emoji}
+          {/* First audio unlock banner if not interacted yet */}
+          {!hasInteractedAudio && (
+            <button
+              onClick={() => handleUnlockAndPlaySound(false)}
+              className="mb-3 px-4 py-2 rounded-full bg-white text-orange-600 font-black text-xs sm:text-sm shadow-lg flex items-center gap-2 animate-bounce hover:bg-orange-50 transition-transform active:scale-95"
+            >
+              <Play className="w-4 h-4 fill-orange-600 text-orange-600" />
+              <span>Toque para Ouvir o Som do Bicho 🔊</span>
+            </button>
+          )}
+
+          {/* Rich Vector Illustration (with emoji fallback) */}
+          <div className="relative my-1 flex items-center justify-center animate-float">
+            <div className="absolute inset-0 bg-white/20 rounded-full blur-xl transform scale-90" />
+            <div className="relative bg-white/30 backdrop-blur-sm p-4 rounded-3xl shadow-inner border border-white/30 flex items-center justify-center">
+              <ItemIllustration
+                itemId={currentAnimal.id}
+                fallbackEmoji={currentAnimal.emoji}
+                size="xl"
+                altText={currentAnimal.name}
+              />
+            </div>
           </div>
 
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-sm mt-2 text-center">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-sm mt-3 text-center">
             {currentAnimal.name}
           </h2>
 
-          {/* Syllables breakdown pill when in First Words Mode or if syllable data exists */}
+          {/* Syllables breakdown pill */}
           {currentAnimal.syllables && (
             <div className="mt-1 bg-white/25 backdrop-blur-md px-3 py-0.5 rounded-full text-white font-extrabold text-xs tracking-widest uppercase shadow-sm">
               {currentAnimal.syllables[gameLanguage] ||
@@ -485,7 +613,7 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
             </div>
           )}
 
-          <p className="text-xs sm:text-sm font-semibold text-white/90 text-center mt-1 max-w-xs">
+          <p className="text-xs sm:text-sm font-semibold text-white/95 text-center mt-1 max-w-xs">
             {currentAnimal.actionDescription}
           </p>
         </div>
@@ -528,37 +656,126 @@ export const FazendaFalanteGame: React.FC<FazendaFalanteGameProps> = ({ child })
               >
                 <span>{t('game.nextWord')}</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>{' '}
+              </Button>
             </div>
           </div>
         ) : (
-          /* Mic Recording Trigger */
-          <div className="flex flex-col items-center gap-3">
-            {isRecording ? (
+          /* Mic Recording Trigger with all states feedback */
+          <div className="w-full flex flex-col items-center gap-3">
+            {/* Microfone Negado */}
+            {micStatus === 'denied' && (
+              <div className="w-full bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col items-center text-center gap-2 animate-fade-in">
+                <div className="flex items-center gap-2 text-rose-700 font-black text-sm">
+                  <AlertCircle className="w-5 h-5 text-rose-600" />
+                  <span>Microfone bloqueado</span>
+                </div>
+                <p className="text-xs text-rose-600 max-w-sm">
+                  Para falar com o Tico, permita o microfone no navegador. Ou clique abaixo para
+                  avançar!
+                </p>
+                <div className="flex gap-2 mt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleStartRecording}
+                    className="rounded-xl border-rose-300 text-rose-700 text-xs font-bold"
+                  >
+                    Tentar Permitir Novamente
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSkipOrFallback}
+                    className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold"
+                  >
+                    <SkipForward className="w-3.5 h-3.5 mr-1" />
+                    Pular e Ganhar Estrelas
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Microfone Não Suportado */}
+            {micStatus === 'unsupported' && (
+              <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col items-center text-center gap-2 animate-fade-in">
+                <div className="flex items-center gap-2 text-amber-800 font-black text-sm">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  <span>Navegador sem reconhecimento de fala</span>
+                </div>
+                <p className="text-xs text-amber-700 max-w-sm">
+                  Você pode ouvir os sons e repetir com a criança, e avançar para a próxima rodada!
+                </p>
+                <Button
+                  size="sm"
+                  onClick={handleSkipOrFallback}
+                  className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold mt-1"
+                >
+                  <SkipForward className="w-3.5 h-3.5 mr-1" />
+                  Continuar Jogando
+                </Button>
+              </div>
+            )}
+
+            {/* Permissão Pendente / Solicitando */}
+            {micStatus === 'requesting' && (
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-24 h-24 rounded-full bg-amber-500 text-white shadow-xl flex items-center justify-center animate-pulse">
+                  <Loader2 className="w-10 h-10 animate-spin" />
+                </div>
+                <span className="text-xs sm:text-sm font-bold text-amber-700">
+                  Aguardando permissão do microfone...
+                </span>
+              </div>
+            )}
+
+            {/* Gravando / Ouvindo */}
+            {micStatus === 'recording' && (
               <div className="flex flex-col items-center gap-2">
                 <button
                   onClick={() => handleStopRecording()}
-                  className="w-24 h-24 rounded-full bg-rose-500 text-white shadow-2xl flex items-center justify-center animate-pulse ring-8 ring-rose-200"
-                  aria-label="Gravando voz"
+                  className="w-24 h-24 rounded-full bg-rose-500 text-white shadow-2xl flex items-center justify-center animate-pulse ring-8 ring-rose-200 transition-all"
+                  aria-label="Gravando voz - clique para parar"
                 >
                   <Mic className="w-12 h-12" />
                 </button>
-                <span className="text-xs font-bold text-rose-600 animate-pulse">
-                  Ouvindo... Toque para finalizar
+                {/* Visual sound wave bar */}
+                <div className="flex items-center gap-1 h-3 mt-1">
+                  <span className="w-1.5 h-3 bg-rose-500 rounded-full animate-bounce" />
+                  <span className="w-1.5 h-5 bg-rose-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-6 bg-rose-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                  <span className="w-1.5 h-4 bg-rose-500 rounded-full animate-bounce [animation-delay:200ms]" />
+                  <span className="w-1.5 h-2 bg-rose-500 rounded-full animate-bounce [animation-delay:100ms]" />
+                </div>
+                <span className="text-xs font-black text-rose-600">
+                  {transcript ? `"${transcript}"` : 'Ouvindo você... Toque para finalizar'}
                 </span>
+                <button
+                  onClick={handleSkipOrFallback}
+                  className="text-[11px] font-bold text-slate-400 hover:text-slate-600 underline mt-1"
+                >
+                  Não consigo falar agora? Pular palavra
+                </button>
               </div>
-            ) : (
+            )}
+
+            {/* Estado Inicial / Idle */}
+            {micStatus === 'idle' && (
               <div className="flex flex-col items-center gap-2">
                 <button
                   onClick={handleStartRecording}
-                  className="w-24 h-24 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/30 flex items-center justify-center active:scale-95 transition-all group"
+                  className="w-24 h-24 rounded-full bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/30 flex items-center justify-center active:scale-95 transition-all group ring-4 ring-orange-200"
                   aria-label="Aperte para falar"
                 >
                   <Mic className="w-12 h-12 group-hover:scale-110 transition-transform" />
                 </button>
-                <span className="text-xs sm:text-sm font-black text-slate-700">
+                <span className="text-xs sm:text-sm font-black text-slate-700 text-center">
                   Toque no microfone e fale "{currentAnimal.name}"
                 </span>
+                <button
+                  onClick={handleSkipOrFallback}
+                  className="text-[11px] font-bold text-slate-400 hover:text-slate-600 underline"
+                >
+                  Pular palavra
+                </button>
               </div>
             )}
           </div>

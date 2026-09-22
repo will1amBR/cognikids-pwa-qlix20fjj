@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { resolveRealDemoChild, fetchChildren } from '@/services/children'
 import {
   Sparkles,
   ArrowRight,
@@ -43,26 +44,40 @@ export const IndexPage: React.FC = () => {
   const handleStartDemo = async (target: 'infantil' | 'junior') => {
     setIsDemoStarting(target)
     try {
-      // If already logged in, navigate directly
+      // Authenticate with official demo account if not already logged in
       if (!user) {
-        // Authenticate with official demo account
         await login('demo@cognikids.app', 'demo1234')
       }
       // Ensure tour is marked as seen so the child gets directly into the game
       localStorage.setItem('cognikids_tour_completed', 'true')
 
+      // Resolve real child record in PocketBase
+      const targetKey = target === 'infantil' ? 'clara' : 'arthur'
+      let realChild = await resolveRealDemoChild(targetKey)
+
+      if (!realChild) {
+        // Fallback: try fetching all children of the user
+        const kids = await fetchChildren()
+        realChild = kids.find((k) => k.name.toLowerCase().includes(targetKey)) || kids[0] || null
+      }
+
+      const childId =
+        realChild?.id || (target === 'infantil' ? '3daks4amyhs7o3j' : 'h7cix80bm9zncbd')
+
+      localStorage.setItem('cognikids_selected_child_id', childId)
+
       if (target === 'infantil') {
-        localStorage.setItem('cognikids_selected_child_id', 'clara_demo_id')
-        navigate('/app/game/clara_demo_id/fazenda_falante')
+        navigate(`/app/game/${childId}/fazenda_falante`)
       } else {
-        localStorage.setItem('cognikids_selected_child_id', 'arthur_demo_id')
         navigate('/junior')
       }
     } catch (err) {
       console.warn('Erro ao autenticar demo instantâneo', err)
-      // Fallback: if login fails for any network reason, navigate directly to runner
+      // Fallback: if network fails, use the known seeded IDs directly
+      const fallbackId = target === 'infantil' ? '3daks4amyhs7o3j' : 'h7cix80bm9zncbd'
+      localStorage.setItem('cognikids_selected_child_id', fallbackId)
       if (target === 'infantil') {
-        navigate('/app/game/clara_demo_id/fazenda_falante')
+        navigate(`/app/game/${fallbackId}/fazenda_falante`)
       } else {
         navigate('/junior')
       }

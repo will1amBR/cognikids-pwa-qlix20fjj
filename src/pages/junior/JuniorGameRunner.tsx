@@ -32,16 +32,16 @@ export const JuniorGameRunnerPage: React.FC = () => {
         if (!data) {
           if (childId.includes('demo') || childId === 'arthur_demo_id') {
             setChild({
-              id: 'arthur_demo_id',
-              user_id: 'demo_user',
-              name: 'Arthur (Demo Junior)',
+              id: 'h7cix80bm9zncbd',
+              user_id: 'hxvsetb7o76qs18',
+              name: 'Arthur (8 anos)',
               birth_date: new Date(Date.now() - 96 * 30.5 * 24 * 3600 * 1000).toISOString(),
               class_group: 'Jardim / 3º Ano',
               favorite_color: '#6366F1',
               daily_minutes: 25,
               daily_activity_count: 4,
               primary_language: 'pt-BR',
-              learning_languages: ['pt-BR', 'en', 'es'],
+              learning_languages: ['pt-BR', 'en', 'es', 'de', 'fr'],
               created: new Date().toISOString(),
               updated: new Date().toISOString(),
             })
@@ -49,6 +49,9 @@ export const JuniorGameRunnerPage: React.FC = () => {
           }
           setError('Perfil da criança não encontrado.')
         } else {
+          if (data.id === 'arthur_demo_id') {
+            data.id = 'h7cix80bm9zncbd'
+          }
           setChild(data)
         }
       })

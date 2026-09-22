@@ -10,6 +10,7 @@ import { AnimalItem, WORD_CATEGORIES, getItemsByCategory, getAllItems } from './
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { CelebrationScreen } from '@/components/celebration/CelebrationScreen'
+import { ItemIllustration } from './ItemIllustration'
 
 interface CadeOBichinhoGameProps {
   child: Child
@@ -222,7 +223,12 @@ export const CadeOBichinhoGame: React.FC<CadeOBichinhoGameProps> = ({ child }) =
                       : 'border-slate-200/80 hover:border-orange-300 hover:shadow-xl'
                 }`}
               >
-                <span className="text-5xl sm:text-6xl drop-shadow-md">{opt.emoji}</span>
+                <ItemIllustration
+                  itemId={opt.id}
+                  fallbackEmoji={opt.emoji}
+                  size="md"
+                  altText={opt.name}
+                />
                 <span className="font-black text-slate-800 text-sm sm:text-base">{opt.name}</span>
               </button>
             )

@@ -9,6 +9,7 @@ import { FARM_ANIMALS, DINOSAURS, AnimalItem } from './farmAnimalsData'
 import { Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
+import { ItemIllustration } from './ItemIllustration'
 
 interface SomDoBichoGameProps {
   child: Child
@@ -187,7 +188,12 @@ export const SomDoBichoGame: React.FC<SomDoBichoGameProps> = ({ child }) => {
                       : 'border-slate-200/80 hover:border-orange-300 hover:shadow-xl'
                 }`}
               >
-                <span className="text-5xl sm:text-6xl drop-shadow-md">{opt.emoji}</span>
+                <ItemIllustration
+                  itemId={opt.id}
+                  fallbackEmoji={opt.emoji}
+                  size="md"
+                  altText={opt.name}
+                />
                 <span className="font-black text-slate-800 text-sm sm:text-base">{opt.name}</span>
               </button>
             )
