@@ -21,8 +21,9 @@ import { ArrowLeft, Loader2, Upload, Trash2, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export const ChildFormPage: React.FC = () => {
-  const { childId } = useParams()
-  const isEditing = Boolean(childId)
+  const params = useParams<{ childId?: string; id?: string }>()
+  const activeChildId = params.childId || params.id
+  const isEditing = Boolean(activeChildId)
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -49,10 +50,10 @@ export const ChildFormPage: React.FC = () => {
   }))
 
   useEffect(() => {
-    if (isEditing && childId) {
+    if (isEditing && activeChildId) {
       const load = async () => {
         setIsFetching(true)
-        const child = await fetchChildById(childId)
+        const child = await fetchChildById(activeChildId)
         if (child) {
           setName(child.name)
           setBirthDate(child.birth_date ? child.birth_date.split('T')[0] : '')
@@ -77,7 +78,7 @@ export const ChildFormPage: React.FC = () => {
       }
       load()
     }
-  }, [childId, isEditing, navigate, toast])
+  }, [activeChildId, isEditing, navigate, toast])
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -120,8 +121,8 @@ export const ChildFormPage: React.FC = () => {
 
     setIsLoading(true)
     try {
-      if (isEditing && childId) {
-        await updateChild(childId, {
+      if (isEditing && activeChildId) {
+        await updateChild(activeChildId, {
           name: name.trim(),
           birth_date: new Date(birthDate).toISOString(),
           favorite_color: favoriteColor,

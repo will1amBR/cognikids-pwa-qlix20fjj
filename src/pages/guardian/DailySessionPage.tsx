@@ -39,7 +39,8 @@ import { ClimaERoupaGame } from '@/components/games/ClimaERoupaGame'
 import { CarinhasFelizesGame } from '@/components/games/CarinhasFelizesGame'
 
 export const DailySessionPage: React.FC = () => {
-  const { childId } = useParams()
+  const params = useParams<{ childId?: string; id?: string }>()
+  const activeChildId = params.childId || params.id
   const navigate = useNavigate()
   const { playPop, playVictory, playStarReward } = useSound()
 
@@ -53,10 +54,10 @@ export const DailySessionPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!childId) return
+    if (!activeChildId) return
     const load = async () => {
       setIsLoading(true)
-      const kid = await fetchChildById(childId)
+      const kid = await fetchChildById(activeChildId)
       setChild(kid)
 
       if (kid) {
@@ -163,7 +164,7 @@ export const DailySessionPage: React.FC = () => {
       setIsLoading(false)
     }
     load()
-  }, [childId])
+  }, [activeChildId])
 
   const handleStartSession = () => {
     playPop()

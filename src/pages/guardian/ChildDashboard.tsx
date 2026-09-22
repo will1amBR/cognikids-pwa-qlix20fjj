@@ -37,6 +37,9 @@ import { WeeklyWordsRanking } from '@/components/progress/WeeklyWordsRanking'
 import { computeWeeklyWordsRanking, WeeklyWordRankItem } from '@/services/reminders'
 import { offlineSyncService } from '@/lib/offlineSync'
 import { fetchChildSessions } from '@/services/children'
+import { teacherNotesService } from '@/services/teacherNotes'
+import type { TeacherNote } from '@/types/cognikids'
+import { BookOpen, Calendar, Tag, MessageSquare, School as SchoolIcon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -48,7 +51,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSound } from '@/context/SoundContext'
 
 export const ChildDashboardPage: React.FC = () => {
-  const { childId } = useParams()
+  const params = useParams<{ childId?: string; id?: string }>()
+  const activeChildId = params.childId || params.id
   const navigate = useNavigate()
   const { playPop } = useSound()
   const { language, t } = useLanguage()
@@ -62,19 +66,22 @@ export const ChildDashboardPage: React.FC = () => {
   const [showGamePicker, setShowGamePicker] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'flower' | 'badges'>('flower')
+  const [teacherNotes, setTeacherNotes] = useState<TeacherNote[]>([])
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false)
 
   useEffect(() => {
-    if (!childId) return
+    if (!activeChildId) return
     const load = async () => {
       setIsLoading(true)
-      const kid = await fetchChildById(childId)
+      const kid = await fetchChildById(activeChildId)
       setChild(kid)
 
       if (kid) {
-        const [progList, achList, sessionList] = await Promise.all([
+        const [progList, achList, sessionList, notesList] = await Promise.all([
           fetchChildModuleProgress(kid.id),
           syncAndEvaluateAchievements(kid.id),
           fetchChildSessions(kid.id, 100),
+          teacherNotesService.fetchNotesByChild(kid.id),
         ])
 
         const pending = offlineSyncService
@@ -117,11 +124,12 @@ export const ChildDashboardPage: React.FC = () => {
         })
         setProgressMap(map)
         setAchievements(achList)
+        setTeacherNotes(notesList)
       }
       setIsLoading(false)
     }
     load()
-  }, [childId])
+  }, [activeChildId])
 
   if (isLoading || !child) {
     return (
@@ -363,6 +371,104 @@ export const ChildDashboardPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Seção Diário da Escola & Anotações do Professor */}
+      {teacherNotes.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                <SchoolIcon className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-black text-slate-800">
+                    Diário da Escola & Anotações do Professor
+                  </h2>
+                  <span className="text-[10px] font-black uppercase bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                    {teacherNotes.length} {teacherNotes.length === 1 ? 'registro' : 'registros'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Acompanhe em primeira mão o que a escola e os professores registraram sobre as
+                  atividades e o desenvolvimento de {child.name}.
+                </p>
+              </div>
+            </div>
+
+            <Link to="/escola">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Ver Portal da Escola
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+            {teacherNotes.slice(0, 4).map((note) => {
+              const formattedDate = note.note_date
+                ? new Date(note.note_date).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })
+                : 'Recente'
+
+              return (
+                <div
+                  key={note.id}
+                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <span className="font-semibold flex items-center gap-1 text-indigo-700">
+                        <SchoolIcon className="w-3.5 h-3.5" />
+                        <strong>{note.author_name || 'Professor(a)'}</strong>
+                        {note.class_group && ` (${note.class_group})`}
+                      </span>
+                      <span className="flex items-center gap-1 font-medium">
+                        <Calendar className="w-3 h-3" />
+                        {formattedDate}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-md">
+                        Aula / Atividade
+                      </span>
+                      <h4 className="font-black text-slate-800 text-sm mt-0.5">
+                        {note.lesson_activity}
+                      </h4>
+                    </div>
+
+                    {note.observation && (
+                      <p className="text-slate-600 leading-relaxed bg-white p-2.5 rounded-xl border border-slate-200/60 text-[11px]">
+                        {note.observation}
+                      </p>
+                    )}
+                  </div>
+
+                  {note.tags && note.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-200/60">
+                      {note.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="text-[9px] font-bold bg-white text-slate-600 px-1.5 py-0.5 rounded-md border border-slate-200"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Main Tabs: Cérebro em Flor & Módulos vs Medalhas & Conquistas */}
       <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)}>

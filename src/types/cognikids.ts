@@ -1041,3 +1041,22 @@ export function formatChildAge(birthDateStr: string, lang: AppLanguage = 'pt-BR'
   }
   return `${years} ${years === 1 ? 'ano' : 'anos'} e ${remMonths} ${remMonths === 1 ? 'mês' : 'meses'}`
 }
+
+export interface TeacherNote {
+  id: string
+  school_code: string
+  child_id: string
+  class_group?: string
+  lesson_activity: string
+  author_name?: string
+  note_date: string
+  observation?: string
+  tags?: string[]
+  synced?: boolean
+  created: string
+  updated: string
+  // Optional expanded child
+  expand?: {
+    child_id?: Child
+  }
+}

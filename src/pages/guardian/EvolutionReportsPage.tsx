@@ -9,7 +9,8 @@ import {
 } from '@/services/children'
 import type { Child, EvolutionSummary, ChildAchievement } from '@/types/cognikids'
 import { generateEvolutionPdf } from '@/lib/pdfReport'
-import { formatChildAge, COGNIKIDS_MODULES } from '@/types/cognikids'
+import { formatChildAge, COGNIKIDS_MODULES, TeacherNote } from '@/types/cognikids'
+import { teacherNotesService } from '@/services/teacherNotes'
 import { TicoMascot } from '@/components/mascot/TicoMascot'
 import { evaluateModuleDevelopment } from '@/lib/developmentDiagnostic'
 import { useLanguage } from '@/context/LanguageContext'
@@ -38,6 +39,7 @@ import {
   Download,
   Languages,
   History,
+  School as SchoolIcon,
 } from 'lucide-react'
 import { BilingualBadge } from '@/components/mascot/BilingualBadge'
 import { VocabReviewQueueCard } from '@/components/reminders/VocabReviewQueueCard'
@@ -52,6 +54,7 @@ export const EvolutionReportsPage: React.FC = () => {
   const [childrenList, setChildrenList] = useState<Child[]>([])
   const [selectedChild, setSelectedChild] = useState<Child | null>(null)
   const [achievements, setAchievements] = useState<ChildAchievement[]>([])
+  const [teacherNotes, setTeacherNotes] = useState<TeacherNote[]>([])
   const [period, setPeriod] = useState<'week' | 'month'>('week')
   const [summary, setSummary] = useState<EvolutionSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -68,12 +71,14 @@ export const EvolutionReportsPage: React.FC = () => {
       setSelectedChild(active)
 
       if (active) {
-        const [evo, achs] = await Promise.all([
+        const [evo, achs, notes] = await Promise.all([
           calculateChildEvolution(active.id, period),
           fetchChildAchievements(active.id),
+          teacherNotesService.fetchNotesByChild(active.id),
         ])
         setSummary(evo)
         setAchievements(achs)
+        setTeacherNotes(notes)
       }
       setIsLoading(false)
     }
@@ -93,12 +98,14 @@ export const EvolutionReportsPage: React.FC = () => {
     setSelectedChild(kid)
     localStorage.setItem('cognikids_selected_child_id', kid.id)
     setIsLoading(true)
-    const [evo, achs] = await Promise.all([
+    const [evo, achs, notes] = await Promise.all([
       calculateChildEvolution(kid.id, period),
       fetchChildAchievements(kid.id),
+      teacherNotesService.fetchNotesByChild(kid.id),
     ])
     setSummary(evo)
     setAchievements(achs)
+    setTeacherNotes(notes)
     setIsLoading(false)
   }
 
@@ -347,6 +354,92 @@ export const EvolutionReportsPage: React.FC = () => {
               <span>{isExporting ? 'Processando…' : 'Gerar PDF para Impressão'}</span>
             </Button>
           </div>
+
+          {/* Seção Diário da Escola & Anotações do Professor no Relatório */}
+          {teacherNotes.length > 0 && (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-indigo-200/90 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                    <SchoolIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800">
+                      Diário da Escola & Anotações do Professor
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Registros pedagógicos, atividades em sala de aula e observações da equipe
+                      escolar
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-[11px] font-bold px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200 self-start sm:self-auto">
+                  {teacherNotes.length} {teacherNotes.length === 1 ? 'registro' : 'registros'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                {teacherNotes.slice(0, 4).map((note) => {
+                  const formattedDate = note.note_date
+                    ? new Date(note.note_date).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : 'Recente'
+
+                  return (
+                    <div
+                      key={note.id}
+                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs flex flex-col justify-between"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                          <span className="font-bold flex items-center gap-1 text-indigo-700">
+                            <strong>{note.author_name || 'Professor(a)'}</strong>
+                            {note.class_group && ` (${note.class_group})`}
+                          </span>
+                          <span className="flex items-center gap-1 font-medium">
+                            <Calendar className="w-3 h-3" />
+                            {formattedDate}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded-md">
+                            Atividade em Sala
+                          </span>
+                          <h4 className="font-black text-slate-800 text-sm mt-0.5">
+                            {note.lesson_activity}
+                          </h4>
+                        </div>
+
+                        {note.observation && (
+                          <p className="text-slate-600 leading-relaxed bg-white p-2.5 rounded-xl border border-slate-200/60 text-[11px]">
+                            {note.observation}
+                          </p>
+                        )}
+                      </div>
+
+                      {note.tags && note.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-200/60">
+                          {note.tags.map((t) => (
+                            <span
+                              key={t}
+                              className="text-[9px] font-bold bg-white text-slate-600 px-1.5 py-0.5 rounded-md border border-slate-200"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Fila de Palavras a Revisar Conectada no Relatório */}
           <VocabReviewQueueCard

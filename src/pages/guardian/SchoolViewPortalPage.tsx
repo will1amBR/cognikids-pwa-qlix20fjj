@@ -36,8 +36,21 @@ import {
   fetchCouponRedemptions,
 } from '@/services/children'
 import type { CouponRedemptionRecord } from '@/types/cognikids'
-import { UserCheck, UserPlus2, BarChart3, Mail, CalendarCheck2, RefreshCw } from 'lucide-react'
+import {
+  UserCheck,
+  UserPlus2,
+  BarChart3,
+  Mail,
+  CalendarCheck2,
+  RefreshCw,
+  FileText,
+  Send,
+  Tag,
+  MessageSquare,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { teacherNotesService } from '@/services/teacherNotes'
+import type { TeacherNote } from '@/types/cognikids'
 import {
   Dialog,
   DialogContent,
@@ -59,21 +72,57 @@ export const SchoolViewPortalPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(Boolean(codeParam))
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Active section tab: 'pedagogical' (mapa cognitivo) or 'enrollments' (painel de matrículas)
+  // Active section tab: 'pedagogical' (mapa cognitivo), 'enrollments' (matrículas) or 'teacher_notes' (anotações do professor)
   const sectionParam = searchParams.get('section')
-  const [activePortalSection, setActivePortalSection] = useState<'pedagogical' | 'enrollments'>(
-    sectionParam === 'enrollments' ? 'enrollments' : 'pedagogical',
+  const [activePortalSection, setActivePortalSection] = useState<
+    'pedagogical' | 'enrollments' | 'teacher_notes'
+  >(
+    sectionParam === 'enrollments'
+      ? 'enrollments'
+      : sectionParam === 'teacher_notes'
+        ? 'teacher_notes'
+        : 'pedagogical',
   )
 
   useEffect(() => {
     if (sectionParam === 'enrollments') {
       setActivePortalSection('enrollments')
+    } else if (sectionParam === 'teacher_notes') {
+      setActivePortalSection('teacher_notes')
     } else if (sectionParam === 'pedagogical') {
       setActivePortalSection('pedagogical')
     }
   }, [sectionParam])
   const [couponRedemptions, setCouponRedemptions] = useState<CouponRedemptionRecord[]>([])
   const [isLoadingRedemptions, setIsLoadingRedemptions] = useState(false)
+
+  // Teacher notes state
+  const [teacherNotes, setTeacherNotes] = useState<TeacherNote[]>([])
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false)
+  const [noteFormTurma, setNoteFormTurma] = useState<string>('')
+  const [noteFormChildId, setNoteFormChildId] = useState<string>('')
+  const [noteFormActivity, setNoteFormActivity] = useState<string>('')
+  const [noteFormObservation, setNoteFormObservation] = useState<string>('')
+  const [noteFormDate, setNoteFormDate] = useState<string>(
+    () => new Date().toISOString().split('T')[0],
+  )
+  const [noteFormTeacherName, setNoteFormTeacherName] = useState<string>(() => {
+    return localStorage.getItem('cognikids_teacher_author_name') || ''
+  })
+  const [noteTimelineChildFilter, setNoteTimelineChildFilter] = useState<string>('all')
+  const [isSubmittingNote, setIsSubmittingNote] = useState<boolean>(false)
+  const [offlinePendingNotesCount, setOfflinePendingNotesCount] = useState<number>(0)
+
+  // Quick activity suggestions
+  const QUICK_LESSON_SUGGESTIONS = [
+    'Roda de Conversa & Expressão Oral',
+    'Reconhecimento de Fala com o Mascote Tico',
+    'Circuito Motor & Coordenação Fina',
+    'Identificação de Cores e Padrões Lógicos',
+    'Contação de Histórias & Rimas Musicais',
+    'Introdução ao Vocabulário Bilíngue (Inglês)',
+    'Contagem Numérica & Quantidades',
+  ]
 
   // School coupon generator state
   const { toast } = useToast()
@@ -126,14 +175,19 @@ export const SchoolViewPortalPage: React.FC = () => {
     if (codeParam) {
       loadPortalData(codeParam)
     }
+    const unsub = teacherNotesService.onSyncChange((count) => {
+      setOfflinePendingNotesCount(count)
+    })
+    return () => unsub()
   }, [codeParam])
 
   const loadPortalData = async (code: string) => {
     setIsLoading(true)
     setErrorMsg(null)
-    const [result, redemptions] = await Promise.all([
+    const [result, redemptions, notes] = await Promise.all([
       getSchoolPortalData(code),
       fetchCouponRedemptions(),
+      teacherNotesService.fetchNotesBySchool(code),
     ])
 
     if (result) {
@@ -141,8 +195,13 @@ export const SchoolViewPortalPage: React.FC = () => {
       setActiveCodeFilter(result.primaryToken.access_code)
       if (result.children.length > 0) {
         setSelectedChildId(result.children[0].id)
+        setNoteFormChildId(result.children[0].id)
+        if (result.children[0].class_group) {
+          setNoteFormTurma(result.children[0].class_group)
+        }
       }
       setCouponRedemptions(redemptions)
+      setTeacherNotes(notes)
     } else {
       setErrorMsg(
         'Código de acesso inválido ou expirado. Verifique com a coordenação ou responsável da criança.',
@@ -403,7 +462,7 @@ export const SchoolViewPortalPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link to="/auth/login">
+            <Link to="/login">
               <Button
                 variant="outline"
                 size="sm"
@@ -533,6 +592,32 @@ export const SchoolViewPortalPage: React.FC = () => {
                   <span className="bg-black/20 text-inherit px-2 py-0.5 rounded-full text-[10px] font-black">
                     {couponRedemptions.length}
                   </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActivePortalSection('teacher_notes')
+                    const params = new URLSearchParams(searchParams)
+                    params.set('section', 'teacher_notes')
+                    setSearchParams(params, { replace: true })
+                  }}
+                  className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                    activePortalSection === 'teacher_notes'
+                      ? 'bg-emerald-400 text-slate-950 shadow-md shadow-black/10'
+                      : 'bg-white/15 text-white hover:bg-white/25'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 text-emerald-950" />
+                  <span>Anotações do Professor</span>
+                  <span className="bg-black/20 text-inherit px-2 py-0.5 rounded-full text-[10px] font-black">
+                    {teacherNotes.length}
+                  </span>
+                  {offlinePendingNotesCount > 0 && (
+                    <span className="bg-amber-500 text-white px-1.5 py-0.2 rounded-full text-[9px] font-black animate-pulse">
+                      {offlinePendingNotesCount} pendente(s)
+                    </span>
+                  )}
                 </button>
               </div>
 
@@ -1029,6 +1114,466 @@ export const SchoolViewPortalPage: React.FC = () => {
                         )}
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CONDITIONAL SECTION: ANOTAÇÕES DO PROFESSOR (ÁREA DO PROFESSOR) */}
+            {activePortalSection === 'teacher_notes' && (
+              <div className="space-y-6 animate-fade-in">
+                {/* Header Card */}
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 mb-2">
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Área do Professor & Registro Pedagógico Diário</span>
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-800">
+                      Diário de Aulas & Anotações de Desenvolvimento
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                      Registre as atividades realizadas em sala, avanços de fala, comportamento e
+                      interações lúdicas. Os registros ficam salvos para a equipe escolar e são
+                      compartilhados no painel dos pais.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {offlinePendingNotesCount > 0 && (
+                      <div className="flex items-center gap-2 bg-amber-50 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-2xl text-xs font-bold">
+                        <Clock className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+                        <span>{offlinePendingNotesCount} em fila offline</span>
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        setIsLoadingNotes(true)
+                        try {
+                          await teacherNotesService.syncPendingNotes()
+                          const notes = await teacherNotesService.fetchNotesBySchool(
+                            inputCode || codeParam,
+                          )
+                          setTeacherNotes(notes)
+                          toast({ title: 'Anotações sincronizadas e atualizadas! 🔄' })
+                        } finally {
+                          setIsLoadingNotes(false)
+                        }
+                      }}
+                      disabled={isLoadingNotes}
+                      className="rounded-2xl border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5"
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${isLoadingNotes ? 'animate-spin' : ''}`}
+                      />
+                      <span>{isLoadingNotes ? 'Atualizando…' : 'Atualizar Timeline'}</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Grid: Formulário de Nova Anotação + Timeline das Anotações */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Formulário do Professor (5 cols) */}
+                  <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-slate-800">
+                          Nova Anotação Pedagógica
+                        </h3>
+                        <p className="text-[11px] text-slate-400">
+                          Funciona online e offline (salva local e sincroniza depois)
+                        </p>
+                      </div>
+                    </div>
+
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault()
+                        if (!noteFormChildId || !noteFormActivity.trim()) {
+                          toast({
+                            title: 'Campos obrigatórios',
+                            description: 'Selecione o aluno e informe a atividade realizada.',
+                            variant: 'destructive',
+                          })
+                          return
+                        }
+
+                        setIsSubmittingNote(true)
+                        try {
+                          // Salva nome do professor no localStorage para persistência futura
+                          if (noteFormTeacherName.trim()) {
+                            localStorage.setItem(
+                              'cognikids_teacher_author_name',
+                              noteFormTeacherName.trim(),
+                            )
+                          }
+
+                          const schoolCode = inputCode || codeParam || 'ESCOLA-DEMO01'
+                          const selectedKid = portalData.children.find(
+                            (c) => c.id === noteFormChildId,
+                          )
+
+                          const tags: string[] = []
+                          if (selectedKid?.class_group) tags.push(selectedKid.class_group)
+                          if (
+                            noteFormActivity.toLowerCase().includes('inglês') ||
+                            noteFormActivity.toLowerCase().includes('bilíngue')
+                          ) {
+                            tags.push('Bilíngue')
+                          }
+                          if (
+                            noteFormActivity.toLowerCase().includes('motor') ||
+                            noteFormActivity.toLowerCase().includes('circuito')
+                          ) {
+                            tags.push('Coordenação Motora')
+                          }
+                          if (
+                            noteFormActivity.toLowerCase().includes('fala') ||
+                            noteFormActivity.toLowerCase().includes('conversa')
+                          ) {
+                            tags.push('Linguagem')
+                          }
+                          if (
+                            noteFormActivity.toLowerCase().includes('lógica') ||
+                            noteFormActivity.toLowerCase().includes('matemática') ||
+                            noteFormActivity.toLowerCase().includes('formas')
+                          ) {
+                            tags.push('Raciocínio')
+                          }
+                          if (tags.length === 0) tags.push('Desenvolvimento Integral')
+
+                          const created = await teacherNotesService.saveNote({
+                            school_code: schoolCode,
+                            child_id: noteFormChildId,
+                            class_group: noteFormTurma || selectedKid?.class_group || '',
+                            lesson_activity: noteFormActivity.trim(),
+                            author_name: noteFormTeacherName.trim() || 'Professor(a)',
+                            note_date: noteFormDate
+                              ? new Date(noteFormDate).toISOString()
+                              : new Date().toISOString(),
+                            observation: noteFormObservation.trim(),
+                            tags,
+                          })
+
+                          setTeacherNotes((prev) => [created, ...prev])
+                          setNoteFormActivity('')
+                          setNoteFormObservation('')
+                          toast({
+                            title: 'Anotação registrada com sucesso! 📝',
+                            description: created.synced
+                              ? 'Salva diretamente no banco da escola.'
+                              : 'Salva localmente (offline) e sincronizará quando online.',
+                          })
+                        } catch (err) {
+                          console.error('Error submitting teacher note', err)
+                          toast({
+                            title: 'Erro ao registrar anotação',
+                            variant: 'destructive',
+                          })
+                        } finally {
+                          setIsSubmittingNote(false)
+                        }
+                      }}
+                      className="space-y-4"
+                    >
+                      {/* Seletor de Turma */}
+                      <div className="space-y-1 text-left">
+                        <label className="text-xs font-bold text-slate-700">Turma / Sala</label>
+                        <select
+                          value={noteFormTurma}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setNoteFormTurma(val)
+                            // Auto select first child of this turma if possible
+                            const kidsInTurma = portalData.children.filter(
+                              (c) =>
+                                !val || (c.class_group || '').toLowerCase() === val.toLowerCase(),
+                            )
+                            if (kidsInTurma.length > 0) {
+                              setNoteFormChildId(kidsInTurma[0].id)
+                            }
+                          }}
+                          className="w-full h-11 px-3 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">Todas as Turmas da Escola</option>
+                          {availableTurmas.map((t) => (
+                            <option key={t} value={t}>
+                              Turma: {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Seletor de Aluno */}
+                      <div className="space-y-1 text-left">
+                        <label className="text-xs font-bold text-slate-700">Aluno(a) *</label>
+                        <select
+                          value={noteFormChildId}
+                          onChange={(e) => {
+                            setNoteFormChildId(e.target.value)
+                            const k = portalData.children.find((c) => c.id === e.target.value)
+                            if (k?.class_group) setNoteFormTurma(k.class_group)
+                          }}
+                          required
+                          className="w-full h-11 px-3 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">Selecione o aluno...</option>
+                          {portalData.children
+                            .filter(
+                              (c) =>
+                                !noteFormTurma ||
+                                (c.class_group || '').toLowerCase() === noteFormTurma.toLowerCase(),
+                            )
+                            .map((k) => (
+                              <option key={k.id} value={k.id}>
+                                {k.name} {k.class_group ? `(${k.class_group})` : ''}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+
+                      {/* Campo Atividade Realizada */}
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-xs font-bold text-slate-700">
+                          Aula / Atividade Realizada *
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="ex: Roda de Conversa com o Tico, Formas Geométricas..."
+                          value={noteFormActivity}
+                          onChange={(e) => setNoteFormActivity(e.target.value)}
+                          required
+                          className="rounded-2xl h-11 text-xs"
+                        />
+                        {/* Sugestões rápidas */}
+                        <div className="pt-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            Sugestões Rápidas:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {QUICK_LESSON_SUGGESTIONS.slice(0, 4).map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                onClick={() => setNoteFormActivity(sug)}
+                                className="text-[10px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-600 px-2 py-0.5 rounded-lg transition-colors border border-slate-200"
+                              >
+                                + {sug}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Nome do Professor e Data */}
+                      <div className="grid grid-cols-2 gap-3 text-left">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700">Professor(a)</label>
+                          <Input
+                            type="text"
+                            placeholder="ex: Profa. Camila"
+                            value={noteFormTeacherName}
+                            onChange={(e) => setNoteFormTeacherName(e.target.value)}
+                            className="rounded-2xl h-10 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700">Data</label>
+                          <Input
+                            type="date"
+                            value={noteFormDate}
+                            onChange={(e) => setNoteFormDate(e.target.value)}
+                            className="rounded-2xl h-10 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Observação / Parecer Pedagógico */}
+                      <div className="space-y-1 text-left">
+                        <label className="text-xs font-bold text-slate-700">
+                          Observação Pedagógica / Relato
+                        </label>
+                        <textarea
+                          rows={4}
+                          placeholder="Descreva o engajamento da criança, respostas na atividade, socialização ou estímulos recomendados..."
+                          value={noteFormObservation}
+                          onChange={(e) => setNoteFormObservation(e.target.value)}
+                          className="w-full p-3 rounded-2xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSubmittingNote || !noteFormChildId || !noteFormActivity.trim()}
+                        className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"
+                      >
+                        <Send className="w-4 h-4" />
+                        <span>
+                          {isSubmittingNote ? 'Registrando…' : 'Salvar Anotação no Diário'}
+                        </span>
+                      </Button>
+                    </form>
+                  </div>
+
+                  {/* Timeline das Anotações (7 cols) */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {/* Filtro por Aluno na Timeline */}
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-emerald-600" />
+                        <h3 className="text-sm font-black text-slate-800">
+                          Linha do Tempo das Anotações
+                        </h3>
+                      </div>
+
+                      {/* Seletor de filtro */}
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="text-[11px] font-bold text-slate-400">Filtrar por:</span>
+                        <select
+                          value={noteTimelineChildFilter}
+                          onChange={(e) => setNoteTimelineChildFilter(e.target.value)}
+                          className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-none"
+                        >
+                          <option value="all">Todos os Alunos ({teacherNotes.length})</option>
+                          {portalData.children.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Lista Cronológica */}
+                    {(() => {
+                      const displayedNotes = teacherNotes.filter((n) => {
+                        if (noteTimelineChildFilter === 'all') return true
+                        return n.child_id === noteTimelineChildFilter
+                      })
+
+                      if (displayedNotes.length === 0) {
+                        return (
+                          <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm text-center text-slate-400 space-y-3">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                              <FileText className="w-6 h-6" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-600">
+                              Nenhuma anotação registrada ainda para este filtro.
+                            </p>
+                            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                              Utilize o formulário ao lado para registrar o relato da aula ou
+                              atividade com o aluno.
+                            </p>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <div className="space-y-3.5">
+                          {displayedNotes.map((note) => {
+                            const kid = portalData.children.find((c) => c.id === note.child_id)
+                            const kidName = kid ? kid.name : note.expand?.child_id?.name || 'Aluno'
+                            const kidColor = kid ? kid.favorite_color : '#4F46E5'
+
+                            const formattedDate = note.note_date
+                              ? new Date(note.note_date).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })
+                              : 'Hoje'
+
+                            return (
+                              <div
+                                key={note.id}
+                                className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm space-y-3 hover:border-emerald-200 transition-colors"
+                              >
+                                {/* Top Bar */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-xs"
+                                      style={{ backgroundColor: kidColor || '#4F46E5' }}
+                                    >
+                                      {kidName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-black text-slate-800">
+                                          {kidName}
+                                        </span>
+                                        {note.class_group && (
+                                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                            {note.class_group}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[11px] text-slate-400">
+                                        Por <strong>{note.author_name || 'Professor(a)'}</strong>
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                                      <Calendar className="w-3.5 h-3.5" />
+                                      {formattedDate}
+                                    </span>
+                                    {note.synced === false ? (
+                                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                        Offline (Pendente)
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        ✓ Sincronizado
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Lesson / Activity Title */}
+                                <div>
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                                    Atividade Realizada
+                                  </span>
+                                  <h4 className="text-sm font-black text-slate-900 mt-1">
+                                    {note.lesson_activity}
+                                  </h4>
+                                </div>
+
+                                {/* Observation Body */}
+                                {note.observation && (
+                                  <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
+                                    {note.observation}
+                                  </p>
+                                )}
+
+                                {/* Tags */}
+                                {note.tags && note.tags.length > 0 && (
+                                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                    {note.tags.map((t) => (
+                                      <span
+                                        key={t}
+                                        className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg flex items-center gap-1"
+                                      >
+                                        <Tag className="w-2.5 h-2.5 text-slate-400" />
+                                        <span>{t}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>

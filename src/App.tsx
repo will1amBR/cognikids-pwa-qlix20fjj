@@ -35,19 +35,43 @@ import { GameRunnerPage } from './pages/game/GameRunner'
 import { DemoPresentationKitPage } from './pages/DemoPresentationKitPage'
 import { NotFound } from './pages/NotFound'
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: loading } = useAuth()
+import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 
-  if (loading) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading: loading, login } = useAuth()
+  const location = useLocation()
+  const [isDemoLoggingIn, setIsDemoLoggingIn] = useState(false)
+
+  const isDemoTarget =
+    location.pathname.includes('demo') ||
+    location.search.includes('demo') ||
+    location.pathname.includes('clara_demo_id') ||
+    location.pathname.includes('arthur_demo_id') ||
+    location.pathname.includes('theo_demo_id')
+
+  useEffect(() => {
+    if (!loading && !user && isDemoTarget && !isDemoLoggingIn) {
+      setIsDemoLoggingIn(true)
+      login('demo@cognikids.app', 'demo1234')
+        .catch((err) => console.warn('Auto-login demo failed in ProtectedRoute', err))
+        .finally(() => setIsDemoLoggingIn(false))
+    }
+  }, [loading, user, isDemoTarget, isDemoLoggingIn, login])
+
+  if (loading || isDemoLoggingIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-amber-50">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-amber-50 gap-3">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+        {isDemoLoggingIn && (
+          <p className="text-xs font-bold text-amber-800">Conectando à conta de demonstração...</p>
+        )}
       </div>
     )
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   return <>{children}</>
@@ -63,6 +87,7 @@ export function App() {
               {/* Public Routes */}
               <Route path="/" element={<IndexPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth/login" element={<Navigate to="/login" replace />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -116,16 +141,21 @@ export function App() {
                 <Route index element={<GuardianHome />} />
                 <Route path="children" element={<ChildrenListPage />} />
                 <Route path="children/new" element={<ChildFormPage />} />
-                <Route path="children/:id" element={<ChildDashboardPage />} />
-                <Route path="children/:id/edit" element={<ChildFormPage />} />
-                <Route path="child/:id" element={<ChildDashboardPage />} />
-                <Route path="daily/:id" element={<DailySessionPage />} />
-                <Route path="daily-session/:id" element={<DailySessionPage />} />
+                <Route path="children/:childId" element={<ChildDashboardPage />} />
+                <Route path="children/:childId/edit" element={<ChildFormPage />} />
+                <Route path="child/:childId" element={<ChildDashboardPage />} />
+                <Route path="daily/:childId" element={<DailySessionPage />} />
+                <Route path="daily-session/:childId" element={<DailySessionPage />} />
+                {/* Fallbacks para parâmetros com :id legados */}
+                <Route path="children/id/:id" element={<ChildDashboardPage />} />
+                <Route path="child/id/:id" element={<ChildDashboardPage />} />
+                <Route path="daily/id/:id" element={<DailySessionPage />} />
                 <Route path="history" element={<GameHistoryPage />} />
                 <Route path="history/:childId" element={<GameHistoryPage />} />
                 <Route path="reports" element={<EvolutionReportsPage />} />
                 <Route path="reports/:childId" element={<EvolutionReportsPage />} />
                 <Route path="invites" element={<InvitesAndSchoolPage />} />
+                <Route path="community" element={<InvitesAndSchoolPage />} />
                 <Route path="themes-guide" element={<GuardianThemesGuidePage />} />
                 <Route path="wardrobe" element={<TicoWardrobePage />} />
                 <Route path="loja" element={<TicoWardrobePage />} />
