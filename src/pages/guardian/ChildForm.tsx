@@ -17,7 +17,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, Upload, Trash2, Sparkles } from 'lucide-react'
+import {
+  ArrowLeft,
+  Loader2,
+  Upload,
+  Trash2,
+  HeartPulse,
+  ShieldAlert,
+  Phone,
+  Stethoscope,
+  Syringe,
+  AlertTriangle,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export const ChildFormPage: React.FC = () => {
@@ -41,6 +52,20 @@ export const ChildFormPage: React.FC = () => {
   const [dailyActivityCount, setDailyActivityCount] = useState<number>(3)
   const [learningLanguages, setLearningLanguages] = useState<AppLanguage[]>(['pt-BR'])
   const [primaryLanguage, setPrimaryLanguage] = useState<AppLanguage>('pt-BR')
+
+  // Detalhes médicos da ficha da criança
+  const [bloodType, setBloodType] = useState<string>('')
+  const [allergies, setAllergies] = useState<string>('')
+  const [continuousMedications, setContinuousMedications] = useState<string>('')
+  const [medicalConditions, setMedicalConditions] = useState<string>('')
+  const [pediatricianName, setPediatricianName] = useState<string>('')
+  const [pediatricianPhone, setPediatricianPhone] = useState<string>('')
+  const [emergencyContactName, setEmergencyContactName] = useState<string>('')
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState<string>('')
+  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState<string>('')
+  const [vaccinesUpToDate, setVaccinesUpToDate] = useState<string>('')
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<string>('')
+
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(isEditing)
 
@@ -65,6 +90,18 @@ export const ChildFormPage: React.FC = () => {
             setLearningLanguages(child.learning_languages as AppLanguage[])
           }
           if (child.primary_language) setPrimaryLanguage(child.primary_language as AppLanguage)
+          if (child.blood_type) setBloodType(child.blood_type)
+          if (child.allergies) setAllergies(child.allergies)
+          if (child.continuous_medications) setContinuousMedications(child.continuous_medications)
+          if (child.medical_conditions) setMedicalConditions(child.medical_conditions)
+          if (child.pediatrician_name) setPediatricianName(child.pediatrician_name)
+          if (child.pediatrician_phone) setPediatricianPhone(child.pediatrician_phone)
+          if (child.emergency_contact_name) setEmergencyContactName(child.emergency_contact_name)
+          if (child.emergency_contact_phone) setEmergencyContactPhone(child.emergency_contact_phone)
+          if (child.emergency_contact_relationship)
+            setEmergencyContactRelationship(child.emergency_contact_relationship)
+          if (child.vaccines_up_to_date) setVaccinesUpToDate(child.vaccines_up_to_date)
+          if (child.dietary_restrictions) setDietaryRestrictions(child.dietary_restrictions)
           const existingUrl = getChildAvatarUrl(child)
           if (existingUrl) setAvatarPreview(existingUrl)
         } else {
@@ -133,6 +170,17 @@ export const ChildFormPage: React.FC = () => {
           primary_language: primaryLanguage,
           avatarFile,
           clearAvatar,
+          blood_type: bloodType,
+          allergies: allergies.trim(),
+          continuous_medications: continuousMedications.trim(),
+          medical_conditions: medicalConditions.trim(),
+          pediatrician_name: pediatricianName.trim(),
+          pediatrician_phone: pediatricianPhone.trim(),
+          emergency_contact_name: emergencyContactName.trim(),
+          emergency_contact_phone: emergencyContactPhone.trim(),
+          emergency_contact_relationship: emergencyContactRelationship.trim(),
+          vaccines_up_to_date: vaccinesUpToDate,
+          dietary_restrictions: dietaryRestrictions.trim(),
         })
         toast({ title: 'Perfil atualizado com sucesso! 🎉' })
       } else {
@@ -152,6 +200,17 @@ export const ChildFormPage: React.FC = () => {
           learning_languages: learningLanguages,
           primary_language: primaryLanguage,
           avatarFile,
+          blood_type: bloodType,
+          allergies: allergies.trim(),
+          continuous_medications: continuousMedications.trim(),
+          medical_conditions: medicalConditions.trim(),
+          pediatrician_name: pediatricianName.trim(),
+          pediatrician_phone: pediatricianPhone.trim(),
+          emergency_contact_name: emergencyContactName.trim(),
+          emergency_contact_phone: emergencyContactPhone.trim(),
+          emergency_contact_relationship: emergencyContactRelationship.trim(),
+          vaccines_up_to_date: vaccinesUpToDate,
+          dietary_restrictions: dietaryRestrictions.trim(),
         })
 
         // Record coupon redemption if code was present
@@ -441,6 +500,283 @@ export const ChildFormPage: React.FC = () => {
                 </button>
               )
             })}
+          </div>
+        </div>
+        {/* Seção: Detalhes Médicos da Criança */}
+        <div className="pt-4 border-t border-slate-200/80 space-y-4 text-left">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <HeartPulse className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-black text-slate-800">
+                  Ficha Médica & Cuidados de Saúde
+                </Label>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  Opcional
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Informações para emergências e rotina escolar (visíveis também no Portal da Escola).
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-rose-900">
+            <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] leading-relaxed">
+              <strong>Privacidade garantida:</strong> Estes dados médicos são restritos aos
+              responsáveis e à equipe pedagógica autorizada no portal da escola. Eles nunca são
+              incluídos em compartilhamentos públicos ou resumos do WhatsApp.
+            </p>
+          </div>
+
+          {/* Tipo Sanguíneo e Vacinas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Tipo Sanguíneo */}
+            <div className="space-y-1.5">
+              <Label htmlFor="bloodType" className="text-xs font-bold text-slate-700">
+                Tipo sanguíneo
+              </Label>
+              <select
+                id="bloodType"
+                value={bloodType}
+                onChange={(e) => setBloodType(e.target.value)}
+                disabled={isLoading}
+                className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+              >
+                <option value="">Selecione (se souber)</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="Não sei">Não sei ainda</option>
+              </select>
+              <p className="text-[10px] text-slate-400">
+                Útil para atendimentos rápidos de emergência médica.
+              </p>
+            </div>
+
+            {/* Vacinas em dia */}
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="vaccines"
+                className="text-xs font-bold text-slate-700 flex items-center gap-1"
+              >
+                <Syringe className="w-3.5 h-3.5 text-rose-500" />
+                <span>Vacinas em dia?</span>
+              </Label>
+              <select
+                id="vaccines"
+                value={vaccinesUpToDate}
+                onChange={(e) => setVaccinesUpToDate(e.target.value)}
+                disabled={isLoading}
+                className="w-full h-11 px-3.5 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400"
+              >
+                <option value="">Não informado</option>
+                <option value="sim">Sim, calendário vacinal em dia ✓</option>
+                <option value="nao">Não / com doses pendentes</option>
+                <option value="nao_sei">Não sei / preciso verificar</option>
+              </select>
+              <p className="text-[10px] text-slate-400">
+                Acompanhamento conforme a caderneta da criança.
+              </p>
+            </div>
+          </div>
+
+          {/* Alergias & Restrições Alimentares */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="allergies"
+                className="text-xs font-bold text-slate-700 flex items-center gap-1"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span>Alergias conhecidas</span>
+              </Label>
+              <Input
+                id="allergies"
+                type="text"
+                placeholder="ex: Dipirona, abelha, amendoim, poeira..."
+                value={allergies}
+                onChange={(e) => setAllergies(e.target.value)}
+                disabled={isLoading}
+                className="rounded-2xl h-11 text-xs"
+              />
+              <p className="text-[10px] text-slate-400">
+                Medicamentos, alimentos, picadas de insetos ou outras reações.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="dietaryRestrictions" className="text-xs font-bold text-slate-700">
+                Restrições alimentares
+              </Label>
+              <Input
+                id="dietaryRestrictions"
+                type="text"
+                placeholder="ex: Sem lactose, glúten, vegano, ovos..."
+                value={dietaryRestrictions}
+                onChange={(e) => setDietaryRestrictions(e.target.value)}
+                disabled={isLoading}
+                className="rounded-2xl h-11 text-xs"
+              />
+              <p className="text-[10px] text-slate-400">
+                Orienta o lanche na escola e atividades culinárias.
+              </p>
+            </div>
+          </div>
+
+          {/* Medicamentos contínuos & Condições de saúde */}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="continuousMedications" className="text-xs font-bold text-slate-700">
+                Medicamentos de uso contínuo
+              </Label>
+              <Input
+                id="continuousMedications"
+                type="text"
+                placeholder="ex: Bombinha de asma, antialérgico diário, colírio..."
+                value={continuousMedications}
+                onChange={(e) => setContinuousMedications(e.target.value)}
+                disabled={isLoading}
+                className="rounded-2xl h-11 text-xs"
+              />
+              <p className="text-[10px] text-slate-400">
+                Remédios que a criança toma todos os dias ou precisa ter por perto.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="medicalConditions" className="text-xs font-bold text-slate-700">
+                Condições de saúde / Observações médicas
+              </Label>
+              <textarea
+                id="medicalConditions"
+                rows={2}
+                placeholder="ex: Asma induzida por esforço, convulsões febris no histórico, sensibilidade auditiva..."
+                value={medicalConditions}
+                onChange={(e) => setMedicalConditions(e.target.value)}
+                disabled={isLoading}
+                className="w-full p-3 rounded-2xl bg-white border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
+              />
+              <p className="text-[10px] text-slate-400">
+                Informações clínicas que professores e cuidadores devem saber.
+              </p>
+            </div>
+          </div>
+
+          {/* Pediatra Responsável */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+              <Stethoscope className="w-4 h-4 text-indigo-600" />
+              <span>Pediatra / Médico Responsável</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label
+                  htmlFor="pediatricianName"
+                  className="text-[11px] font-semibold text-slate-600"
+                >
+                  Nome do médico(a)
+                </Label>
+                <Input
+                  id="pediatricianName"
+                  type="text"
+                  placeholder="ex: Dra. Mariana Costa"
+                  value={pediatricianName}
+                  onChange={(e) => setPediatricianName(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl h-10 text-xs bg-white mt-1"
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="pediatricianPhone"
+                  className="text-[11px] font-semibold text-slate-600"
+                >
+                  Telefone / WhatsApp do médico
+                </Label>
+                <Input
+                  id="pediatricianPhone"
+                  type="tel"
+                  placeholder="ex: (11) 98765-4321"
+                  value={pediatricianPhone}
+                  onChange={(e) => setPediatricianPhone(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl h-10 text-xs bg-white mt-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contato de Emergência (além dos pais) */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+              <Phone className="w-4 h-4 text-emerald-600" />
+              <span>Contato de Emergência Adicional (além dos pais)</span>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Avós, tios, vizinho ou pessoa autorizada a ser contatada se os pais não atenderem.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-1">
+                <Label
+                  htmlFor="emergencyContactName"
+                  className="text-[11px] font-semibold text-slate-600"
+                >
+                  Nome do contato
+                </Label>
+                <Input
+                  id="emergencyContactName"
+                  type="text"
+                  placeholder="ex: Dona Rosa"
+                  value={emergencyContactName}
+                  onChange={(e) => setEmergencyContactName(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl h-10 text-xs bg-white mt-1"
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <Label
+                  htmlFor="emergencyContactRelationship"
+                  className="text-[11px] font-semibold text-slate-600"
+                >
+                  Parentesco / Vínculo
+                </Label>
+                <Input
+                  id="emergencyContactRelationship"
+                  type="text"
+                  placeholder="ex: Avó materna, Tio..."
+                  value={emergencyContactRelationship}
+                  onChange={(e) => setEmergencyContactRelationship(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl h-10 text-xs bg-white mt-1"
+                />
+              </div>
+              <div className="sm:col-span-1">
+                <Label
+                  htmlFor="emergencyContactPhone"
+                  className="text-[11px] font-semibold text-slate-600"
+                >
+                  Telefone para ligar
+                </Label>
+                <Input
+                  id="emergencyContactPhone"
+                  type="tel"
+                  placeholder="ex: (11) 97123-4567"
+                  value={emergencyContactPhone}
+                  onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl h-10 text-xs bg-white mt-1"
+                />
+              </div>
+            </div>
           </div>
         </div>
         {/* Configuração da Sessão Diária da Criança */}

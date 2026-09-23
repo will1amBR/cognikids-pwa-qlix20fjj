@@ -29,6 +29,12 @@ import {
   Check,
   Plus,
   Ticket,
+  HeartPulse,
+  AlertTriangle,
+  Stethoscope,
+  Phone,
+  Syringe,
+  AlertCircle,
 } from 'lucide-react'
 import {
   createClassroomInviteCode,
@@ -1751,6 +1757,11 @@ export const SchoolViewPortalPage: React.FC = () => {
                                 Turma: {selectedChild.class_group}
                               </span>
                             )}
+                            {selectedChild.blood_type && (
+                              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                Sangue: {selectedChild.blood_type}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-slate-500 mt-1">
                             Idade: <strong>{formatChildAge(selectedChild.birth_date)}</strong> •
@@ -1765,7 +1776,175 @@ export const SchoolViewPortalPage: React.FC = () => {
                         <span className="block font-bold text-slate-700">
                           Acesso via código oficial
                         </span>
-                        <span>Modo somente leitura pedagógico</span>
+                        <span>Modo somente leitura pedagógico & emergência</span>
+                      </div>
+                    </div>
+
+                    {/* Ficha Médica e Cuidados de Saúde para a Escola (Crítico para Emergência) */}
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-rose-200/90 shadow-sm space-y-4 relative overflow-hidden">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rose-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center font-bold shadow-md shadow-rose-600/20 shrink-0">
+                            <HeartPulse className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-600 text-white shadow-xs">
+                                Ficha de Saúde Escolar
+                              </span>
+                              <h3 className="text-lg font-black text-slate-900">
+                                Detalhes Médicos & Cuidados de {selectedChild.name}
+                              </h3>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Dados confidenciais essenciais para pronto atendimento em caso de
+                              emergência ou rotina escolar.
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-xl self-start sm:self-auto flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Somente leitura (registrado pelos pais)</span>
+                        </span>
+                      </div>
+
+                      {/* Grade de Alertas Médicos */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        {/* 1. Tipo Sanguíneo & Vacinação */}
+                        <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/80 space-y-2">
+                          <div className="flex items-center gap-1.5 text-rose-800 text-xs font-black uppercase">
+                            <span>🩸</span>
+                            <span>Tipo Sanguíneo & Vacinas</span>
+                          </div>
+                          <div className="space-y-1.5 text-xs">
+                            <p className="text-slate-800">
+                              Tipo Sanguíneo:{' '}
+                              <strong className="text-rose-900 font-black text-sm">
+                                {selectedChild.blood_type || 'Não informado'}
+                              </strong>
+                            </p>
+                            <p className="text-slate-600 flex items-center gap-1.5">
+                              <Syringe className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                              <span>
+                                Vacinas:{' '}
+                                <strong className="text-slate-800">
+                                  {selectedChild.vaccines_up_to_date === 'sim'
+                                    ? 'Em dia ✓'
+                                    : selectedChild.vaccines_up_to_date === 'nao'
+                                      ? 'Pendentes'
+                                      : selectedChild.vaccines_up_to_date === 'nao_sei'
+                                        ? 'A verificar'
+                                        : 'Não informado'}
+                                </strong>
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 2. Alergias & Restrições Alimentares */}
+                        <div
+                          className={`p-4 rounded-2xl border space-y-2 ${
+                            selectedChild.allergies || selectedChild.dietary_restrictions
+                              ? 'bg-amber-50/70 border-amber-300'
+                              : 'bg-slate-50 border-slate-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 text-amber-900 text-xs font-black uppercase">
+                            <AlertTriangle className="w-4 h-4 text-amber-600" />
+                            <span>Alergias & Restrições</span>
+                          </div>
+                          <div className="space-y-1 text-xs">
+                            <p className="text-slate-800 leading-snug">
+                              <strong>Alergias:</strong>{' '}
+                              <span
+                                className={
+                                  selectedChild.allergies
+                                    ? 'text-amber-950 font-bold'
+                                    : 'text-slate-500'
+                                }
+                              >
+                                {selectedChild.allergies || 'Nenhuma alergia relatada'}
+                              </span>
+                            </p>
+                            <p className="text-slate-800 leading-snug">
+                              <strong>Alimentação:</strong>{' '}
+                              <span className="text-slate-700">
+                                {selectedChild.dietary_restrictions || 'Sem restrições relatadas'}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 3. Medicamentos & Condições de Saúde */}
+                        <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 space-y-2">
+                          <div className="flex items-center gap-1.5 text-indigo-900 text-xs font-black uppercase">
+                            <span>💊</span>
+                            <span>Medicamentos & Condições</span>
+                          </div>
+                          <div className="space-y-1 text-xs">
+                            <p className="text-slate-800 leading-snug">
+                              <strong>Uso contínuo:</strong>{' '}
+                              <span className="text-slate-700">
+                                {selectedChild.continuous_medications ||
+                                  'Nenhum medicamento contínuo'}
+                              </span>
+                            </p>
+                            <p className="text-slate-800 leading-snug">
+                              <strong>Condições/Asma:</strong>{' '}
+                              <span className="text-slate-700">
+                                {selectedChild.medical_conditions || 'Nenhuma observação médica'}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 4. Pediatra & Contato de Emergência */}
+                        <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+                          <div className="flex items-center gap-1.5 text-emerald-900 text-xs font-black uppercase">
+                            <Phone className="w-4 h-4 text-emerald-600" />
+                            <span>Emergência / Médico</span>
+                          </div>
+                          <div className="space-y-1 text-xs">
+                            {selectedChild.pediatrician_name ? (
+                              <p className="text-slate-800 leading-snug truncate">
+                                <strong>Pediatra:</strong> {selectedChild.pediatrician_name}
+                                {selectedChild.pediatrician_phone && (
+                                  <a
+                                    href={`tel:${selectedChild.pediatrician_phone}`}
+                                    className="block font-bold text-emerald-700 hover:underline text-[11px] mt-0.5"
+                                  >
+                                    📞 {selectedChild.pediatrician_phone}
+                                  </a>
+                                )}
+                              </p>
+                            ) : null}
+
+                            {selectedChild.emergency_contact_name ? (
+                              <p className="text-slate-800 leading-snug truncate pt-1 border-t border-emerald-200/60">
+                                <strong>Contato Adicional:</strong>{' '}
+                                {selectedChild.emergency_contact_name}{' '}
+                                {selectedChild.emergency_contact_relationship &&
+                                  `(${selectedChild.emergency_contact_relationship})`}
+                                {selectedChild.emergency_contact_phone && (
+                                  <a
+                                    href={`tel:${selectedChild.emergency_contact_phone}`}
+                                    className="block font-bold text-emerald-700 hover:underline text-[11px] mt-0.5"
+                                  >
+                                    📞 {selectedChild.emergency_contact_phone}
+                                  </a>
+                                )}
+                              </p>
+                            ) : null}
+
+                            {!selectedChild.pediatrician_name &&
+                              !selectedChild.emergency_contact_name && (
+                                <p className="text-slate-400 text-[11px]">
+                                  Contatar diretamente os responsáveis cadastrados.
+                                </p>
+                              )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 

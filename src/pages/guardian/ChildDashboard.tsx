@@ -59,6 +59,16 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  HeartPulse,
+  AlertTriangle,
+  Stethoscope,
+  Phone,
+  Syringe,
+  Pencil,
+  ShieldCheck,
+  CheckCircle,
+} from 'lucide-react'
 import { useSound } from '@/context/SoundContext'
 
 export const ChildDashboardPage: React.FC = () => {
@@ -315,11 +325,214 @@ export const ChildDashboardPage: React.FC = () => {
                 <Gamepad2 className="w-5 h-5 text-orange-500" />
                 <span>Todos os Jogos</span>
               </Button>
+
+              <Button
+                onClick={() => {
+                  playPop()
+                  navigate(`/app/children/edit/${child.id}`)
+                }}
+                variant="outline"
+                className="h-14 px-4 rounded-2xl border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5"
+                title="Editar dados da criança e ficha médica"
+              >
+                <Pencil className="w-4 h-4 text-slate-500" />
+                <span className="hidden sm:inline">Editar Perfil</span>
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Cartão de Detalhes Médicos & Saúde da Criança */}
+      {(() => {
+        const hasAnyMedicalData = Boolean(
+          child.blood_type ||
+          child.allergies ||
+          child.continuous_medications ||
+          child.medical_conditions ||
+          child.pediatrician_name ||
+          child.pediatrician_phone ||
+          child.emergency_contact_name ||
+          child.emergency_contact_phone ||
+          child.vaccines_up_to_date ||
+          child.dietary_restrictions,
+        )
+
+        const vaccineLabel =
+          child.vaccines_up_to_date === 'sim'
+            ? 'Em dia'
+            : child.vaccines_up_to_date === 'nao'
+              ? 'Doses pendentes'
+              : child.vaccines_up_to_date === 'nao_sei'
+                ? 'A verificar'
+                : null
+
+        return (
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-rose-200/90 shadow-sm space-y-4 relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rose-100">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-200">
+                  <HeartPulse className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-black text-slate-800">
+                      Detalhes Médicos & Ficha de Saúde
+                    </h2>
+                    {hasAnyMedicalData ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Preenchida
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        Pendente
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Informações de cuidados, alergias e contatos de emergência (visíveis para a
+                    escola).
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  playPop()
+                  navigate(`/app/children/edit/${child.id}`)
+                }}
+                className="rounded-2xl border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto h-9"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>{hasAnyMedicalData ? 'Editar Ficha Médica' : 'Preencher Ficha Médica'}</span>
+              </Button>
+            </div>
+
+            {!hasAnyMedicalData ? (
+              <div className="bg-rose-50/40 border border-dashed border-rose-200 rounded-2xl p-5 text-center space-y-2">
+                <p className="text-xs font-bold text-slate-700">
+                  Nenhum detalhe médico preenchido para {child.name} ainda.
+                </p>
+                <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                  Em caso de emergência ou no dia a dia da escola, ter alergias, tipo sanguíneo e
+                  contato do pediatra cadastrados ajuda a equipe a cuidar do seu filho com
+                  agilidade.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    playPop()
+                    navigate(`/app/children/edit/${child.id}`)
+                  }}
+                  className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs mt-1"
+                >
+                  Adicionar Detalhes Médicos Agora
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                {/* Tipo Sanguíneo & Vacinas */}
+                <div className="p-3.5 rounded-2xl bg-rose-50/50 border border-rose-100 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 flex items-center gap-1">
+                    <span>🩸</span>
+                    <span>Tipo Sanguíneo & Vacinas</span>
+                  </span>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-800">
+                      Tipo:{' '}
+                      <strong className="text-rose-900 font-black">
+                        {child.blood_type || 'Não informado'}
+                      </strong>
+                    </p>
+                    {vaccineLabel && (
+                      <p className="text-xs text-slate-600 flex items-center gap-1">
+                        <Syringe className="w-3 h-3 text-rose-500" />
+                        <span>
+                          Vacinas: <strong>{vaccineLabel}</strong>
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Alergias & Restrições */}
+                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/70 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Alergias & Restrições</span>
+                  </span>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-800 leading-snug">
+                      <strong>Alergias:</strong> {child.allergies || 'Nenhuma informada'}
+                    </p>
+                    {child.dietary_restrictions && (
+                      <p className="text-[11px] text-slate-600 leading-snug">
+                        <strong>Alimentar:</strong> {child.dietary_restrictions}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Medicamentos & Condições */}
+                <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                    <span>💊</span>
+                    <span>Medicamentos & Cuidados</span>
+                  </span>
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-800 leading-snug">
+                      <strong>Uso contínuo:</strong> {child.continuous_medications || 'Nenhum'}
+                    </p>
+                    {child.medical_conditions && (
+                      <p className="text-[11px] text-slate-600 leading-snug">
+                        <strong>Condição:</strong> {child.medical_conditions}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pediatra & Emergência */}
+                <div className="p-3.5 rounded-2xl bg-emerald-50/50 border border-emerald-100 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                    <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Contatos de Emergência</span>
+                  </span>
+                  <div className="space-y-1 text-xs">
+                    {child.pediatrician_name ? (
+                      <p className="text-slate-800 truncate">
+                        <strong>Pediatra:</strong> {child.pediatrician_name}{' '}
+                        {child.pediatrician_phone && (
+                          <span className="text-emerald-700 font-semibold block text-[11px]">
+                            📞 {child.pediatrician_phone}
+                          </span>
+                        )}
+                      </p>
+                    ) : null}
+                    {child.emergency_contact_name ? (
+                      <p className="text-slate-800 truncate">
+                        <strong>Adicional:</strong> {child.emergency_contact_name}{' '}
+                        {child.emergency_contact_relationship &&
+                          `(${child.emergency_contact_relationship})`}
+                        {child.emergency_contact_phone && (
+                          <span className="text-emerald-700 font-semibold block text-[11px]">
+                            📞 {child.emergency_contact_phone}
+                          </span>
+                        )}
+                      </p>
+                    ) : null}
+                    {!child.pediatrician_name && !child.emergency_contact_name && (
+                      <p className="text-[11px] text-slate-500">Nenhum telefone registrado</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
       {/* Status de Desenvolvimento: "Indo Bem" vs "Precisa Melhorar" */}
       <div
         className={`rounded-3xl p-6 border transition-all ${

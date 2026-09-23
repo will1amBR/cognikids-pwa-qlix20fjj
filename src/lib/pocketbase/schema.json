@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T16:05:18.472Z",
+  "generatedAt": "2026-09-23T01:36:29.437Z",
   "collections": [
     {
       "name": "users",
@@ -162,6 +162,74 @@
         },
         {
           "name": "primary_language",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "blood_type",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Não sei"]
+        },
+        {
+          "name": "allergies",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "continuous_medications",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "medical_conditions",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pediatrician_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pediatrician_phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "emergency_contact_name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "emergency_contact_phone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "emergency_contact_relationship",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "vaccines_up_to_date",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["sim", "nao", "nao_sei"]
+        },
+        {
+          "name": "dietary_restrictions",
           "type": "text",
           "required": false,
           "system": false

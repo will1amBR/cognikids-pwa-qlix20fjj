@@ -80,6 +80,18 @@ export async function fetchChildById(id: string): Promise<Child | null> {
         daily_activity_count: 3,
         primary_language: 'pt-BR',
         learning_languages: ['pt-BR', 'en'],
+        blood_type: 'O+',
+        allergies: 'Picada de inseto (abelha); leve intolerância a lactose',
+        continuous_medications: 'Nenhum no momento',
+        medical_conditions: 'Rinite alérgica em dias secos',
+        pediatrician_name: 'Dra. Mariana Costa (Pediatra)',
+        pediatrician_phone: '(11) 98765-4321',
+        emergency_contact_name: 'Dona Rosa (Avó materna)',
+        emergency_contact_phone: '(11) 97123-4567',
+        emergency_contact_relationship: 'Avó materna',
+        vaccines_up_to_date: 'sim',
+        dietary_restrictions:
+          'Evitar leite puro de vaca (oferecer alternativa vegetal ou sem lactose)',
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
       }
@@ -96,6 +108,17 @@ export async function fetchChildById(id: string): Promise<Child | null> {
         daily_activity_count: 4,
         primary_language: 'pt-BR',
         learning_languages: ['pt-BR', 'en', 'es'],
+        blood_type: 'O+',
+        allergies: 'Amendoim e castanhas',
+        continuous_medications: 'Aerolin spray (bombinha) se houver crise de asma',
+        medical_conditions: 'Asma leve induzida por esforço físico intenso',
+        pediatrician_name: 'Dra. Camila Alencar',
+        pediatrician_phone: '(11) 98111-2233',
+        emergency_contact_name: 'Carlos Eduardo (Tio)',
+        emergency_contact_phone: '(11) 99333-7788',
+        emergency_contact_relationship: 'Tio materno',
+        vaccines_up_to_date: 'sim',
+        dietary_restrictions: 'Restrição severa a amendoim, nozes e castanhas',
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
       }
@@ -112,6 +135,17 @@ export async function fetchChildById(id: string): Promise<Child | null> {
         daily_activity_count: 2,
         primary_language: 'pt-BR',
         learning_languages: ['pt-BR'],
+        blood_type: 'A+',
+        allergies: 'Nenhuma alergia conhecida',
+        continuous_medications: 'Vitamina D (gotas diárias)',
+        medical_conditions: 'Nenhuma condição crônica',
+        pediatrician_name: 'Dr. Roberto Silveira',
+        pediatrician_phone: '(11) 99888-1234',
+        emergency_contact_name: 'Tio Lucas Silveira',
+        emergency_contact_phone: '(11) 98222-3344',
+        emergency_contact_relationship: 'Tio paterno',
+        vaccines_up_to_date: 'sim',
+        dietary_restrictions: 'Introdução alimentar fase 2 (frutas amassadas, papinhas sem sal)',
         created: new Date().toISOString(),
         updated: new Date().toISOString(),
       }
@@ -137,6 +171,17 @@ export async function createChild(data: {
   daily_activity_count?: number
   learning_languages?: string[]
   primary_language?: string
+  blood_type?: string
+  allergies?: string
+  continuous_medications?: string
+  medical_conditions?: string
+  pediatrician_name?: string
+  pediatrician_phone?: string
+  emergency_contact_name?: string
+  emergency_contact_phone?: string
+  emergency_contact_relationship?: string
+  vaccines_up_to_date?: string
+  dietary_restrictions?: string
 }): Promise<Child> {
   const formData = new FormData()
   formData.append('user_id', pb.authStore.record?.id || '')
@@ -151,6 +196,27 @@ export async function createChild(data: {
     formData.append('learning_languages', JSON.stringify(data.learning_languages))
   if (data.primary_language) formData.append('primary_language', data.primary_language)
   if (data.avatarFile) formData.append('avatar', data.avatarFile)
+
+  // Medical details
+  if (data.blood_type) formData.append('blood_type', data.blood_type)
+  if (data.allergies !== undefined) formData.append('allergies', data.allergies)
+  if (data.continuous_medications !== undefined)
+    formData.append('continuous_medications', data.continuous_medications)
+  if (data.medical_conditions !== undefined)
+    formData.append('medical_conditions', data.medical_conditions)
+  if (data.pediatrician_name !== undefined)
+    formData.append('pediatrician_name', data.pediatrician_name)
+  if (data.pediatrician_phone !== undefined)
+    formData.append('pediatrician_phone', data.pediatrician_phone)
+  if (data.emergency_contact_name !== undefined)
+    formData.append('emergency_contact_name', data.emergency_contact_name)
+  if (data.emergency_contact_phone !== undefined)
+    formData.append('emergency_contact_phone', data.emergency_contact_phone)
+  if (data.emergency_contact_relationship !== undefined)
+    formData.append('emergency_contact_relationship', data.emergency_contact_relationship)
+  if (data.vaccines_up_to_date) formData.append('vaccines_up_to_date', data.vaccines_up_to_date)
+  if (data.dietary_restrictions !== undefined)
+    formData.append('dietary_restrictions', data.dietary_restrictions)
 
   const res = await pb.collection('children').create<Child>(formData)
   return res
@@ -169,6 +235,17 @@ export async function updateChild(
     daily_activity_count?: number
     learning_languages?: string[]
     primary_language?: string
+    blood_type?: string
+    allergies?: string
+    continuous_medications?: string
+    medical_conditions?: string
+    pediatrician_name?: string
+    pediatrician_phone?: string
+    emergency_contact_name?: string
+    emergency_contact_phone?: string
+    emergency_contact_relationship?: string
+    vaccines_up_to_date?: string
+    dietary_restrictions?: string
   },
 ): Promise<Child> {
   const formData = new FormData()
@@ -188,6 +265,28 @@ export async function updateChild(
   } else if (data.clearAvatar) {
     formData.append('avatar', '')
   }
+
+  // Medical details
+  if (data.blood_type !== undefined) formData.append('blood_type', data.blood_type)
+  if (data.allergies !== undefined) formData.append('allergies', data.allergies)
+  if (data.continuous_medications !== undefined)
+    formData.append('continuous_medications', data.continuous_medications)
+  if (data.medical_conditions !== undefined)
+    formData.append('medical_conditions', data.medical_conditions)
+  if (data.pediatrician_name !== undefined)
+    formData.append('pediatrician_name', data.pediatrician_name)
+  if (data.pediatrician_phone !== undefined)
+    formData.append('pediatrician_phone', data.pediatrician_phone)
+  if (data.emergency_contact_name !== undefined)
+    formData.append('emergency_contact_name', data.emergency_contact_name)
+  if (data.emergency_contact_phone !== undefined)
+    formData.append('emergency_contact_phone', data.emergency_contact_phone)
+  if (data.emergency_contact_relationship !== undefined)
+    formData.append('emergency_contact_relationship', data.emergency_contact_relationship)
+  if (data.vaccines_up_to_date !== undefined)
+    formData.append('vaccines_up_to_date', data.vaccines_up_to_date)
+  if (data.dietary_restrictions !== undefined)
+    formData.append('dietary_restrictions', data.dietary_restrictions)
 
   const res = await pb.collection('children').update<Child>(id, formData)
 
@@ -652,6 +751,17 @@ export async function getSchoolPortalData(accessCode: string): Promise<SchoolPor
           favorite_color: '#FF7A45',
           daily_minutes: 15,
           daily_activity_count: 3,
+          blood_type: 'O+',
+          allergies: 'Picada de abelha; intolerância moderada a lactose',
+          continuous_medications: 'Nenhum',
+          medical_conditions: 'Rinite alérgica sazonal',
+          pediatrician_name: 'Dra. Mariana Costa',
+          pediatrician_phone: '(11) 98765-4321',
+          emergency_contact_name: 'Dona Rosa (Avó materna)',
+          emergency_contact_phone: '(11) 97123-4567',
+          emergency_contact_relationship: 'Avó materna',
+          vaccines_up_to_date: 'sim',
+          dietary_restrictions: 'Sem lactose (leite sem lactose ou vegetal)',
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
         },
@@ -664,6 +774,17 @@ export async function getSchoolPortalData(accessCode: string): Promise<SchoolPor
           favorite_color: '#34D399',
           daily_minutes: 10,
           daily_activity_count: 2,
+          blood_type: 'A+',
+          allergies: 'Nenhuma alergia conhecida',
+          continuous_medications: 'Vitamina D em gotas',
+          medical_conditions: 'Nenhuma',
+          pediatrician_name: 'Dr. Roberto Silveira',
+          pediatrician_phone: '(11) 99888-1234',
+          emergency_contact_name: 'Tio Lucas Silveira',
+          emergency_contact_phone: '(11) 98222-3344',
+          emergency_contact_relationship: 'Tio paterno',
+          vaccines_up_to_date: 'sim',
+          dietary_restrictions: 'Alimentos bem amassados / sem sal',
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
         },
@@ -676,6 +797,17 @@ export async function getSchoolPortalData(accessCode: string): Promise<SchoolPor
           favorite_color: '#6366F1',
           daily_minutes: 25,
           daily_activity_count: 4,
+          blood_type: 'O+',
+          allergies: 'Amendoim e castanhas',
+          continuous_medications: 'Aerolin spray (se falta de ar após corrida)',
+          medical_conditions: 'Asma leve induzida por esforço',
+          pediatrician_name: 'Dra. Camila Alencar',
+          pediatrician_phone: '(11) 98111-2233',
+          emergency_contact_name: 'Carlos Eduardo',
+          emergency_contact_phone: '(11) 99333-7788',
+          emergency_contact_relationship: 'Tio',
+          vaccines_up_to_date: 'sim',
+          dietary_restrictions: 'Restrição severa a amendoim, nozes e castanhas',
           created: new Date().toISOString(),
           updated: new Date().toISOString(),
         },

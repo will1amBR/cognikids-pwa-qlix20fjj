@@ -22,7 +22,25 @@ export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { code: 'fr', label: 'Francês', nativeName: 'Français', flag: '🇫🇷', speechLang: 'fr-FR' },
 ]
 
-export interface Child {
+export type BloodType = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'Não sei' | string
+
+export type VaccineStatus = 'sim' | 'nao' | 'nao_sei' | string
+
+export interface ChildMedicalDetails {
+  blood_type?: BloodType
+  allergies?: string
+  continuous_medications?: string
+  medical_conditions?: string
+  pediatrician_name?: string
+  pediatrician_phone?: string
+  emergency_contact_name?: string
+  emergency_contact_phone?: string
+  emergency_contact_relationship?: string
+  vaccines_up_to_date?: VaccineStatus
+  dietary_restrictions?: string
+}
+
+export interface Child extends ChildMedicalDetails {
   id: string
   user_id: string
   name: string
