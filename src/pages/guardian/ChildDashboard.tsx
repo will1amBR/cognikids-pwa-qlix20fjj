@@ -329,7 +329,7 @@ export const ChildDashboardPage: React.FC = () => {
               <Button
                 onClick={() => {
                   playPop()
-                  navigate(`/app/children/edit/${child.id}`)
+                  navigate(`/app/children/${child.id}/edit`)
                 }}
                 variant="outline"
                 className="h-14 px-4 rounded-2xl border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5"
@@ -402,7 +402,7 @@ export const ChildDashboardPage: React.FC = () => {
                 variant="outline"
                 onClick={() => {
                   playPop()
-                  navigate(`/app/children/edit/${child.id}`)
+                  navigate(`/app/children/${child.id}/edit`)
                 }}
                 className="rounded-2xl border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto h-9"
               >
@@ -425,7 +425,7 @@ export const ChildDashboardPage: React.FC = () => {
                   size="sm"
                   onClick={() => {
                     playPop()
-                    navigate(`/app/children/edit/${child.id}`)
+                    navigate(`/app/children/${child.id}/edit`)
                   }}
                   className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs mt-1"
                 >
