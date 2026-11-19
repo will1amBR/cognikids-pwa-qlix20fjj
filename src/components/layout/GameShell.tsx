@@ -119,19 +119,19 @@ export const GameShell: React.FC<GameShellProps> = ({
         </div>
 
         {/* Right: Audio Controls and optional Top Advance/Skip Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 justify-end sm:flex-none min-w-0">
           {onNextRound && (
             <button
               onClick={() => {
                 playPop()
                 onNextRound()
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/90 hover:bg-orange-50 text-orange-600 font-extrabold text-xs border border-orange-200/80 shadow-sm transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-2xl bg-white/90 hover:bg-orange-50 text-orange-600 font-extrabold text-[11px] sm:text-xs border border-orange-200/80 shadow-sm transition-all active:scale-95 min-w-0"
               title="Avançar para a próxima rodada"
               aria-label="Avançar rodada"
             >
-              <span>{nextLabel}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span className="truncate">{nextLabel}</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </button>
           )}
 
@@ -172,11 +172,11 @@ export const GameShell: React.FC<GameShellProps> = ({
 
           {/* Persistent Floating Bottom Action Bar if onNextRound is provided */}
           {onNextRound && (
-            <div className="w-full max-w-lg mt-3 flex items-center justify-between gap-3 bg-white/85 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div className="w-full max-w-lg mt-3 flex items-center justify-between gap-2 sm:gap-3 bg-white/85 backdrop-blur-md px-3 sm:px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
               <button
                 type="button"
                 onClick={handleExitClick}
-                className="text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors"
+                className="text-[11px] sm:text-xs font-semibold text-slate-500 hover:text-rose-600 transition-colors shrink-0 whitespace-nowrap"
               >
                 Voltar / Sair
               </button>
@@ -187,10 +187,12 @@ export const GameShell: React.FC<GameShellProps> = ({
                   playPop()
                   onNextRound()
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all min-w-0 flex-1 sm:flex-none justify-center"
               >
-                <span>{currentRound >= totalRounds ? 'Concluir Jogo' : 'Próxima Rodada'}</span>
-                <ArrowRight className="w-4 h-4" />
+                <span className="truncate">
+                  {currentRound >= totalRounds ? 'Concluir Jogo' : 'Próxima Rodada'}
+                </span>
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
             </div>
           )}

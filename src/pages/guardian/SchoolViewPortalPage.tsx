@@ -539,9 +539,11 @@ export const SchoolViewPortalPage: React.FC = () => {
             <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-purple-700 rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-6">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/15">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 backdrop-blur-sm">
-                    <School className="w-3.5 h-3.5" />
-                    <span>{portalData.institutionName}</span>
+                  <div className="inline-flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 backdrop-blur-sm max-w-[calc(100vw-4rem)]">
+                    <School className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate" title={portalData.institutionName}>
+                      {portalData.institutionName}
+                    </span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
                     Painel da Equipe Pedagógica
@@ -654,13 +656,16 @@ export const SchoolViewPortalPage: React.FC = () => {
                       <button
                         key={t}
                         onClick={() => setSelectedTurma(t)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        title={t}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all max-w-full min-w-0 ${
                           selectedTurma.toLowerCase() === t.toLowerCase()
                             ? 'bg-white text-indigo-900 shadow-md font-black'
                             : 'bg-white/15 text-white hover:bg-white/25'
                         }`}
                       >
-                        {t} {count > 0 ? `(${count})` : ''}
+                        <span className="block truncate">
+                          {t} {count > 0 ? `(${count})` : ''}
+                        </span>
                       </button>
                     )
                   })}
@@ -687,15 +692,23 @@ export const SchoolViewPortalPage: React.FC = () => {
                       <button
                         key={tok.id}
                         onClick={() => setActiveCodeFilter(tok.access_code)}
-                        className={`px-2.5 py-1 rounded-xl font-mono text-xs transition-all ${
+                        className={`px-2.5 py-1 rounded-xl font-mono text-xs transition-all max-w-full min-w-0 ${
                           activeCodeFilter === tok.access_code
                             ? 'bg-white text-indigo-900 shadow-md font-black'
                             : 'bg-white/15 text-white hover:bg-white/25 font-semibold'
                         }`}
-                        title={tok.teacher_name ? `Prof: ${tok.teacher_name}` : tok.access_code}
+                        title={
+                          tok.teacher_name
+                            ? `Prof: ${tok.teacher_name} — ${tok.access_code}${
+                                tok.class_group ? ` (${tok.class_group})` : ''
+                              }`
+                            : `${tok.access_code}${tok.class_group ? ` (${tok.class_group})` : ''}`
+                        }
                       >
-                        {tok.access_code}
-                        {tok.class_group ? ` (${tok.class_group})` : ''}
+                        <span className="block truncate">
+                          {tok.access_code}
+                          {tok.class_group ? ` (${tok.class_group})` : ''}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -746,12 +759,15 @@ export const SchoolViewPortalPage: React.FC = () => {
                       key={c.code}
                       className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3"
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-slate-800">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <span className="text-xs font-black text-slate-800 min-w-0 truncate">
                             Turma: {c.classGroup}
                           </span>
-                          <span className="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-200">
+                          <span
+                            className="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-200 max-w-[55%] truncate"
+                            title={c.code}
+                          >
                             {c.code}
                           </span>
                         </div>
@@ -806,9 +822,11 @@ export const SchoolViewPortalPage: React.FC = () => {
                 {/* Header & Refresh Controls */}
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-900 mb-2">
-                      <Ticket className="w-3.5 h-3.5" />
-                      <span>Painel de Conversão & Acompanhamento de Matrículas</span>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-900 mb-2 max-w-[calc(100vw-6rem)]">
+                      <Ticket className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">
+                        Painel de Conversão & Acompanhamento de Matrículas
+                      </span>
                     </div>
                     <h2 className="text-2xl font-black text-slate-800">
                       Estatísticas Reais de Matrícula por Cupom
@@ -1704,20 +1722,25 @@ export const SchoolViewPortalPage: React.FC = () => {
                           <button
                             key={child.id}
                             onClick={() => setSelectedChildId(child.id)}
-                            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2.5 border-2 ${
+                            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2.5 border-2 max-w-full ${
                               isSelected
                                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20 scale-102'
                                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                             }`}
                           >
                             <div
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black"
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0"
                               style={{ backgroundColor: child.favorite_color || '#4F46E5' }}
                             >
                               {child.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="text-left">
-                              <span className="block leading-tight">{child.name}</span>
+                            <div className="text-left min-w-0">
+                              <span
+                                className="block leading-tight max-w-[10rem] truncate"
+                                title={child.name}
+                              >
+                                {child.name}
+                              </span>
                               <span
                                 className={`text-[10px] font-medium block leading-tight ${
                                   isSelected ? 'text-indigo-100' : 'text-slate-400'
@@ -1747,13 +1770,13 @@ export const SchoolViewPortalPage: React.FC = () => {
                         >
                           {selectedChild.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
+                        <div className="min-w-0">
+                          <h2 className="text-xl sm:text-2xl font-black text-slate-800 break-words">
+                            {selectedChild.name}
+                          </h2>
                           <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-xl sm:text-2xl font-black text-slate-800">
-                              {selectedChild.name}
-                            </h2>
                             {selectedChild.class_group && (
-                              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 break-words">
                                 Turma: {selectedChild.class_group}
                               </span>
                             )}
