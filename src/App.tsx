@@ -21,6 +21,7 @@ import { ChildDashboardPage } from './pages/guardian/ChildDashboard'
 import { DailySessionPage } from './pages/guardian/DailySessionPage'
 import { GameHistoryPage } from './pages/guardian/GameHistoryPage'
 import { EvolutionReportsPage } from './pages/guardian/EvolutionReportsPage'
+import AdvancedReportPage from './pages/guardian/AdvancedReportPage'
 import { InvitesAndSchoolPage } from './pages/guardian/InvitesAndSchoolPage'
 import { SchoolViewPortalPage } from './pages/guardian/SchoolViewPortalPage'
 import { SettingsPage } from './pages/guardian/SettingsPage'
@@ -155,6 +156,8 @@ export function App() {
                 <Route path="history/:childId" element={<GameHistoryPage />} />
                 <Route path="reports" element={<EvolutionReportsPage />} />
                 <Route path="reports/:childId" element={<EvolutionReportsPage />} />
+                <Route path="reports-advanced" element={<AdvancedReportPage />} />
+                <Route path="reports-advanced/:childId" element={<AdvancedReportPage />} />
                 <Route path="invites" element={<InvitesAndSchoolPage />} />
                 <Route path="community" element={<InvitesAndSchoolPage />} />
                 <Route path="themes-guide" element={<GuardianThemesGuidePage />} />

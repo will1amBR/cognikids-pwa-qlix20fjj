@@ -306,6 +306,13 @@ export const AppShell: React.FC = () => {
           icon: BarChart3,
         },
         {
+          label: 'Relatórios Avançados',
+          path: selectedChild
+            ? `/app/reports-advanced/${selectedChild.id}`
+            : '/app/reports-advanced',
+          icon: TrendingUp,
+        },
+        {
           label: 'Guarda-Roupa do Tico',
           path: '/app/wardrobe',
           icon: Shirt,
@@ -368,6 +375,14 @@ export const AppShell: React.FC = () => {
           desc: 'PDFs e gráficos diagnósticos clínicos/pedagógicos',
         },
         {
+          label: 'Relatórios Avançados',
+          path: selectedChild
+            ? `/app/reports-advanced/${selectedChild.id}`
+            : '/app/reports-advanced',
+          icon: TrendingUp,
+          desc: 'Gráficos de evolução, insights automáticos e alertas',
+        },
+        {
           label: 'Dicas & Bem-estar',
           path: '/app/health-guide',
           icon: HeartPulse,
@@ -410,6 +425,14 @@ export const AppShell: React.FC = () => {
           path: selectedChild ? `/app/reports/${selectedChild.id}` : '/app/reports',
           icon: TrendingUp,
           desc: 'PDFs e gráficos diagnósticos clínicos/pedagógicos',
+        },
+        {
+          label: 'Relatórios Avançados',
+          path: selectedChild
+            ? `/app/reports-advanced/${selectedChild.id}`
+            : '/app/reports-advanced',
+          icon: TrendingUp,
+          desc: 'Gráficos de evolução, insights automáticos e alertas',
         },
         {
           label: 'Dicas & Bem-estar',
